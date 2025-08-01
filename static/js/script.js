@@ -145,7 +145,7 @@ async function validateWhatsAppReal(phone) {
     }
 }
 
-// عرض معلومات رقم الواتساب المتقدمة
+// عرض معلومات مبسطة للرقم
 function showPhoneInfo(info, inputElement) {
     // إزالة معلومات سابقة
     const existingInfo = document.querySelector('.phone-info');
@@ -155,28 +155,14 @@ function showPhoneInfo(info, inputElement) {
     }
 
     // التحقق من صحة البيانات
-    if (!info.is_valid && !info.valid) {
+    if (!info.is_valid) {
         showPhoneInfoError(info.error || 'رقم غير صحيح', inputElement);
         return;
     }
 
-    // إنشاء عنصر المعلومات
+    // إنشاء عنصر المعلومات المبسط
     const infoDiv = document.createElement('div');
     infoDiv.className = 'phone-info success-info';
-    
-    // تحديد الأعلام والرموز
-    const phoneInfo = info.phone_info || info;
-    const countryFlags = {
-        'EG': '🇪🇬', 'SA': '🇸🇦', 'AE': '🇦🇪', 'KW': '🇰🇼',
-        'QA': '🇶🇦', 'BH': '🇧🇭', 'OM': '🇴🇲', 'JO': '🇯🇴',
-        'LB': '🇱🇧', 'SY': '🇸🇾', 'IQ': '🇮🇶', 'YE': '🇾🇪',
-        'LY': '🇱🇾', 'TN': '🇹🇳', 'DZ': '🇩🇿', 'MA': '🇲🇦',
-        'SD': '🇸🇩', 'US': '🇺🇸', 'GB': '🇬🇧', 'DE': '🇩🇪',
-        'FR': '🇫🇷', 'IT': '🇮🇹', 'ES': '🇪🇸', 'TR': '🇹🇷'
-    };
-    
-    const flagEmoji = countryFlags[phoneInfo.country_code] || (info.is_egyptian ? '🇪🇬' : '🌍');
-    const typeIcon = info.is_egyptian ? '📱' : '🌐';
     
     infoDiv.innerHTML = `
         <div class="info-content">
@@ -184,38 +170,11 @@ function showPhoneInfo(info, inputElement) {
                 <i class="fas fa-check-circle"></i>
                 <span>رقم صحيح ومتاح على واتساب</span>
             </div>
-            <div class="phone-info-header">
-                <span class="country-flag">${flagEmoji}</span>
-                <span class="country-name">${phoneInfo.country_name || info.country || 'غير محدد'}</span>
-            </div>
-            <div class="info-details">
-                <div class="info-item">
-                    <span class="info-label">${flagEmoji} البلد:</span>
-                    <span class="info-value">${phoneInfo.country_name || info.country || 'غير محدد'}</span>
-                </div>
-                ${(phoneInfo.carrier || info.carrier) ? `
-                <div class="info-item">
-                    <span class="info-label">${typeIcon} الشركة:</span>
-                    <span class="info-value">${phoneInfo.carrier || info.carrier}</span>
-                </div>
-                ` : ''}
-                <div class="info-item">
-                    <span class="info-label">📞 الرقم المنسق:</span>
-                    <span class="info-value direction-ltr">${phoneInfo.formatted_number || info.formatted || inputElement.value}</span>
-                </div>
-                ${phoneInfo.country_code ? `
-                <div class="info-item">
-                    <span class="info-label">🔢 كود الدولة:</span>
-                    <span class="info-value">${phoneInfo.country_code}</span>
-                </div>
-                ` : ''}
-                <div class="info-item">
-                    <span class="info-label">📋 النوع:</span>
-                    <span class="info-value">${phoneInfo.type === 'mobile' ? 'هاتف محمول' : (phoneInfo.type || 'هاتف محمول')}</span>
-                </div>
+            <div class="phone-display">
+                <span class="formatted-number">${info.formatted || inputElement.value}</span>
             </div>
             <div class="validation-badge">
-                <i class="fas fa-check-circle"></i>
+                <i class="fas fa-whatsapp"></i>
                 <span>تم التحقق من الرقم</span>
             </div>
         </div>

@@ -1,0 +1,512 @@
+:root {
+    /* الألوان الدقيقة من الموقع الأصلي */
+    --main-purple: #190f2c;
+    --light-purple: #3a2d5b;
+    --dark-purple: #0d0419;
+    --accent-orange: #ff9000;
+    --hover-orange: #ffa500;
+    --text-white: #FFFFFF;
+    --glass-bg: linear-gradient(145deg, rgba(25, 15, 44, 0.85), rgba(58, 45, 91, 0.75));
+    --button-bg: linear-gradient(145deg, rgba(25, 15, 44, 0.9), rgba(58, 45, 91, 0.8));
+    --selected-bg: linear-gradient(145deg, var(--accent-orange), var(--hover-orange));
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Cairo', sans-serif;
+    background: linear-gradient(135deg, var(--main-purple) 0%, var(--light-purple) 50%, var(--dark-purple) 100%);
+    min-height: 100vh;
+    padding: 15px;
+    overflow-x: hidden;
+}
+
+/* خلفية الجسيمات */
+.particles-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: rgba(255, 144, 0, 0.6);
+    border-radius: 50%;
+    animation: float 8s infinite linear;
+}
+
+@keyframes float {
+    0% {
+        transform: translateY(100vh) rotate(0deg);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-10vh) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+/* الحاوي الرئيسي - محسن للهواتف */
+.container {
+    max-width: 500px;
+    margin: 0 auto;
+    background: var(--glass-bg);
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* رأس الصفحة */
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.header h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: 2.2rem;
+    font-weight: 900;
+    margin-bottom: 10px;
+    color: var(--text-white);
+    text-shadow: 0 0 20px rgba(255, 144, 0, 0.3);
+}
+
+.header p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* قسم المنصات */
+.platforms-section {
+    margin-bottom: 30px;
+}
+
+.section-title {
+    color: var(--text-white);
+    font-size: 1.3rem;
+    font-weight: 800;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.platforms-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.platform-card {
+    background: var(--button-bg);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.platform-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(255, 144, 0, 0.2);
+    border-color: rgba(255, 144, 0, 0.5);
+}
+
+.platform-card.selected {
+    background: var(--selected-bg);
+    border-color: var(--accent-orange);
+    color: #1F2937;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255, 144, 0, 0.4);
+}
+
+.platform-icon {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.platform-icon.playstation { color: #00D4FF; }
+.platform-icon.xbox { color: #107C10; }
+.platform-icon.pc { color: #ff9000; }
+
+.platform-card h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.platform-card:not(.selected) h3 {
+    color: var(--text-white);
+}
+
+/* نموذج الإدخال */
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-group label {
+    display: block;
+    color: var(--text-white);
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-input {
+    width: 100%;
+    padding: 15px 20px;
+    border: none;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-white);
+    font-size: 1rem;
+    font-weight: 600;
+    backdrop-filter: blur(5px);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    font-family: 'Cairo', sans-serif;
+}
+
+.form-input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--accent-orange);
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 20px rgba(255, 144, 0, 0.3);
+}
+
+/* طرق الدفع مع الشعارات الأصلية */
+.payment-methods {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.payment-btn {
+    padding: 18px;
+    border: none;
+    border-radius: 12px;
+    background: var(--button-bg);
+    color: var(--text-white);
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 15px;
+    font-family: 'Cairo', sans-serif;
+    backdrop-filter: blur(10px);
+}
+
+.payment-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(255, 144, 0, 0.2);
+    border-color: rgba(255, 144, 0, 0.5);
+}
+
+.payment-btn.selected {
+    background: var(--selected-bg);
+    border-color: var(--accent-orange);
+    color: #1F2937;
+    font-weight: 800;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255, 144, 0, 0.4);
+}
+
+/* الشعارات الأصلية */
+.payment-logo {
+    width: 28px;
+    height: 28px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    display: block;
+    flex-shrink: 0;
+}
+
+.vodafone-logo {
+    background-image: url('https://page.gensparksite.com/v1/base64_upload/3d7ddb6e3c7675003a61ac138f5d01de');
+}
+
+.etisalat-logo {
+    background-image: url('https://page.gensparksite.com/v1/base64_upload/73b6c94c096c4a2c242405caf72a345b');
+}
+
+.orange-logo {
+    background-image: url('https://page.gensparksite.com/v1/base64_upload/147913bc6269ca9b04f9c400c250fda5');
+}
+
+.we-logo {
+    background-image: url('https://page.gensparksite.com/v1/base64_upload/2d8a087f82faa2b4e878b2d79ac6d5a1');
+}
+
+.bank-logo {
+    background-image: url('https://page.gensparksite.com/v1/base64_upload/c9d46092b69e1966028e66ef451d43d2');
+}
+
+.tilda-logo {
+    background-image: url('https://page.gensparksite.com/v1/base64_upload/9892f3e0f4190ecc34f1db37fca1efb1');
+}
+
+.instapay-logo {
+    background-image: url('https://page.gensparksite.com/v1/base64_upload/41a0496cae8b5222182d11da0a06089f');
+}
+
+.whatsapp-logo {
+    color: #25D366;
+    font-size: 1.5rem;
+}
+
+/* الحقول الديناميكية */
+.dynamic-input {
+    display: none;
+    margin-top: 15px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.4s ease;
+}
+
+.dynamic-input.show {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.dynamic-input label {
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* رسائل الخطأ */
+.error-message-field {
+    display: none;
+    margin-top: 8px;
+    padding: 10px 12px;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.3));
+    border: 2px solid #DC2626;
+    border-radius: 8px;
+    color: var(--text-white);
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.error-message-field.show {
+    display: block;
+    animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* زر الحفظ */
+.submit-btn {
+    width: 100%;
+    padding: 18px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent-orange), var(--hover-orange));
+    color: #1F2937;
+    font-size: 1.2rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 30px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: 'Orbitron', monospace;
+}
+
+.submit-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(255, 144, 0, 0.5);
+}
+
+.submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* رسائل النجاح والخطأ */
+.message {
+    padding: 15px;
+    border-radius: 12px;
+    margin-top: 20px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1rem;
+    display: none;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.4s ease;
+}
+
+.message.show {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.success-message {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.3));
+    border: 2px solid #10B981;
+    color: var(--text-white);
+}
+
+.error-message {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.3));
+    border: 2px solid #DC2626;
+    color: var(--text-white);
+}
+
+/* شاشة التحميل */
+.loading {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(25, 15, 44, 0.95), rgba(58, 45, 91, 0.98));
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+    flex-direction: column;
+}
+
+.loading.show {
+    display: flex;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(255, 255, 255, 0.3);
+    border-top: 5px solid var(--accent-orange);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+}
+
+.loading-text {
+    color: var(--text-white);
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* لوحة الأمان */
+.security-notice {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.3));
+    border: 2px solid #10B981;
+    border-radius: 12px;
+    padding: 15px;
+    margin-top: 25px;
+    color: var(--text-white);
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* تحسينات إضافية للهواتف */
+@media (max-width: 480px) {
+    .container {
+        padding: 20px 15px;
+        margin: 10px;
+        border-radius: 15px;
+    }
+    
+    .header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .payment-btn {
+        padding: 15px;
+        font-size: 0.9rem;
+    }
+    
+    .payment-logo {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .form-input {
+        padding: 12px 15px;
+    }
+    
+    .submit-btn {
+        padding: 15px;
+        font-size: 1.1rem;
+    }
+}
+
+/* تحسينات للاندرويد */
+@media (max-width: 400px) {
+    body {
+        padding: 10px;
+    }
+    
+    .container {
+        padding: 15px;
+        margin: 5px;
+    }
+    
+    .platforms-grid {
+        gap: 10px;
+    }
+    
+    .payment-methods {
+        gap: 10px;
+    }
+    
+    .platform-card {
+        padding: 15px;
+    }
+    
+    .platform-icon {
+        font-size: 2rem;
+    }
+}

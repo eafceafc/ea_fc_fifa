@@ -10,6 +10,8 @@ import phonenumbers
 from phonenumbers import geocoder, carrier
 from phonenumbers.phonenumberutil import number_type
 from urllib.parse import urlparse
+import time
+import random
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')
@@ -54,10 +56,10 @@ def normalize_phone_number(phone):
     
     return clean_phone
 
-def check_whatsapp_real_api(phone_number):
+def check_whatsapp_simple_and_effective(phone_number):
     """
-    🔥 الحل الجذري الحقيقي - تحليل محتوى الصفحة مش status code
-    زي ما صاحبك قال بالضبط!
+    🔥 الحل البسيط والفعال - بدون تعقيد!
+    هنجرب طرق متعددة ونشوف أي واحدة تشتغل
     """
     
     if not re.match(r'^\+[1-9]\d{7,14}$', phone_number):
@@ -67,209 +69,132 @@ def check_whatsapp_real_api(phone_number):
             'message': 'تنسيق الرقم غير صحيح'
         }
     
-    try:
-        # تنظيف الرقم للرابط
-        clean_phone = phone_number.replace('+', '').replace(' ', '')
-        
-        # الرابط الصحيح زي ما قال صاحبك
-        url = f"https://api.whatsapp.com/send/?phone={clean_phone}"
-        
-        # Headers محاكية للمتصفح الحقيقي
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-            'Accept-Language': 'ar,en-US;q=0.9,en;q=0.8',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1',
-            'Sec-Fetch-Dest': 'document',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'none',
-            'Cache-Control': 'max-age=0'
-        }
-        
-        # طلب GET لجلب محتوى الصفحة
-        response = requests.get(url, headers=headers, timeout=10, allow_redirects=True)
-        
-        # تحليل محتوى الصفحة - هنا السر!
-        page_content = response.text.lower()
-        
-        # 🔍 العلامات الحقيقية للرقم غير الموجود
-        error_indicators = [
-            'phone number shared via url is invalid',
-            'رقم الهاتف المشترك عبر الرابط غير صالح',
-            'the phone number shared via url is invalid',
-            'invalid phone number',
-            'رقم الهاتف غير صحيح',
-            'phone number is not valid',
-            'numero de telefono no valido',
-            'numéro de téléphone non valide'
-        ]
-        
-        # 🔍 العلامات الحقيقية للرقم الموجود
-        success_indicators = [
-            'continue to chat',
-            'المتابعة إلى الدردشة',
-            'continuar al chat',
-            'continuer la discussion',
-            'message',
-            'رسالة',
-            'chat with',
-            'whatsapp://send',
-            'wa.me/'
-        ]
-        
-        # فحص علامات الخطأ أولاً (أهم!)
-        for error_sign in error_indicators:
-            if error_sign in page_content:
-                return {
-                    'exists': False,
-                    'method': 'content_analysis_error',
-                    'confidence': 'very_high',
-                    'message': 'الرقم غير موجود على واتساب - تم التأكد',
-                    'detected_sign': error_sign
+    clean_phone = phone_number.replace('+', '').replace(' ', '')
+    
+    # قائمة بالطرق المختلفة للتحقق
+    urls_to_try = [
+        f"https://api.whatsapp.com/send/?phone={clean_phone}",
+        f"https://wa.me/{clean_phone}",
+        f"https://web.whatsapp.com/send?phone={clean_phone}",
+        f"https://api.whatsapp.com/send?phone={clean_phone}&text=test"
+    ]
+    
+    results = []
+    
+    for i, url in enumerate(urls_to_try):
+        try:
+            # انتظار عشوائي لمحاكاة السلوك البشري
+            if i > 0:
+                time.sleep(random.uniform(0.5, 1.5))
+            
+            # Headers مختلفة لكل محاولة
+            headers_options = [
+                {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                    'Accept-Language': 'ar,en-US;q=0.9,en;q=0.8',
+                    'Connection': 'keep-alive'
+                },
+                {
+                    'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Language': 'ar-EG,ar;q=0.9',
+                    'Connection': 'keep-alive'
+                },
+                {
+                    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'application/json, text/plain, */*',
+                    'Accept-Language': 'en-US,en;q=0.5',
+                    'Connection': 'keep-alive'
                 }
-        
-        # فحص علامات النجاح
-        success_count = 0
-        detected_success_signs = []
-        
-        for success_sign in success_indicators:
-            if success_sign in page_content:
-                success_count += 1
-                detected_success_signs.append(success_sign)
-        
-        # إذا وجدنا علامات نجاح كتير، يبقى الرقم موجود
-        if success_count >= 2:
-            return {
-                'exists': True,
-                'method': 'content_analysis_success',
-                'confidence': 'high',
-                'message': 'الرقم موجود على واتساب',
-                'detected_signs': detected_success_signs,
-                'success_count': success_count
-            }
-        elif success_count == 1:
-            return {
-                'exists': True,
-                'method': 'content_analysis_partial',
-                'confidence': 'medium',
-                'message': 'على الأغلب موجود على واتساب',
-                'detected_signs': detected_success_signs
-            }
-        
-        # تحليل إضافي للـ HTML structure
-        if 'whatsapp' in page_content and 'chat' in page_content:
-            return {
-                'exists': True,
-                'method': 'structure_analysis',
-                'confidence': 'medium',
-                'message': 'يبدو أن الرقم موجود - تم العثور على هيكل واتساب'
-            }
-        
-        # إذا مفيش أي علامات واضحة
+            ]
+            
+            headers = headers_options[i % len(headers_options)]
+            
+            # محاولة GET request
+            response = requests.get(url, headers=headers, timeout=8, allow_redirects=True)
+            
+            # تحليل بسيط جداً للرد
+            status_ok = response.status_code in [200, 302, 301]
+            content_length = len(response.text)
+            
+            # إذا كان الرد قصير جداً، غالباً يكون خطأ
+            if content_length < 100:
+                result_for_this_url = False
+            elif content_length > 5000:
+                # الرد طويل، غالباً صفحة واتساب الحقيقية
+                result_for_this_url = True
+            else:
+                # متوسط، نعتمد على status code
+                result_for_this_url = status_ok
+            
+            results.append({
+                'url': url,
+                'status': response.status_code,
+                'content_length': content_length,
+                'result': result_for_this_url,
+                'success': status_ok
+            })
+            
+        except requests.exceptions.Timeout:
+            results.append({
+                'url': url,
+                'status': 'timeout',
+                'result': None,
+                'success': False
+            })
+        except requests.exceptions.ConnectionError:
+            results.append({
+                'url': url,
+                'status': 'connection_error',
+                'result': None,
+                'success': False
+            })
+        except Exception as e:
+            results.append({
+                'url': url,
+                'status': f'error: {str(e)}',
+                'result': None,
+                'success': False
+            })
+    
+    # تحليل النتائج
+    valid_results = [r for r in results if r['result'] is not None]
+    
+    if not valid_results:
+        return {
+            'exists': None,
+            'method': 'all_failed',
+            'message': 'فشل في الاتصال - لا يمكن التحقق',
+            'details': results
+        }
+    
+    # حساب نسبة النجاح
+    positive_results = [r for r in valid_results if r['result'] is True]
+    success_rate = len(positive_results) / len(valid_results)
+    
+    # قرار نهائي بناءً على نسبة النجاح
+    if success_rate >= 0.5:  # 50% أو أكثر نجح
+        return {
+            'exists': True,
+            'method': 'multiple_attempts',
+            'confidence': 'high' if success_rate >= 0.75 else 'medium',
+            'success_rate': f"{len(positive_results)}/{len(valid_results)}",
+            'message': f'الرقم موجود على واتساب - نسبة النجاح {success_rate*100:.0f}%',
+            'details': results
+        }
+    else:
         return {
             'exists': False,
-            'method': 'no_indicators',
-            'confidence': 'medium',
-            'message': 'لم يتم العثور على مؤشرات وجود الرقم'
-        }
-        
-    except requests.exceptions.Timeout:
-        return {
-            'exists': None,
-            'method': 'timeout',
-            'confidence': 'very_low',
-            'message': 'انتهت مهلة الاتصال - لا يمكن التحقق'
-        }
-        
-    except requests.exceptions.ConnectionError:
-        return {
-            'exists': None,
-            'method': 'connection_error',
-            'confidence': 'very_low',
-            'message': 'خطأ في الاتصال - لا يمكن التحقق'
-        }
-        
-    except Exception as e:
-        print(f"خطأ في التحقق: {e}")
-        return {
-            'exists': None,
-            'method': 'unknown_error',
-            'confidence': 'very_low',
-            'message': f'خطأ غير متوقع: {str(e)}'
+            'method': 'multiple_attempts',
+            'confidence': 'high' if success_rate <= 0.25 else 'medium',
+            'success_rate': f"{len(positive_results)}/{len(valid_results)}",
+            'message': f'الرقم غير موجود على واتساب - نسبة الفشل {(1-success_rate)*100:.0f}%',
+            'details': results
         }
 
-def validate_egyptian_number(phone):
-    """التحقق من الأرقام المصرية خصيصاً"""
-    if phone.startswith('+2'):
-        local_part = phone[2:]
-    elif phone.startswith('2') and len(phone) > 11:
-        local_part = phone[1:]
-    else:
-        local_part = phone
-    
-    if len(local_part) == 11 and local_part.startswith(('010', '011', '012', '015')):
-        carrier_info = EGYPTIAN_CARRIERS.get(local_part[:3], {})
-        return {
-            'is_valid': True,
-            'is_egyptian': True,
-            'formatted': '+2' + local_part,
-            'country': 'مصر',
-            'country_en': 'Egypt',
-            'carrier': carrier_info.get('name', 'غير معروف'),
-            'carrier_en': carrier_info.get('carrier_en', 'Unknown'),
-            'type': 'رقم محمول مصري'
-        }
-    
-    return {'is_valid': False, 'is_egyptian': False}
-
-def validate_international_number(phone):
-    """التحقق من الأرقام الدولية"""
-    try:
-        normalized = normalize_phone_number(phone)
-        parsed_number = phonenumbers.parse(normalized, None)
-        
-        if not phonenumbers.is_valid_number(parsed_number):
-            return {'is_valid': False, 'error': 'رقم غير صحيح'}
-        
-        phone_type = number_type(parsed_number)
-        if phone_type not in [phonenumbers.PhoneNumberType.MOBILE, 
-                             phonenumbers.PhoneNumberType.FIXED_LINE_OR_MOBILE]:
-            return {'is_valid': False, 'error': 'الرقم ليس رقم محمول'}
-        
-        country_name = geocoder.description_for_number(parsed_number, "ar")
-        country_name_en = geocoder.description_for_number(parsed_number, "en")
-        carrier_name = carrier.name_for_number(parsed_number, "ar")
-        carrier_name_en = carrier.name_for_number(parsed_number, "en")
-        
-        formatted_number = phonenumbers.format_number(parsed_number, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
-        
-        return {
-            'is_valid': True,
-            'is_egyptian': False,
-            'formatted': formatted_number.replace(' ', ''),
-            'country': country_name or 'غير معروف',
-            'country_en': country_name_en or 'Unknown',
-            'carrier': carrier_name or 'غير معروف',
-            'carrier_en': carrier_name_en or 'Unknown',
-            'type': 'رقم محمول دولي',
-            'country_code': '+' + str(parsed_number.country_code)
-        }
-        
-    except phonenumbers.NumberParseException as e:
-        error_messages = {
-            phonenumbers.NumberParseException.INVALID_COUNTRY_CODE: 'كود الدولة غير صحيح',
-            phonenumbers.NumberParseException.NOT_A_NUMBER: 'ليس رقم هاتف صحيح',
-            phonenumbers.NumberParseException.TOO_SHORT_NSN: 'الرقم قصير جداً',
-            phonenumbers.NumberParseException.TOO_LONG: 'الرقم طويل جداً'
-        }
-        return {'is_valid': False, 'error': error_messages.get(e.error_type, 'رقم غير صحيح')}
-    except Exception as e:
-        return {'is_valid': False, 'error': 'خطأ في التحقق من الرقم'}
-
-def validate_whatsapp_final_real(phone):
-    """🔥 التحقق النهائي الحقيقي من الواتساب"""
+def validate_whatsapp_smart(phone):
+    """التحقق الذكي من رقم الواتساب"""
     if not phone:
         return {'is_valid': False, 'error': 'يرجى إدخال رقم الهاتف'}
     
@@ -278,40 +203,31 @@ def validate_whatsapp_final_real(phone):
     if not re.match(r'^\+[1-9]\d{7,14}$', normalized_phone):
         return {'is_valid': False, 'error': 'تنسيق الرقم غير صحيح'}
     
-    # الحصول على معلومات الرقم
-    phone_info = {}
+    # الحصول على معلومات الرقم الأساسية
+    try:
+        parsed_number = phonenumbers.parse(normalized_phone, None)
+        country = geocoder.description_for_number(parsed_number, "ar") or "غير معروف"
+        carrier_name = carrier.name_for_number(parsed_number, "ar") or "غير معروف"
+        is_egyptian = str(parsed_number.country_code) == '20'
+    except:
+        country = "غير معروف"
+        carrier_name = "غير معروف" 
+        is_egyptian = normalized_phone.startswith('+20')
     
-    # للأرقام المصرية
-    if normalized_phone.startswith('+20'):
-        egyptian_info = validate_egyptian_number(normalized_phone)
-        if egyptian_info['is_valid']:
-            phone_info = egyptian_info
-        else:
-            return {'is_valid': False, 'error': 'رقم مصري غير صحيح'}
-    else:
-        # للأرقام الدولية
-        international_info = validate_international_number(normalized_phone)
-        if not international_info.get('is_valid'):
-            return {'is_valid': False, 'error': international_info.get('error', 'رقم دولي غير صحيح')}
-        phone_info = international_info
-    
-    # التحقق الحقيقي من واتساب
-    whatsapp_check = check_whatsapp_real_api(normalized_phone)
+    # التحقق الذكي من واتساب
+    whatsapp_check = check_whatsapp_simple_and_effective(normalized_phone)
     
     if whatsapp_check['exists'] is True:
         return {
             'is_valid': True,
             'formatted': normalized_phone,
-            'country': phone_info.get('country', 'غير معروف'),
-            'country_en': phone_info.get('country_en', 'Unknown'),
-            'carrier': phone_info.get('carrier', 'غير معروف'),
-            'carrier_en': phone_info.get('carrier_en', 'Unknown'),
-            'type': phone_info.get('type', 'رقم محمول'),
-            'is_egyptian': phone_info.get('is_egyptian', False),
+            'country': country,
+            'carrier': carrier_name,
+            'is_egyptian': is_egyptian,
             'whatsapp_status': f'موجود ✅ ({whatsapp_check["confidence"]})',
             'verification_method': whatsapp_check['method'],
             'confidence': whatsapp_check['confidence'],
-            'detected_signs': whatsapp_check.get('detected_signs', []),
+            'success_rate': whatsapp_check.get('success_rate', ''),
             'message': whatsapp_check['message']
         }
     elif whatsapp_check['exists'] is False:
@@ -321,17 +237,18 @@ def validate_whatsapp_final_real(phone):
             'formatted': normalized_phone,
             'verification_method': whatsapp_check['method'],
             'confidence': whatsapp_check['confidence'],
-            'detected_sign': whatsapp_check.get('detected_sign', '')
+            'success_rate': whatsapp_check.get('success_rate', '')
         }
     else:  # None - لا يمكن التحقق
         return {
             'is_valid': True,  # نقبل الرقم مع تحذير
             'formatted': normalized_phone,
-            'country': phone_info.get('country', 'غير معروف'),
-            'carrier': phone_info.get('carrier', 'غير معروف'),
-            'whatsapp_status': f'غير مؤكد ⚠️ ({whatsapp_check["confidence"]})',
+            'country': country,
+            'carrier': carrier_name,
+            'is_egyptian': is_egyptian,
+            'whatsapp_status': f'غير مؤكد ⚠️',
             'verification_method': whatsapp_check['method'],
-            'confidence': whatsapp_check['confidence'],
+            'confidence': 'very_low',
             'message': f"رقم صحيح ولكن {whatsapp_check['message']}"
         }
 
@@ -394,7 +311,7 @@ def index():
 
 @app.route('/validate-whatsapp', methods=['POST'])
 def validate_whatsapp_endpoint():
-    """🔥 API للتحقق الحقيقي من رقم الواتساب"""
+    """🔥 API للتحقق الذكي من رقم الواتساب"""
     try:
         data = request.get_json()
         phone = sanitize_input(data.get('phone', ''))
@@ -402,17 +319,40 @@ def validate_whatsapp_endpoint():
         if not phone:
             return jsonify({'is_valid': False, 'error': 'يرجى إدخال رقم الهاتف'})
         
-        # استخدام الطريقة الحقيقية
-        result = validate_whatsapp_final_real(phone)
+        # استخدام الطريقة الذكية الجديدة
+        result = validate_whatsapp_smart(phone)
         return jsonify(result)
         
     except Exception as e:
         print(f"خطأ في التحقق من الواتساب: {str(e)}")
         return jsonify({'is_valid': False, 'error': 'خطأ في الخادم'})
 
+@app.route('/test-phone', methods=['POST'])
+def test_phone_endpoint():
+    """🧪 endpoint للاختبار المباشر"""
+    try:
+        data = request.get_json()
+        phone = sanitize_input(data.get('phone', ''))
+        
+        if not phone:
+            return jsonify({'error': 'يرجى إدخال رقم الهاتف'})
+        
+        normalized_phone = normalize_phone_number(phone)
+        result = check_whatsapp_simple_and_effective(normalized_phone)
+        
+        return jsonify({
+            'phone': normalized_phone,
+            'result': result,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        print(f"خطأ في الاختبار: {str(e)}")
+        return jsonify({'error': f'خطأ في الاختبار: {str(e)}'})
+
 @app.route('/update-profile', methods=['POST'])
 def update_profile():
-    """تحديث الملف الشخصي بالتحقق الحقيقي"""
+    """تحديث الملف الشخصي بالتحقق الذكي"""
     try:
         client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
         
@@ -429,8 +369,8 @@ def update_profile():
         if not all([platform, whatsapp_number, payment_method]):
             return jsonify({'success': False, 'message': 'Missing required fields'}), 400
         
-        # التحقق الحقيقي من الواتساب
-        whatsapp_validation = validate_whatsapp_final_real(whatsapp_number)
+        # التحقق الذكي من الواتساب
+        whatsapp_validation = validate_whatsapp_smart(whatsapp_number)
         if not whatsapp_validation.get('is_valid'):
             return jsonify({
                 'success': False,
@@ -466,15 +406,12 @@ def update_profile():
             'whatsapp_number': whatsapp_validation['formatted'],
             'whatsapp_info': {
                 'country': whatsapp_validation.get('country'),
-                'country_en': whatsapp_validation.get('country_en'),
                 'carrier': whatsapp_validation.get('carrier'),
-                'carrier_en': whatsapp_validation.get('carrier_en'),
-                'type': whatsapp_validation.get('type'),
                 'is_egyptian': whatsapp_validation.get('is_egyptian', False),
                 'whatsapp_status': whatsapp_validation.get('whatsapp_status'),
                 'verification_method': whatsapp_validation.get('verification_method'),
                 'confidence': whatsapp_validation.get('confidence'),
-                'detected_signs': whatsapp_validation.get('detected_signs', [])
+                'success_rate': whatsapp_validation.get('success_rate', '')
             },
             'payment_method': payment_method,
             'payment_details': processed_payment_details,
@@ -483,13 +420,13 @@ def update_profile():
             'ip_address': hashlib.sha256(client_ip.encode()).hexdigest()[:10]
         }
         
-        print(f"🔥 Real WhatsApp Validation: {json.dumps(user_data, indent=2, ensure_ascii=False)}")
+        print(f"🔥 Smart WhatsApp Validation: {json.dumps(user_data, indent=2, ensure_ascii=False)}")
         
         session['csrf_token'] = generate_csrf_token()
         
         return jsonify({
             'success': True,
-            'message': 'تم التحقق الحقيقي من الواتساب وحفظ البيانات بنجاح!',
+            'message': 'تم التحقق الذكي من الواتساب وحفظ البيانات بنجاح!',
             'data': {
                 'platform': platform,
                 'whatsapp_number': whatsapp_validation['formatted'],

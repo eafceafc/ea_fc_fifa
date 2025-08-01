@@ -513,3 +513,163 @@ body {
         font-size: 2rem;
     }
 }
+
+/* إضافة هذا الكود في نهاية ملف style.css */
+
+/* تأثير التحقق من الواتساب */
+.form-input.validating {
+    border-color: var(--accent-orange) !important;
+    animation: pulse-border 1.5s infinite;
+}
+
+@keyframes pulse-border {
+    0% {
+        border-color: var(--accent-orange);
+        box-shadow: 0 0 5px rgba(255, 144, 0, 0.3);
+    }
+    50% {
+        border-color: var(--hover-orange);
+        box-shadow: 0 0 15px rgba(255, 144, 0, 0.6);
+    }
+    100% {
+        border-color: var(--accent-orange);
+        box-shadow: 0 0 5px rgba(255, 144, 0, 0.3);
+    }
+}
+
+/* معلومات الرقم */
+.phone-info {
+    margin-top: 15px;
+    padding: 15px;
+    border-radius: 12px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.4s ease;
+    font-size: 0.9rem;
+    backdrop-filter: blur(10px);
+}
+
+.phone-info.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.phone-info.success-info {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.3));
+    border: 2px solid #10B981;
+    color: var(--text-white);
+}
+
+.phone-info.error-info {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.3));
+    border: 2px solid #DC2626;
+    color: var(--text-white);
+}
+
+.info-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.info-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.info-header i {
+    font-size: 1.2rem;
+}
+
+.success-info .info-header i {
+    color: #10B981;
+}
+
+.error-info .info-header i {
+    color: #DC2626;
+}
+
+.info-details {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-right: 20px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 600;
+    opacity: 0.9;
+    flex-shrink: 0;
+}
+
+.info-value {
+    font-weight: 700;
+    text-align: left;
+    direction: ltr;
+}
+
+/* تحسينات للهواتف */
+@media (max-width: 480px) {
+    .phone-info {
+        padding: 12px;
+        font-size: 0.85rem;
+    }
+    
+    .info-details {
+        padding-right: 0;
+    }
+    
+    .info-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        padding: 6px 0;
+    }
+    
+    .info-value {
+        text-align: right;
+        direction: rtl;
+        font-size: 0.9rem;
+    }
+}
+
+/* انيميشن إضافي للنجاح */
+.success-info {
+    animation: success-glow 2s ease-in-out;
+}
+
+@keyframes success-glow {
+    0% {
+        box-shadow: 0 0 5px rgba(16, 185, 129, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
+    }
+    100% {
+        box-shadow: 0 0 5px rgba(16, 185, 129, 0.3);
+    }
+}
+
+/* تحسين رسالة النجاح لعرض معلومات إضافية */
+.success-message small {
+    opacity: 0.9;
+    font-size: 0.85rem;
+    margin-top: 8px;
+    display: block;
+    line-height: 1.4;
+}

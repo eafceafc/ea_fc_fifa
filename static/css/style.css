@@ -249,8 +249,8 @@ body {
 
 /* الشعارات الأصلية */
 .payment-logo {
-    width: 55px;
-    height: 55px;
+    width: 65px;
+    height: 65px;
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
@@ -259,7 +259,7 @@ body {
 }
 
 .vodafone-logo {
-    background-image: url('https://github.com/user-attachments/assets/776374cb-198c-45eb-9907-ee2c2ee7d5b9');
+    background-image: url('https://github.com/user-attachments/assets/6ed6893c-fa29-4ea1-a7d8-a20fb7583129');
 }
 
 .etisalat-logo {
@@ -267,7 +267,7 @@ body {
 }
 
 .orange-logo {
-    background-image: url('https://github.com/user-attachments/assets/5701c7d2-3b56-4c8c-8852-8d6600559289');
+    background-image: url('https://github.com/user-attachments/assets/fd19b844-0fb5-419a-a280-3e3704fe8303');
 }
 
 .we-logo {
@@ -472,8 +472,8 @@ body {
     }
     
     .payment-logo {
-        width: 48px;
-        height: 48px;
+        width: 58px;
+        height: 58px;
     }
     
     .form-input {

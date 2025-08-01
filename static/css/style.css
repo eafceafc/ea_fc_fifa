@@ -249,8 +249,8 @@ body {
 
 /* الشعارات الأصلية */
 .payment-logo {
-    width: 28px;
-    height: 28px;
+    width: 45px;
+    height: 45px;
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
@@ -472,8 +472,8 @@ body {
     }
     
     .payment-logo {
-        width: 24px;
-        height: 24px;
+        width: 38px;
+        height: 38px;
     }
     
     .form-input {

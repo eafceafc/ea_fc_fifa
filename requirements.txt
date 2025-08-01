@@ -6,3 +6,4 @@ phonenumbers==8.13.25
 requests==2.31.0
 beautifulsoup4==4.12.3
 numpy==1.26.4
+selenium==4.22.0

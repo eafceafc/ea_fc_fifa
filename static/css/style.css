@@ -283,28 +283,36 @@ body {
 }
 
 .instapay-logo {
-    background-image: url('https://github.com/user-attachments/assets/40bd27cf-e017-48d0-88f9-a08451e900b9');
+    background-image: url('https://github.com/user-attachments/assets/40bd27cf-e017-48d0-88f9-a08451e900b9' );
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
     
-    /* خلفية بيضاء خفيفة عشان وضوح أفضل */
-    background-color: rgba(255, 255, 255, 0.95);
-    border-radius: 6px;
+    /* 1. غيرنا لون الخلفية للأزرق الغامق بتاع انستا باي */
+    background-color: #003B79; /* ده لون أزرق غامق */
+
     padding: 3px;
+    border-radius: 6px;
     
-    /* حدود ناعمة */
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    /* 2. غيرنا لون الإطار للأصفر/البرتقالي بتاع انستا باي */
+    border: 2px solid #FFC107; /* ده لون أصفر/برتقالي (زدت حجمه لـ 2px عشان يبان) */
     
-    /* تأثير عند التمرير */
+    /* 3. غيرنا لون الظل عشان يبقى ماشي مع الألوان الجديدة */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    
     transition: all 0.3s ease;
 }
 
+/* تأثير لما الماوس يجي على الصورة */
 .instapay-logo:hover {
     transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    
+    /* ممكن نغير لون الإطار لما الماوس يجي عليه عشان ندي تأثير أحلى */
+    border-color: #FFA000; /* درجة أغمق من الأصفر */
+    
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
+
 
 .whatsapp-logo {
     color: #25D366;

@@ -259,23 +259,23 @@ body {
 }
 
 .vodafone-logo {
-    background-image: url('https://page.gensparksite.com/v1/base64_upload/3d7ddb6e3c7675003a61ac138f5d01de');
+    background-image: url('https://github.com/user-attachments/assets/776374cb-198c-45eb-9907-ee2c2ee7d5b9');
 }
 
 .etisalat-logo {
-    background-image: url('https://page.gensparksite.com/v1/base64_upload/73b6c94c096c4a2c242405caf72a345b');
+    background-image: url('https://github.com/user-attachments/assets/ec443074-53d1-4dbb-9481-a4784128904f');
 }
 
 .orange-logo {
-    background-image: url('https://page.gensparksite.com/v1/base64_upload/147913bc6269ca9b04f9c400c250fda5');
+    background-image: url('https://github.com/user-attachments/assets/5701c7d2-3b56-4c8c-8852-8d6600559289');
 }
 
 .we-logo {
-    background-image: url('https://page.gensparksite.com/v1/base64_upload/2d8a087f82faa2b4e878b2d79ac6d5a1');
+    background-image: url('https://github.com/user-attachments/assets/d78cad63-f5ef-4f4d-b3ca-cb2e0141b798');
 }
 
 .bank-logo {
-    background-image: url('https://github.com/user-attachments/assets/e3b2d2f3-2b4a-4468-aa6f-5b0d0f694f79');
+    background-image: url('https://github.com/user-attachments/assets/189abf6e-50d5-41e2-b5cd-061cfd0cd5ff');
 }
 
 .tilda-logo {
@@ -284,25 +284,6 @@ body {
 
 .instapay-logo {
     background-image: url('https://github.com/user-attachments/assets/4780c9c8-799f-49ae-993b-2d1197f25725');
-    background-size: contain;
-    background-position: center;
-    background-repeat: no-repeat;
-    
-    /* شفافية كاملة - بدون أي إضافات */
-    background-color: transparent !important;
-    border: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    backdrop-filter: none !important;
-    
-    /* بس تأثير التكبير عند التمرير */
-    transition: transform 0.3s ease;
-}
-
-.instapay-logo:hover {
-    transform: scale(1.1);
 }
 
 

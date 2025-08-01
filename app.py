@@ -12,7 +12,7 @@ from phonenumbers.phonenumberutil import number_type
 import time
 import random
 from urllib.parse import urlparse
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup  # <--- هو ده السطر ومكانه صح 100%
 import numpy as np
 
 app = Flask(__name__)

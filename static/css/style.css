@@ -275,7 +275,7 @@ body {
 }
 
 .bank-logo {
-    background-image: url('https://github.com/user-attachments/assets/ad5c7f40-682c-4b18-bdca-adb4cba56450');
+    background-image: url('https://github.com/user-attachments/assets/e3b2d2f3-2b4a-4468-aa6f-5b0d0f694f79');
 }
 
 .tilda-logo {
@@ -286,11 +286,24 @@ body {
     background-image: url('https://github.com/user-attachments/assets/40bd27cf-e017-48d0-88f9-a08451e900b9');
     background-size: contain;
     background-position: center;
+    background-repeat: no-repeat;
     
-    /* إضافة خلفية بيضاء خفيفة عشان الوضوح */
-    background-color: rgba(255, 255, 255, 0.9);
-    border-radius: 8px;
-    padding: 2px;
+    /* خلفية بيضاء خفيفة عشان وضوح أفضل */
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 6px;
+    padding: 3px;
+    
+    /* حدود ناعمة */
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    
+    /* تأثير عند التمرير */
+    transition: all 0.3s ease;
+}
+
+.instapay-logo:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .whatsapp-logo {

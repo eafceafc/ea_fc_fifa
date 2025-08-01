@@ -279,11 +279,13 @@ body {
 }
 
 .tilda-logo {
-    background-image: url('https://page.gensparksite.com/v1/base64_upload/9892f3e0f4190ecc34f1db37fca1efb1');
+    background-image: url('<img width="1280" height="1280" alt="Image" src="https://github.com/user-attachments/assets/7c4ba7fc-ca61-481c-9a72-dab05eb5b216" />');
 }
 
 .instapay-logo {
     background-image: url('https://github.com/user-attachments/assets/40bd27cf-e017-48d0-88f9-a08451e900b9');
+    background-size: cover;  /* عشان تملأ المساحة كلها */
+    background-position: center;
 }
 
 .whatsapp-logo {

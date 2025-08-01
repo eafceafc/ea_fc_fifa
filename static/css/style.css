@@ -283,26 +283,18 @@ body {
 }
 
 .instapay-logo {
-    /* السطر ده بيحط الصورة بتاعتك */
-    background-image: url('https://github.com/user-attachments/assets/40bd27cf-e017-48d0-88f9-a08451e900b9' );
+    /* استخدمنا الرابط الجديد هنا */
+    background-image: url('https://github.com/user-attachments/assets/40bd27cf-e017-48d0-88f9-a08451e900b9?raw=true' );
     
-    /* السطور دي بتظبط حجم ومكان الصورة جوه العنصر */
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
     
-    /* --- كل الخصائص اللي تحت دي تم حذفها أو تعديلها --- */
-    /* background-color: transparent;  <-- الخلفية شفافة تلقائياً، مش محتاجين نكتبها */
-    /* border: none;                 <-- شيلنا الإطار خالص */
-    /* box-shadow: none;             <-- شيلنا الظل */
-    
-    /* بنضيف تأثير بسيط عند مرور الماوس عشان يبقى شكله حلو */
     transition: transform 0.2s ease;
 }
 
-/* تأثير بسيط جداً لما الماوس يجي على الصورة (تكبير بسيط) */
 .instapay-logo:hover {
-    transform: scale(1.08); /* تقدر تغير الرقم ده عشان تكبر أو تصغر التأثير */
+    transform: scale(1.08);
 }
 
 

@@ -275,17 +275,22 @@ body {
 }
 
 .bank-logo {
-    background-image: url('https://page.gensparksite.com/v1/base64_upload/c9d46092b69e1966028e66ef451d43d2');
+    background-image: url('https://github.com/user-attachments/assets/ad5c7f40-682c-4b18-bdca-adb4cba56450');
 }
 
 .tilda-logo {
-    background-image: url('<img width="1280" height="1280" alt="Image" src="https://github.com/user-attachments/assets/7c4ba7fc-ca61-481c-9a72-dab05eb5b216" />');
+    background-image: url('https://github.com/user-attachments/assets/4eb92686-b1b3-4f77-86cb-534139db766f');
 }
 
 .instapay-logo {
     background-image: url('https://github.com/user-attachments/assets/40bd27cf-e017-48d0-88f9-a08451e900b9');
-    background-size: cover;  /* عشان تملأ المساحة كلها */
+    background-size: contain;
     background-position: center;
+    
+    /* إضافة خلفية بيضاء خفيفة عشان الوضوح */
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    padding: 2px;
 }
 
 .whatsapp-logo {

@@ -283,35 +283,28 @@ body {
 }
 
 .instapay-logo {
+    /* السطر ده بيحط الصورة بتاعتك */
     background-image: url('https://github.com/user-attachments/assets/40bd27cf-e017-48d0-88f9-a08451e900b9' );
+    
+    /* السطور دي بتظبط حجم ومكان الصورة جوه العنصر */
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
     
-    /* 1. غيرنا لون الخلفية للأزرق الغامق بتاع انستا باي */
-    background-color: #003B79; /* ده لون أزرق غامق */
-
-    padding: 3px;
-    border-radius: 6px;
+    /* --- كل الخصائص اللي تحت دي تم حذفها أو تعديلها --- */
+    /* background-color: transparent;  <-- الخلفية شفافة تلقائياً، مش محتاجين نكتبها */
+    /* border: none;                 <-- شيلنا الإطار خالص */
+    /* box-shadow: none;             <-- شيلنا الظل */
     
-    /* 2. غيرنا لون الإطار للأصفر/البرتقالي بتاع انستا باي */
-    border: 2px solid #FFC107; /* ده لون أصفر/برتقالي (زدت حجمه لـ 2px عشان يبان) */
-    
-    /* 3. غيرنا لون الظل عشان يبقى ماشي مع الألوان الجديدة */
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    
-    transition: all 0.3s ease;
+    /* بنضيف تأثير بسيط عند مرور الماوس عشان يبقى شكله حلو */
+    transition: transform 0.2s ease;
 }
 
-/* تأثير لما الماوس يجي على الصورة */
+/* تأثير بسيط جداً لما الماوس يجي على الصورة (تكبير بسيط) */
 .instapay-logo:hover {
-    transform: scale(1.05);
-    
-    /* ممكن نغير لون الإطار لما الماوس يجي عليه عشان ندي تأثير أحلى */
-    border-color: #FFA000; /* درجة أغمق من الأصفر */
-    
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    transform: scale(1.08); /* تقدر تغير الرقم ده عشان تكبر أو تصغر التأثير */
 }
+
 
 
 .whatsapp-logo {

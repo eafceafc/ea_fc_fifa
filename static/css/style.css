@@ -283,19 +283,28 @@ body {
 }
 
 .instapay-logo {
-    /* استخدمنا الرابط الجديد هنا */
-    background-image: url('https://github.com/user-attachments/assets/40bd27cf-e017-48d0-88f9-a08451e900b9?raw=true' );
-    
+    background-image: url('https://github.com/user-attachments/assets/40bd27cf-e017-48d0-88f9-a08451e900b9');
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
     
-    transition: transform 0.2s ease;
+    /* شفافية كاملة - بدون أي إضافات */
+    background-color: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    backdrop-filter: none !important;
+    
+    /* بس تأثير التكبير عند التمرير */
+    transition: transform 0.3s ease;
 }
 
 .instapay-logo:hover {
-    transform: scale(1.08);
+    transform: scale(1.1);
 }
+
 
 
 

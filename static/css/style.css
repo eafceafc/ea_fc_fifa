@@ -219,7 +219,7 @@ body {
     border-radius: 12px;
     background: var(--button-bg);
     color: var(--text-white);
-    font-size: 0.95rem;
+    font-size: 1.3rem;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -263,7 +263,7 @@ body {
 }
 
 .etisalat-logo {
-    background-image: url('https://github.com/user-attachments/assets/91c4f954-1b59-41f7-8295-1728038d911d');
+    background-image: url('https://github.com/user-attachments/assets/1ca35a0e-14c9-4dae-ae5e-c8ceb4e727f2');
 }
 
 .orange-logo {
@@ -283,7 +283,7 @@ body {
 }
 
 .instapay-logo {
-    background-image: url('https://github.com/user-attachments/assets/4780c9c8-799f-49ae-993b-2d1197f25725');
+    background-image: url('https://github.com/user-attachments/assets/05093b0a-3af6-4fee-9f92-01145ffe50d2');
 }
 
 

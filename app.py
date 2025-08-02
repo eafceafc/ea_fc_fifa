@@ -534,7 +534,7 @@ def generate_telegram_code_endpoint():
 
 @app.route('/telegram-webhook', methods=['POST'])
 def telegram_webhook():
-    """استقبال رسائل من التليجرام بوت - محدثة"""
+    """استقبال رسائل من التليجرام بوت - محدثة للكود المباشر"""
     try:
         update = request.get_json()
         print(f"🤖 Telegram Webhook received: {json.dumps(update, indent=2, ensure_ascii=False)}")
@@ -543,16 +543,16 @@ def telegram_webhook():
             return jsonify({'ok': True})
         
         message = update['message']
-        text = message.get('text', '')
+        text = message.get('text', '').strip().upper()
         chat_id = message['chat']['id']
         username = message.get('from', {}).get('username', 'Unknown')
         first_name = message.get('from', {}).get('first_name', 'مستخدم')
         
         # التحقق من كود /start
-        if text.startswith('/start'):
+        if text.startswith('/START'):
             if ' ' in text:
-                code = text.replace('/start ', '').strip().upper()
-                print(f"🔍 Looking for code: {code}")
+                code = text.replace('/START ', '').strip().upper()
+                print(f"🔍 Looking for /start code: {code}")
                 
                 # البحث عن الكود في الذاكرة
                 if code in telegram_codes:
@@ -580,8 +580,7 @@ def telegram_webhook():
                         """
                         
                         send_telegram_message(chat_id, welcome_message.strip())
-                        
-                        print(f"✅ Code {code} activated for user {first_name} (@{username})")
+                        print(f"✅ /start Code {code} activated for user {first_name} (@{username})")
                         
                     else:
                         send_telegram_message(chat_id, f"""
@@ -607,19 +606,75 @@ def telegram_webhook():
 1️⃣ الذهاب للموقع
 2️⃣ إكمال بيانات الملف الشخصي  
 3️⃣ الضغط على "ربط مع التليجرام"
-4️⃣ استخدام الكود الذي ستحصل عليه
+4️⃣ إرسال الكود الذي ستحصل عليه مباشرة (بدون /start)
+
+مثال: ABC123
 
 🔗 الموقع: https://ea-fc-fifa-5jbn.onrender.com/
 
 شكراً! 🏆
                 """)
+        
+        # التحقق من الكود المباشر (بدون /start)
+        elif len(text) >= 6 and len(text) <= 10 and text.isalnum():
+            code = text.upper()
+            print(f"🔍 Looking for direct code: {code}")
+            
+            # البحث عن الكود في الذاكرة
+            if code in telegram_codes:
+                profile_data = telegram_codes[code]
+                if not profile_data.get('used', False):
+                    # تحديث الكود كمستخدم
+                    telegram_codes[code]['used'] = True
+                    telegram_codes[code]['telegram_chat_id'] = chat_id
+                    telegram_codes[code]['telegram_username_actual'] = username
+                    
+                    # إرسال رسالة ترحيب مخصصة
+                    welcome_message = f"""
+🎮 أهلاً بك {first_name} في FC 26 Profile System!
+
+✅ تم ربط حسابك بنجاح بالكود: {code}
+
+📋 بيانات ملفك الشخصي:
+🎯 المنصة: {profile_data['platform'].title()}
+📱 رقم الواتساب: {profile_data['whatsapp_number']}
+💳 طريقة الدفع: {profile_data['payment_method'].replace('_', ' ').title()}
+
+🔗 رابط الموقع: https://ea-fc-fifa-5jbn.onrender.com/
+
+شكراً لاختيارك FC 26! 🏆
+                    """
+                    
+                    send_telegram_message(chat_id, welcome_message.strip())
+                    print(f"✅ Direct Code {code} activated for user {first_name} (@{username})")
+                    
+                else:
+                    send_telegram_message(chat_id, f"""
+❌ هذا الكود ({code}) تم استخدامه من قبل.
+
+يرجى الحصول على كود جديد من الموقع:
+🔗 https://ea-fc-fifa-5jbn.onrender.com/
+                    """)
+                    
+            else:
+                send_telegram_message(chat_id, f"""
+❌ الكود ({code}) غير صحيح أو منتهي الصلاحية.
+
+يرجى الحصول على كود جديد من الموقع:
+🔗 https://ea-fc-fifa-5jbn.onrender.com/
+
+💡 تلميح: أرسل الكود مباشرة بدون /start
+مثال: ABC123
+                """)
+        
         else:
             # رد عام للرسائل الأخرى
-            send_telegram_message(chat_id, """
-🤖 مرحباً! أنا بوت FC 26 Profile System.
+            send_telegram_message(chat_id, f"""
+🤖 مرحباً {first_name}! أنا بوت FC 26 Profile System.
 
-للتفاعل معي، يرجى استخدام الأوامر التالية:
-/start - البدء والربط مع الموقع
+للتفاعل معي، يمكنك:
+📝 /start - البدء والمساعدة
+🔑 إرسال الكود مباشرة (مثال: ABC123)
 
 🔗 الموقع: https://ea-fc-fifa-5jbn.onrender.com/
             """)

@@ -12,16 +12,22 @@ from phonenumbers.phonenumberutil import number_type
 import time
 import random
 from urllib.parse import urlparse
-from bs4 import BeautifulSoup  # <--- هو ده السطر ومكانه صح 100%
+from bs4 import BeautifulSoup
 import numpy as np
+import sqlite3
+import threading
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')
+app.secret_key = os.environ.get('SECRET_KEY', secrets.token_urlsafe(32))
 
-# إعدادات الأمان
-app.config['SESSION_COOKIE_SECURE'] = True
+# إعدادات الأمان محدثة
+app.config['SESSION_COOKIE_SECURE'] = False  # تم تعطيل HTTPS للتطوير
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
+# قاعدة بيانات بسيطة في الذاكرة للـ telegram codes
+telegram_codes = {}
+users_data = {}
 
 # قاموس البلدان والشركات المصرية
 EGYPTIAN_CARRIERS = {
@@ -71,7 +77,7 @@ def check_whatsapp_ultimate_method(phone_number):
         time.sleep(random.uniform(0.1, 0.5))  # محاكاة سلوك إنساني
         
         url = f"https://wa.me/{clean_phone}?text=Test"
-        session = requests.Session()
+        session_req = requests.Session()
         
         headers = {
             'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
@@ -80,7 +86,7 @@ def check_whatsapp_ultimate_method(phone_number):
             'Connection': 'keep-alive'
         }
         
-        response = session.get(url, headers=headers, timeout=8, allow_redirects=True)
+        response = session_req.get(url, headers=headers, timeout=8, allow_redirects=True)
         
         # تحليل محتوى متقدم
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -337,11 +343,19 @@ def validate_instapay_link(link):
 
 @app.before_request
 def before_request():
+    """تهيئة الجلسة - محدثة لحل مشاكل CSRF"""
     if 'csrf_token' not in session:
         session['csrf_token'] = generate_csrf_token()
+        session.permanent = True
 
 @app.route('/')
 def index():
+    """الصفحة الرئيسية - محدثة"""
+    # تأكد من وجود csrf token
+    if 'csrf_token' not in session:
+        session['csrf_token'] = generate_csrf_token()
+        session.permanent = True
+    
     return render_template('index.html', csrf_token=session['csrf_token'])
 
 @app.route('/validate-whatsapp', methods=['POST'])
@@ -364,13 +378,26 @@ def validate_whatsapp_endpoint():
 
 @app.route('/update-profile', methods=['POST'])
 def update_profile():
-    """تحديث الملف الشخصي بالطريقة المبتكرة"""
+    """تحديث الملف الشخصي - محدثة لحل مشكلة CSRF"""
     try:
         client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
         
+        # التحقق من CSRF بطريقة محسنة
         token = request.form.get('csrf_token')
-        if not token or token != session.get('csrf_token'):
-            return jsonify({'success': False, 'message': 'Invalid security token'}), 403
+        session_token = session.get('csrf_token')
+        
+        print(f"🔍 CSRF Debug - Form Token: {token[:20] if token else 'None'}...")
+        print(f"🔍 CSRF Debug - Session Token: {session_token[:20] if session_token else 'None'}...")
+        
+        if not token or not session_token or token != session_token:
+            # إعادة توليد token جديد
+            session['csrf_token'] = generate_csrf_token()
+            return jsonify({
+                'success': False, 
+                'message': 'انتهت صلاحية الجلسة، يرجى إعادة تحميل الصفحة',
+                'error_code': 'csrf_expired',
+                'new_csrf_token': session['csrf_token']
+            }), 403
         
         platform = sanitize_input(request.form.get('platform'))
         whatsapp_number = sanitize_input(request.form.get('whatsapp_number'))
@@ -426,13 +453,20 @@ def update_profile():
             'ip_address': hashlib.sha256(client_ip.encode()).hexdigest()[:10]
         }
         
-        print(f"🔥 New Ultimate Validation: {json.dumps(user_data, indent=2, ensure_ascii=False)}")
+        # حفظ في الذاكرة المؤقتة
+        user_id = hashlib.md5(f"{whatsapp_number}-{datetime.now().isoformat()}".encode()).hexdigest()[:12]
+        users_data[user_id] = user_data
         
+        print(f"🔥 New Ultimate Validation (ID: {user_id}): {json.dumps(user_data, indent=2, ensure_ascii=False)}")
+        
+        # توليد token جديد للأمان
         session['csrf_token'] = generate_csrf_token()
         
         return jsonify({
             'success': True,
             'message': 'تم التحقق بالطرق المبتكرة وحفظ البيانات بنجاح!',
+            'user_id': user_id,
+            'new_csrf_token': session['csrf_token'],
             'data': {
                 'platform': platform,
                 'whatsapp_number': whatsapp_validation['formatted'],
@@ -445,14 +479,14 @@ def update_profile():
         print(f"Error updating profile: {str(e)}")
         return jsonify({'success': False, 'message': 'Internal server error'}), 500
 
-# إضافة دعم التليجرام بوت
+# دوال التليجرام محدثة
 def generate_telegram_code():
     """توليد كود فريد للتليجرام"""
-    return secrets.token_urlsafe(8).upper()
+    return secrets.token_urlsafe(6).upper().replace('_', '').replace('-', '')[:8]
 
 @app.route('/generate-telegram-code', methods=['POST'])
 def generate_telegram_code_endpoint():
-    """API لتوليد كود التليجرام"""
+    """API لتوليد كود التليجرام - محدثة"""
     try:
         data = request.get_json()
         
@@ -469,20 +503,23 @@ def generate_telegram_code_endpoint():
         # توليد كود فريد
         telegram_code = generate_telegram_code()
         
-        # حفظ البيانات مؤقتاً في الجلسة
-        session['pending_profile'] = {
+        # حفظ البيانات في الذاكرة المؤقتة
+        telegram_codes[telegram_code] = {
             'code': telegram_code,
             'platform': platform,
             'whatsapp_number': whatsapp_number,
             'payment_method': data.get('payment_method', ''),
             'payment_details': data.get('payment_details', ''),
             'telegram_username': data.get('telegram_username', ''),
-            'created_at': datetime.now().isoformat()
+            'created_at': datetime.now().isoformat(),
+            'used': False
         }
         
         # الحصول على username البوت من متغيرات البيئة
-        bot_username = os.environ.get('TELEGRAM_BOT_USERNAME', 'YourBotName')
+        bot_username = os.environ.get('TELEGRAM_BOT_USERNAME', 'YourBotName_bot')
         telegram_link = f"https://t.me/{bot_username}?start={telegram_code}"
+        
+        print(f"🤖 Generated Telegram Code: {telegram_code} for {whatsapp_number}")
         
         return jsonify({
             'success': True,
@@ -497,9 +534,10 @@ def generate_telegram_code_endpoint():
 
 @app.route('/telegram-webhook', methods=['POST'])
 def telegram_webhook():
-    """استقبال رسائل من التليجرام بوت"""
+    """استقبال رسائل من التليجرام بوت - محدثة"""
     try:
         update = request.get_json()
+        print(f"🤖 Telegram Webhook received: {json.dumps(update, indent=2, ensure_ascii=False)}")
         
         if 'message' not in update:
             return jsonify({'ok': True})
@@ -507,25 +545,83 @@ def telegram_webhook():
         message = update['message']
         text = message.get('text', '')
         chat_id = message['chat']['id']
+        username = message.get('from', {}).get('username', 'Unknown')
+        first_name = message.get('from', {}).get('first_name', 'مستخدم')
         
         # التحقق من كود /start
-        if text.startswith('/start '):
-            code = text.replace('/start ', '').strip().upper()
-            
-            # البحث عن الملف الشخصي بالكود
-            # هنا يمكن البحث في قاعدة البيانات، لكن حالياً سنستخدم الجلسات
-            
-            # إرسال رد للمستخدم
-            send_telegram_message(chat_id, f"""
-🎮 مرحباً بك في FC 26 Profile System!
+        if text.startswith('/start'):
+            if ' ' in text:
+                code = text.replace('/start ', '').strip().upper()
+                print(f"🔍 Looking for code: {code}")
+                
+                # البحث عن الكود في الذاكرة
+                if code in telegram_codes:
+                    profile_data = telegram_codes[code]
+                    if not profile_data.get('used', False):
+                        # تحديث الكود كمستخدم
+                        telegram_codes[code]['used'] = True
+                        telegram_codes[code]['telegram_chat_id'] = chat_id
+                        telegram_codes[code]['telegram_username_actual'] = username
+                        
+                        # إرسال رسالة ترحيب مخصصة
+                        welcome_message = f"""
+🎮 أهلاً بك {first_name} في FC 26 Profile System!
 
-تم استلام الكود: {code}
+✅ تم ربط حسابك بنجاح!
 
-لإكمال ربط حسابك، يرجى الضغط على الزر أدناه أو العودة للموقع وإدخال بياناتك.
+📋 بيانات ملفك الشخصي:
+🎯 المنصة: {profile_data['platform'].title()}
+📱 رقم الواتساب: {profile_data['whatsapp_number']}
+💳 طريقة الدفع: {profile_data['payment_method'].replace('_', ' ').title()}
+
+🔗 رابط الموقع: https://ea-fc-fifa-5jbn.onrender.com/
+
+شكراً لاختيارك FC 26! 🏆
+                        """
+                        
+                        send_telegram_message(chat_id, welcome_message.strip())
+                        
+                        print(f"✅ Code {code} activated for user {first_name} (@{username})")
+                        
+                    else:
+                        send_telegram_message(chat_id, f"""
+❌ هذا الكود ({code}) تم استخدامه من قبل.
+
+يرجى الحصول على كود جديد من الموقع:
+🔗 https://ea-fc-fifa-5jbn.onrender.com/
+                        """)
+                        
+                else:
+                    send_telegram_message(chat_id, f"""
+❌ الكود ({code}) غير صحيح أو منتهي الصلاحية.
+
+يرجى الحصول على كود جديد من الموقع:
+🔗 https://ea-fc-fifa-5jbn.onrender.com/
+                    """)
+            else:
+                # رسالة بداية عامة
+                send_telegram_message(chat_id, f"""
+🎮 مرحباً بك {first_name} في FC 26 Profile System!
+
+للربط مع حسابك، يرجى:
+1️⃣ الذهاب للموقع
+2️⃣ إكمال بيانات الملف الشخصي  
+3️⃣ الضغط على "ربط مع التليجرام"
+4️⃣ استخدام الكود الذي ستحصل عليه
 
 🔗 الموقع: https://ea-fc-fifa-5jbn.onrender.com/
 
-شكراً لاختيارك FC 26! 🏆
+شكراً! 🏆
+                """)
+        else:
+            # رد عام للرسائل الأخرى
+            send_telegram_message(chat_id, """
+🤖 مرحباً! أنا بوت FC 26 Profile System.
+
+للتفاعل معي، يرجى استخدام الأوامر التالية:
+/start - البدء والربط مع الموقع
+
+🔗 الموقع: https://ea-fc-fifa-5jbn.onrender.com/
             """)
             
         return jsonify({'ok': True})
@@ -535,10 +631,11 @@ def telegram_webhook():
         return jsonify({'ok': True})
 
 def send_telegram_message(chat_id, text):
-    """إرسال رسالة عبر التليجرام بوت"""
+    """إرسال رسالة عبر التليجرام بوت - محدثة"""
     try:
         bot_token = os.environ.get('TELEGRAM_BOT_TOKEN')
         if not bot_token:
+            print("❌ TELEGRAM_BOT_TOKEN غير موجود في متغيرات البيئة")
             return False
         
         url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
@@ -555,18 +652,60 @@ def send_telegram_message(chat_id, text):
         }
         
         response = requests.post(url, json=data, timeout=10)
-        return response.json().get('ok', False)
+        result = response.json()
+        
+        if result.get('ok'):
+            print(f"✅ Message sent successfully to {chat_id}")
+            return True
+        else:
+            print(f"❌ Failed to send message: {result}")
+            return False
         
     except Exception as e:
         print(f"خطأ في إرسال رسالة التليجرام: {str(e)}")
         return False
 
-# إضافة route لصفحة التليجرام
-@app.route('/telegram')
-def telegram_page():
-    """صفحة معلومات التليجرام"""
-    bot_username = os.environ.get('TELEGRAM_BOT_USERNAME', 'YourBotName')
-    return render_template('telegram.html', bot_username=bot_username, csrf_token=session['csrf_token'])
+# route جديد لعرض البيانات المحفوظة (للاختبار)
+@app.route('/admin-data')
+def admin_data():
+    """عرض البيانات المحفوظة - للاختبار فقط"""
+    return jsonify({
+        'users_count': len(users_data),
+        'telegram_codes_count': len(telegram_codes),
+        'users_sample': list(users_data.keys())[:5],
+        'telegram_codes_sample': {k: {**v, 'used': v.get('used', False)} for k, v in list(telegram_codes.items())[:5]}
+    })
+
+# route جديد لإعداد webhook التليجرام
+@app.route('/set-telegram-webhook')
+def set_telegram_webhook():
+    """إعداد webhook التليجرام"""
+    try:
+        bot_token = os.environ.get('TELEGRAM_BOT_TOKEN')
+        if not bot_token:
+            return jsonify({'success': False, 'message': 'TELEGRAM_BOT_TOKEN غير موجود'})
+        
+        webhook_url = f"https://ea-fc-fifa-5jbn.onrender.com/telegram-webhook"
+        telegram_api_url = f"https://api.telegram.org/bot{bot_token}/setWebhook"
+        
+        response = requests.post(telegram_api_url, json={'url': webhook_url}, timeout=10)
+        result = response.json()
+        
+        if result.get('ok'):
+            return jsonify({
+                'success': True, 
+                'message': f'Webhook تم تعيينه بنجاح: {webhook_url}',
+                'result': result
+            })
+        else:
+            return jsonify({
+                'success': False, 
+                'message': 'فشل في تعيين webhook',
+                'result': result
+            })
+            
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'خطأ: {str(e)}'})
 
 @app.errorhandler(404)
 def not_found(error):
@@ -579,4 +718,3 @@ def internal_error(error):
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
-

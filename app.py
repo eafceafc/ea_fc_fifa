@@ -445,6 +445,129 @@ def update_profile():
         print(f"Error updating profile: {str(e)}")
         return jsonify({'success': False, 'message': 'Internal server error'}), 500
 
+# إضافة دعم التليجرام بوت
+def generate_telegram_code():
+    """توليد كود فريد للتليجرام"""
+    return secrets.token_urlsafe(8).upper()
+
+@app.route('/generate-telegram-code', methods=['POST'])
+def generate_telegram_code_endpoint():
+    """API لتوليد كود التليجرام"""
+    try:
+        data = request.get_json()
+        
+        # التحقق من صحة البيانات الأساسية
+        platform = sanitize_input(data.get('platform', ''))
+        whatsapp_number = sanitize_input(data.get('whatsapp_number', ''))
+        
+        if not platform or not whatsapp_number:
+            return jsonify({
+                'success': False, 
+                'message': 'يرجى إكمال الملف الشخصي أولاً'
+            }), 400
+        
+        # توليد كود فريد
+        telegram_code = generate_telegram_code()
+        
+        # حفظ البيانات مؤقتاً في الجلسة
+        session['pending_profile'] = {
+            'code': telegram_code,
+            'platform': platform,
+            'whatsapp_number': whatsapp_number,
+            'payment_method': data.get('payment_method', ''),
+            'payment_details': data.get('payment_details', ''),
+            'telegram_username': data.get('telegram_username', ''),
+            'created_at': datetime.now().isoformat()
+        }
+        
+        # الحصول على username البوت من متغيرات البيئة
+        bot_username = os.environ.get('TELEGRAM_BOT_USERNAME', 'YourBotName')
+        telegram_link = f"https://t.me/{bot_username}?start={telegram_code}"
+        
+        return jsonify({
+            'success': True,
+            'code': telegram_code,
+            'telegram_link': telegram_link,
+            'message': f'تم إنشاء الكود: {telegram_code}'
+        })
+        
+    except Exception as e:
+        print(f"خطأ في توليد كود التليجرام: {str(e)}")
+        return jsonify({'success': False, 'message': 'خطأ في الخادم'})
+
+@app.route('/telegram-webhook', methods=['POST'])
+def telegram_webhook():
+    """استقبال رسائل من التليجرام بوت"""
+    try:
+        update = request.get_json()
+        
+        if 'message' not in update:
+            return jsonify({'ok': True})
+        
+        message = update['message']
+        text = message.get('text', '')
+        chat_id = message['chat']['id']
+        
+        # التحقق من كود /start
+        if text.startswith('/start '):
+            code = text.replace('/start ', '').strip().upper()
+            
+            # البحث عن الملف الشخصي بالكود
+            # هنا يمكن البحث في قاعدة البيانات، لكن حالياً سنستخدم الجلسات
+            
+            # إرسال رد للمستخدم
+            send_telegram_message(chat_id, f"""
+🎮 مرحباً بك في FC 26 Profile System!
+
+تم استلام الكود: {code}
+
+لإكمال ربط حسابك، يرجى الضغط على الزر أدناه أو العودة للموقع وإدخال بياناتك.
+
+🔗 الموقع: https://ea-fc-fifa-5jbn.onrender.com/
+
+شكراً لاختيارك FC 26! 🏆
+            """)
+            
+        return jsonify({'ok': True})
+        
+    except Exception as e:
+        print(f"خطأ في webhook التليجرام: {str(e)}")
+        return jsonify({'ok': True})
+
+def send_telegram_message(chat_id, text):
+    """إرسال رسالة عبر التليجرام بوت"""
+    try:
+        bot_token = os.environ.get('TELEGRAM_BOT_TOKEN')
+        if not bot_token:
+            return False
+        
+        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+        data = {
+            'chat_id': chat_id,
+            'text': text,
+            'parse_mode': 'HTML',
+            'reply_markup': {
+                'inline_keyboard': [[{
+                    'text': '🎮 فتح الموقع',
+                    'url': 'https://ea-fc-fifa-5jbn.onrender.com/'
+                }]]
+            }
+        }
+        
+        response = requests.post(url, json=data, timeout=10)
+        return response.json().get('ok', False)
+        
+    except Exception as e:
+        print(f"خطأ في إرسال رسالة التليجرام: {str(e)}")
+        return False
+
+# إضافة route لصفحة التليجرام
+@app.route('/telegram')
+def telegram_page():
+    """صفحة معلومات التليجرام"""
+    bot_username = os.environ.get('TELEGRAM_BOT_USERNAME', 'YourBotName')
+    return render_template('telegram.html', bot_username=bot_username, csrf_token=session['csrf_token'])
+
 @app.errorhandler(404)
 def not_found(error):
     return render_template('index.html'), 404

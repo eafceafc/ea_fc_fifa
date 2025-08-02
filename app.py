@@ -566,7 +566,7 @@ def notify_website_telegram_linked(code, profile_data, chat_id, first_name, user
 
 @app.route('/telegram-webhook', methods=['POST'])
 def telegram_webhook():
-    """استقبال رسائل من التليجرام بوت - محدثة للكود المباشر"""
+    """استقبال رسائل من التليجرام بوت - محدثة مع تفاصيل الدفع"""
     try:
         update = request.get_json()
         print(f"🤖 Telegram Webhook received: {json.dumps(update, indent=2, ensure_ascii=False)}")
@@ -598,9 +598,11 @@ def telegram_webhook():
                         # إرسال إشعار للموقع
                         notify_website_telegram_linked(code, profile_data, chat_id, first_name, username)
                         
+                        # تحديد نص الدفع
+                        payment_text = get_payment_display_text(profile_data['payment_method'], profile_data.get('payment_details', ''))
+                        
                         # إرسال رسالة ترحيب مخصصة
-                        welcome_message = f"""
-🎮 أهلاً بك {first_name} في FC 26 Profile System!
+                        welcome_message = f"""🎮 أهلاً بك {first_name} في FC 26 Profile System!
 
 ✅ تم ربط حسابك بنجاح!
 
@@ -608,34 +610,29 @@ def telegram_webhook():
 🎯 المنصة: {profile_data['platform'].title()}
 📱 رقم الواتساب: {profile_data['whatsapp_number']}
 💳 طريقة الدفع: {profile_data['payment_method'].replace('_', ' ').title()}
+{payment_text}
 
 🔗 رابط الموقع: https://ea-fc-fifa-5jbn.onrender.com/
 
-شكراً لاختيارك FC 26! 🏆
-                        """
+شكراً لاختيارك FC 26! 🏆"""
                         
                         send_telegram_message(chat_id, welcome_message.strip())
                         print(f"✅ /start Code {code} activated for user {first_name} (@{username})")
                         
                     else:
-                        send_telegram_message(chat_id, f"""
-❌ هذا الكود ({code}) تم استخدامه من قبل.
+                        send_telegram_message(chat_id, f"""❌ هذا الكود ({code}) تم استخدامه من قبل.
 
 يرجى الحصول على كود جديد من الموقع:
-🔗 https://ea-fc-fifa-5jbn.onrender.com/
-                        """)
+🔗 https://ea-fc-fifa-5jbn.onrender.com/""")
                         
                 else:
-                    send_telegram_message(chat_id, f"""
-❌ الكود ({code}) غير صحيح أو منتهي الصلاحية.
+                    send_telegram_message(chat_id, f"""❌ الكود ({code}) غير صحيح أو منتهي الصلاحية.
 
 يرجى الحصول على كود جديد من الموقع:
-🔗 https://ea-fc-fifa-5jbn.onrender.com/
-                    """)
+🔗 https://ea-fc-fifa-5jbn.onrender.com/""")
             else:
                 # رسالة بداية عامة
-                send_telegram_message(chat_id, f"""
-🎮 مرحباً بك {first_name} في FC 26 Profile System!
+                send_telegram_message(chat_id, f"""🎮 مرحباً بك {first_name} في FC 26 Profile System!
 
 للربط مع حسابك، يرجى:
 1️⃣ الذهاب للموقع
@@ -647,8 +644,7 @@ def telegram_webhook():
 
 🔗 الموقع: https://ea-fc-fifa-5jbn.onrender.com/
 
-شكراً! 🏆
-                """)
+شكراً! 🏆""")
         
         # التحقق من الكود المباشر (بدون /start)
         elif len(text) >= 6 and len(text) <= 10 and text.isalnum():
@@ -667,9 +663,11 @@ def telegram_webhook():
                     # إرسال إشعار للموقع
                     notify_website_telegram_linked(code, profile_data, chat_id, first_name, username)
                     
+                    # تحديد نص الدفع
+                    payment_text = get_payment_display_text(profile_data['payment_method'], profile_data.get('payment_details', ''))
+                    
                     # إرسال رسالة ترحيب مخصصة
-                    welcome_message = f"""
-🎮 أهلاً بك {first_name} في FC 26 Profile System!
+                    welcome_message = f"""🎮 أهلاً بك {first_name} في FC 26 Profile System!
 
 ✅ تم ربط حسابك بنجاح بالكود: {code}
 
@@ -677,51 +675,65 @@ def telegram_webhook():
 🎯 المنصة: {profile_data['platform'].title()}
 📱 رقم الواتساب: {profile_data['whatsapp_number']}
 💳 طريقة الدفع: {profile_data['payment_method'].replace('_', ' ').title()}
+{payment_text}
 
 🔗 رابط الموقع: https://ea-fc-fifa-5jbn.onrender.com/
 
-شكراً لاختيارك FC 26! 🏆
-                    """
+شكراً لاختيارك FC 26! 🏆"""
                     
                     send_telegram_message(chat_id, welcome_message.strip())
                     print(f"✅ Direct Code {code} activated for user {first_name} (@{username})")
                     
                 else:
-                    send_telegram_message(chat_id, f"""
-❌ هذا الكود ({code}) تم استخدامه من قبل.
+                    send_telegram_message(chat_id, f"""❌ هذا الكود ({code}) تم استخدامه من قبل.
 
 يرجى الحصول على كود جديد من الموقع:
-🔗 https://ea-fc-fifa-5jbn.onrender.com/
-                    """)
+🔗 https://ea-fc-fifa-5jbn.onrender.com/""")
                     
             else:
-                send_telegram_message(chat_id, f"""
-❌ الكود ({code}) غير صحيح أو منتهي الصلاحية.
+                send_telegram_message(chat_id, f"""❌ الكود ({code}) غير صحيح أو منتهي الصلاحية.
 
 يرجى الحصول على كود جديد من الموقع:
 🔗 https://ea-fc-fifa-5jbn.onrender.com/
 
 💡 تلميح: أرسل الكود مباشرة بدون /start
-مثال: ABC123
-                """)
+مثال: ABC123""")
         
         else:
             # رد عام للرسائل الأخرى
-            send_telegram_message(chat_id, f"""
-🤖 مرحباً {first_name}! أنا بوت FC 26 Profile System.
+            send_telegram_message(chat_id, f"""🤖 مرحباً {first_name}! أنا بوت FC 26 Profile System.
 
 للتفاعل معي، يمكنك:
 📝 /start - البدء والمساعدة
 🔑 إرسال الكود مباشرة (مثال: ABC123)
 
-🔗 الموقع: https://ea-fc-fifa-5jbn.onrender.com/
-            """)
+🔗 الموقع: https://ea-fc-fifa-5jbn.onrender.com/""")
             
         return jsonify({'ok': True})
         
     except Exception as e:
         print(f"خطأ في webhook التليجرام: {str(e)}")
         return jsonify({'ok': True})
+
+def get_payment_display_text(payment_method, payment_details):
+    """تحديد نص عرض تفاصيل الدفع"""
+    if not payment_details:
+        return ""
+    
+    if payment_method in ['vodafone_cash', 'etisalat_cash', 'orange_cash', 'we_cash', 'bank_wallet']:
+        return f"رقم الدفع: {payment_details}"
+    elif payment_method == 'tilda':
+        return f"رقم البطاقة: {payment_details}"
+    elif payment_method == 'instapay':
+        return f"رابط الدفع: {payment_details}"
+    else:
+        return f"تفاصيل الدفع: {payment_details}"
+
+@app.route('/get-bot-username')
+def get_bot_username():
+    """الحصول على username البوت"""
+    bot_username = os.environ.get('TELEGRAM_BOT_USERNAME', 'YourBotName_bot')
+    return jsonify({'bot_username': bot_username})
 
 def send_telegram_message(chat_id, text):
     """إرسال رسالة عبر التليجرام بوت - محدثة"""

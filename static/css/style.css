@@ -995,3 +995,34 @@ body {
     60% { content: '..'; }
     80%, 100% { content: '...'; }
 }
+
+.code-example {
+    margin-top: 15px;
+    padding: 12px;
+    background: rgba(0, 136, 204, 0.1);
+    border-radius: 8px;
+    border-left: 4px solid #0088cc;
+    font-size: 0.9rem;
+}
+
+.code-example code {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    color: #0088cc;
+    font-size: 1.1rem;
+}
+
+/* تحسينات للهواتف */
+@media (max-width: 480px) {
+    .code-example {
+        padding: 10px;
+        font-size: 0.85rem;
+    }
+    
+    .code-example code {
+        font-size: 1rem;
+    }
+}

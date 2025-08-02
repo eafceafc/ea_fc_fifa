@@ -1317,6 +1317,12 @@ async function handleFormSubmit(e) {
 async function generateTelegramCode() {
     const telegramBtn = document.getElementById('telegramBtn');
     const telegramCodeResult = document.getElementById('telegramCodeResult');
+
+            // تحديث المثال بالكود الحقيقي
+            const exampleCode = document.getElementById('exampleCode');
+            if (exampleCode) {
+                exampleCode.textContent = result.code;
+            }
     
     // التحقق من البيانات الأساسية
     const platform = document.getElementById('platform')?.value;

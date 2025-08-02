@@ -1128,7 +1128,192 @@ window.FC26ProfileSetup = {
 // رسالة تأكيد التهيئة
 console.log('FC 26 Profile Setup - تم تهيئة JavaScript المدمج بنجاح');
 
-// دوال التليجرام
+// إصلاح مشكلة CSRF والتليجرام - محدث
+
+// متغير للـ CSRF token الحالي
+let currentCSRFToken = null;
+
+// دالة للحصول على CSRF token محدثة
+function getCSRFToken() {
+    // أولوية للـ token المحدث من الاستجابة
+    if (currentCSRFToken) {
+        return currentCSRFToken;
+    }
+    
+    // ثم البحث في meta tag
+    const metaToken = document.querySelector('meta[name="csrf-token"]');
+    if (metaToken) {
+        return metaToken.getAttribute('content');
+    }
+    
+    // ثم البحث في input hidden
+    const inputToken = document.querySelector('input[name="csrf_token"], input[name="csrfmiddlewaretoken"]');
+    if (inputToken) {
+        return inputToken.value;
+    }
+    
+    return '';
+}
+
+// دالة تحديث CSRF token في النموذج
+function updateCSRFTokenInForm(newToken) {
+    currentCSRFToken = newToken;
+    
+    // تحديث في input hidden
+    const csrfInput = document.querySelector('input[name="csrf_token"]');
+    if (csrfInput) {
+        csrfInput.value = newToken;
+    }
+    
+    // تحديث في meta tag
+    const metaToken = document.querySelector('meta[name="csrf-token"]');
+    if (metaToken) {
+        metaToken.setAttribute('content', newToken);
+    }
+    
+    console.log('🔐 CSRF Token updated:', newToken.substring(0, 20) + '...');
+}
+
+// معالجة إرسال النموذج محدثة
+async function handleFormSubmit(e) {
+    e.preventDefault();
+    
+    // منع الإرسال المتكرر
+    const now = Date.now();
+    if (isSubmitting || (now - lastSubmitTime < 3000)) {
+        showNotification('يرجى الانتظار قبل المحاولة مرة أخرى', 'error');
+        return;
+    }
+    
+    // التحقق النهائي من النموذج
+    if (!checkFormValidity()) {
+        showNotification('يرجى إكمال جميع البيانات المطلوبة', 'error');
+        return;
+    }
+    
+    isSubmitting = true;
+    lastSubmitTime = now;
+    
+    const loading = document.getElementById('loading');
+    const successMessage = document.getElementById('successMessage');
+    const errorMessage = document.getElementById('errorMessage');
+    const submitBtn = document.getElementById('submitBtn') || document.querySelector('.submit-btn');
+    
+    // إخفاء الرسائل السابقة
+    if (successMessage) successMessage.classList.remove('show');
+    if (errorMessage) errorMessage.classList.remove('show');
+    
+    // عرض شاشة التحميل
+    if (loading) loading.classList.add('show');
+    
+    // تحديث زر الإرسال
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...';
+    }
+    
+    try {
+        const formData = new FormData(e.target);
+        
+        // التأكد من وجود CSRF token
+        const csrfToken = getCSRFToken();
+        if (csrfToken) {
+            formData.set('csrf_token', csrfToken);
+        }
+        
+        console.log('📤 Submitting with CSRF:', csrfToken ? csrfToken.substring(0, 20) + '...' : 'No token');
+        
+        const response = await fetch('/update-profile', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const result = await response.json();
+        
+        // إخفاء شاشة التحميل
+        if (loading) loading.classList.remove('show');
+        
+        if (response.ok && result.success) {
+            // تحديث CSRF token إذا تم إرساله
+            if (result.new_csrf_token) {
+                updateCSRFTokenInForm(result.new_csrf_token);
+            }
+            
+            // رسالة النجاح المحسنة
+            let successText = '✅ تم حفظ بياناتك بنجاح!';
+            if (result.data && result.data.whatsapp_info) {
+                const info = result.data.whatsapp_info;
+                successText += `<br><small>رقم الواتساب: ${result.data.whatsapp_number}<br>البلد: ${info.country} | الشركة: ${info.carrier}</small>`;
+            }
+            
+            if (successMessage) {
+                successMessage.innerHTML = successText;
+                successMessage.classList.add('show');
+            } else {
+                showNotification('تم إرسال البيانات بنجاح! سيتم التواصل معك قريباً', 'success');
+            }
+            
+            // اهتزاز نجاح
+            if (navigator.vibrate) {
+                navigator.vibrate([200, 100, 200]);
+            }
+            
+        } else {
+            // معالجة خاصة لخطأ CSRF
+            if (result.error_code === 'csrf_expired') {
+                if (result.new_csrf_token) {
+                    updateCSRFTokenInForm(result.new_csrf_token);
+                    showNotification('تم تحديث الجلسة، يرجى المحاولة مرة أخرى', 'error');
+                } else {
+                    showNotification('انتهت صلاحية الجلسة، سيتم إعادة تحميل الصفحة...', 'error');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                }
+            } else {
+                const errorText = result.message || 'حدث خطأ غير متوقع';
+                if (errorMessage) {
+                    errorMessage.textContent = errorText;
+                    errorMessage.classList.add('show');
+                } else {
+                    showNotification(errorText, 'error');
+                }
+            }
+            
+            // اهتزاز خطأ
+            if (navigator.vibrate) {
+                navigator.vibrate([300, 100, 300, 100, 300]);
+            }
+        }
+        
+    } catch (error) {
+        console.error('خطأ في الشبكة:', error);
+        
+        // إخفاء شاشة التحميل
+        if (loading) loading.classList.remove('show');
+        
+        const errorText = 'خطأ في الاتصال، يرجى المحاولة مرة أخرى';
+        if (errorMessage) {
+            errorMessage.textContent = errorText;
+            errorMessage.classList.add('show');
+        } else {
+            showNotification(errorText, 'error');
+        }
+        
+        // اهتزاز خطأ شبكة
+        if (navigator.vibrate) {
+            navigator.vibrate([500, 200, 500]);
+        }
+    }
+    
+    isSubmitting = false;
+    updateSubmitButton();
+}
+
+// دوال التليجرام محدثة
 async function generateTelegramCode() {
     const telegramBtn = document.getElementById('telegramBtn');
     const telegramCodeResult = document.getElementById('telegramCodeResult');
@@ -1155,17 +1340,19 @@ async function generateTelegramCode() {
             telegram_username: document.getElementById('telegram')?.value || ''
         };
         
+        console.log('📤 Generating Telegram code with data:', formData);
+        
         const response = await fetch('/generate-telegram-code', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': getCSRFToken()
+                'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify(formData)
         });
         
         const result = await response.json();
+        console.log('📥 Telegram code result:', result);
         
         if (result.success) {
             // عرض النتيجة
@@ -1235,46 +1422,4 @@ async function copyTelegramCode() {
     }
 }
 
-// تحديث دالة checkFormValidity لتفعيل زر التليجرام
-function checkFormValidity() {
-    // الكود الحالي...
-    const platform = document.getElementById('platform')?.value;
-    const whatsapp = document.getElementById('whatsapp')?.value;
-    const paymentMethod = document.getElementById('payment_method')?.value;
-    
-    // تحديث حالات التحقق
-    validationStates.platform = !!platform;
-    
-    // التحقق من صحة الواتساب
-    const phoneInfo = document.querySelector('.phone-info.success-info');
-    validationStates.whatsapp = !!(whatsapp && phoneInfo);
-    
-    // التحقق من طرق الدفع
-    validatePaymentMethod();
-    
-    // التحقق النهائي
-    const isValid = validationStates.platform && validationStates.whatsapp && validationStates.paymentMethod;
-    
-    // تحديث زر الإرسال
-    updateSubmitButton(isValid);
-    
-    // تحديث زر التليجرام (يحتاج فقط منصة ورقم واتساب صحيح)
-    const telegramBtn = document.getElementById('telegramBtn');
-    const canGenerateTelegramCode = validationStates.platform && validationStates.whatsapp;
-    
-    if (telegramBtn) {
-        if (canGenerateTelegramCode) {
-            telegramBtn.style.opacity = '1';
-            telegramBtn.style.pointerEvents = 'auto';
-            telegramBtn.querySelector('.telegram-subtitle').textContent = 'احصل على كود فوري وادخل للبوت';
-        } else {
-            telegramBtn.style.opacity = '0.6';
-            telegramBtn.style.pointerEvents = 'none';
-            telegramBtn.querySelector('.telegram-subtitle').textContent = 'يرجى إكمال المنصة ورقم الواتساب أولاً';
-        }
-    }
-    
-    return isValid;
-}
-
-console.log('تم إضافة وظائف التليجرام بنجاح');
+console.log('🔐 CSRF and Telegram functions updated successfully');

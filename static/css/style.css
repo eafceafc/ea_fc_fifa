@@ -1026,3 +1026,80 @@ body {
         font-size: 1rem;
     }
 }
+
+/* تحديث أزرار التليجرام */
+.telegram-open-btn {
+    background: linear-gradient(135deg, #0088cc, #005599);
+    color: white;
+    border: 2px solid #0088cc;
+    padding: 15px 20px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-decoration: none;
+    font-family: 'Cairo', sans-serif;
+}
+
+.telegram-open-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 136, 204, 0.4);
+}
+
+/* إشعار نجاح ربط التليجرام */
+.telegram-success-notification {
+    margin-top: 20px;
+    padding: 15px;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.3));
+    border: 2px solid #10B981;
+    border-radius: 12px;
+    animation: success-fade-in 0.5s ease-out;
+}
+
+.success-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-white);
+}
+
+.success-icon {
+    color: #10B981;
+    font-size: 1.5rem;
+}
+
+.success-text {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+@keyframes success-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* تحسينات للهواتف */
+@media (max-width: 480px) {
+    .telegram-success-notification {
+        padding: 12px;
+    }
+    
+    .success-text {
+        font-size: 1rem;
+    }
+    
+    .success-icon {
+        font-size: 1.3rem;
+    }
+}

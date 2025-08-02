@@ -1127,3 +1127,154 @@ window.FC26ProfileSetup = {
 
 // رسالة تأكيد التهيئة
 console.log('FC 26 Profile Setup - تم تهيئة JavaScript المدمج بنجاح');
+
+// دوال التليجرام
+async function generateTelegramCode() {
+    const telegramBtn = document.getElementById('telegramBtn');
+    const telegramCodeResult = document.getElementById('telegramCodeResult');
+    
+    // التحقق من البيانات الأساسية
+    const platform = document.getElementById('platform')?.value;
+    const whatsappNumber = document.getElementById('whatsapp')?.value;
+    
+    if (!platform || !whatsappNumber) {
+        showNotification('يرجى إكمال الملف الشخصي أولاً (المنصة ورقم الواتساب)', 'error');
+        return;
+    }
+    
+    // حالة التحميل
+    telegramBtn.classList.add('generating');
+    telegramBtn.disabled = true;
+    
+    try {
+        const formData = {
+            platform: platform,
+            whatsapp_number: whatsappNumber,
+            payment_method: document.getElementById('payment_method')?.value || '',
+            payment_details: document.querySelector('.dynamic-input.show input')?.value || '',
+            telegram_username: document.getElementById('telegram')?.value || ''
+        };
+        
+        const response = await fetch('/generate-telegram-code', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // عرض النتيجة
+            document.getElementById('generatedCode').textContent = result.code;
+            document.getElementById('telegramLink').href = result.telegram_link;
+            
+            telegramCodeResult.style.display = 'block';
+            setTimeout(() => {
+                telegramCodeResult.classList.add('show');
+            }, 100);
+            
+            // اهتزاز نجاح
+            if (navigator.vibrate) {
+                navigator.vibrate([100, 50, 100]);
+            }
+            
+            showNotification(`تم إنشاء الكود: ${result.code}`, 'success');
+            
+        } else {
+            showNotification(result.message || 'خطأ في إنشاء الكود', 'error');
+        }
+        
+    } catch (error) {
+        console.error('خطأ في توليد كود التليجرام:', error);
+        showNotification('خطأ في الاتصال، يرجى المحاولة مرة أخرى', 'error');
+    }
+    
+    // إزالة حالة التحميل
+    telegramBtn.classList.remove('generating');
+    telegramBtn.disabled = false;
+}
+
+async function copyTelegramCode() {
+    const codeElement = document.getElementById('generatedCode');
+    const code = codeElement.textContent;
+    
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(code);
+            showNotification('تم نسخ الكود!', 'success');
+        } else {
+            // طريقة بديلة للمتصفحات القديمة
+            const textArea = document.createElement('textarea');
+            textArea.value = code;
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                showNotification('تم نسخ الكود!', 'success');
+            } catch (err) {
+                showNotification('خطأ في نسخ الكود', 'error');
+            }
+            
+            document.body.removeChild(textArea);
+        }
+        
+        // اهتزاز للهواتف
+        if (navigator.vibrate) {
+            navigator.vibrate(50);
+        }
+        
+    } catch (error) {
+        console.error('خطأ في نسخ الكود:', error);
+        showNotification('خطأ في نسخ الكود', 'error');
+    }
+}
+
+// تحديث دالة checkFormValidity لتفعيل زر التليجرام
+function checkFormValidity() {
+    // الكود الحالي...
+    const platform = document.getElementById('platform')?.value;
+    const whatsapp = document.getElementById('whatsapp')?.value;
+    const paymentMethod = document.getElementById('payment_method')?.value;
+    
+    // تحديث حالات التحقق
+    validationStates.platform = !!platform;
+    
+    // التحقق من صحة الواتساب
+    const phoneInfo = document.querySelector('.phone-info.success-info');
+    validationStates.whatsapp = !!(whatsapp && phoneInfo);
+    
+    // التحقق من طرق الدفع
+    validatePaymentMethod();
+    
+    // التحقق النهائي
+    const isValid = validationStates.platform && validationStates.whatsapp && validationStates.paymentMethod;
+    
+    // تحديث زر الإرسال
+    updateSubmitButton(isValid);
+    
+    // تحديث زر التليجرام (يحتاج فقط منصة ورقم واتساب صحيح)
+    const telegramBtn = document.getElementById('telegramBtn');
+    const canGenerateTelegramCode = validationStates.platform && validationStates.whatsapp;
+    
+    if (telegramBtn) {
+        if (canGenerateTelegramCode) {
+            telegramBtn.style.opacity = '1';
+            telegramBtn.style.pointerEvents = 'auto';
+            telegramBtn.querySelector('.telegram-subtitle').textContent = 'احصل على كود فوري وادخل للبوت';
+        } else {
+            telegramBtn.style.opacity = '0.6';
+            telegramBtn.style.pointerEvents = 'none';
+            telegramBtn.querySelector('.telegram-subtitle').textContent = 'يرجى إكمال المنصة ورقم الواتساب أولاً';
+        }
+    }
+    
+    return isValid;
+}
+
+console.log('تم إضافة وظائف التليجرام بنجاح');

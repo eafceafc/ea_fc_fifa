@@ -18,6 +18,23 @@
         <div class="loading-text">جاري حفظ البيانات...</div>
     </div>
 
+    <!-- شاشة نجاح الربط الكاملة -->
+    <div class="telegram-success-overlay" id="telegramSuccessOverlay" style="display: none;">
+        <div class="success-container">
+            <div class="success-animation">
+                <i class="fas fa-check-circle success-mega-icon"></i>
+            </div>
+            <h2 class="success-title">🎉 تم ربط حسابك بنجاح!</h2>
+            <p class="success-subtitle">تم ربط حسابك مع التليجرام بنجاح وحفظ جميع بياناتك</p>
+            <div class="success-actions">
+                <button type="button" class="success-btn" onclick="closeSuccessOverlay()">
+                    <i class="fas fa-home"></i>
+                    العودة للرئيسية
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <div class="header">
             <h1>🎮 FC 26 - EA SPORTS</h1>
@@ -184,14 +201,6 @@
                                 <strong>مثال:</strong> فقط اكتب <code id="exampleCode">ABC123</code>
                             </div>
                         </div>
-                        
-                        <!-- إشعار نجاح الربط -->
-                        <div class="telegram-success-notification" id="telegramSuccessNotification" style="display: none;">
-                            <div class="success-content">
-                                <i class="fas fa-check-circle success-icon"></i>
-                                <span class="success-text">تم ربط حسابك بنجاح مع التليجرام!</span>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -207,52 +216,6 @@
             <div class="message error-message" id="errorMessage">
                 ❌ حدث خطأ، يرجى التحقق من البيانات والمحاولة مرة أخرى
             </div>
-            <!-- زر التليجرام الكبير -->
-            <div class="telegram-section">
-                <button type="button" class="telegram-btn" id="telegramBtn" onclick="generateTelegramCode()">
-                    <div class="telegram-btn-content">
-                        <i class="fab fa-telegram telegram-icon"></i>
-                        <div class="telegram-text">
-                            <span class="telegram-title">📱 ربط مع التليجرام</span>
-                            <span class="telegram-subtitle">احصل على كود فوري وادخل للبوت</span>
-                        </div>
-                    </div>
-                </button>
-                
-                <div class="telegram-code-result" id="telegramCodeResult" style="display: none;">
-                    <div class="code-container">
-                        <div class="code-header">
-                            <i class="fas fa-key"></i>
-                            <span>الكود الخاص بك</span>
-                        </div>
-                        <div class="generated-code" id="generatedCode"></div>
-                        <div class="telegram-actions">
-                            <a href="#" id="telegramLink" target="_blank" class="telegram-open-btn">
-                                <i class="fab fa-telegram"></i>
-                                فتح التليجرام
-                            </a>
-                            <button type="button" class="copy-code-btn" onclick="copyTelegramCode()">
-                                <i class="fas fa-copy"></i>
-                                نسخ الكود
-                            </button>
-                        </div>
-                        <div class="telegram-instructions">
-                            <p>📋 <strong>خطوات الربط:</strong></p>
-                            <ol>
-                                <li>اضغط على "فتح التليجرام"</li>
-                                <li>أرسل الكود مباشرة للبوت</li>
-                                <li>سيتم ربط حسابك تلقائياً</li>
-                            </ol>
-                            <div class="code-example">
-                                <strong>مثال:</strong> فقط اكتب <code id="exampleCode">ABC123</code>
-                            </div>
-                        </div>
-
-                        </div>
-                    </div>
-                </div>
-            </div>
-
         </form>
 
         <div class="security-notice">

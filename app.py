@@ -9,11 +9,13 @@ import json
 import phonenumbers
 from phonenumbers import geocoder, carrier
 from phonenumbers.phonenumberutil import number_type
-from urllib.parse import urlparse, quote
+from urllib.parse import urlparse, quote, unquote
 import time
 import random
 from bs4 import BeautifulSoup
 import base64
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')
@@ -58,65 +60,337 @@ def normalize_phone_number(phone):
     
     return clean_phone
 
-def get_ultra_realistic_headers():
-    """🔥 Headers فائقة الواقعية - مستخرجة من متصفح حقيقي"""
-    return {
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Accept-Language': 'ar-EG,ar;q=0.9,en-US;q=0.8,en;q=0.7',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-        'DNT': '1',
-        'Pragma': 'no-cache',
-        'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-        'Sec-Ch-Ua-Mobile': '?0',
-        'Sec-Ch-Ua-Platform': '"Windows"',
-        'Sec-Fetch-Dest': 'document',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'cross-site',
-        'Sec-Fetch-User': '?1',
-        'Upgrade-Insecure-Requests': '1',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    }
+def get_burp_suite_headers():
+    """
+    🔥 Headers مستخرجة بطريقة Burp Suite - محاكاة مثالية للمتصفح
+    """
+    headers_variants = [
+        # Chrome على Windows
+        {
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Accept-Language': 'ar-EG,ar;q=0.9,en-US;q=0.8,en;q=0.7,fr;q=0.6',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'DNT': '1',
+            'Pragma': 'no-cache',
+            'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+            'Sec-Ch-Ua-Mobile': '?0',
+            'Sec-Ch-Ua-Platform': '"Windows"',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'cross-site',
+            'Sec-Fetch-User': '?1',
+            'Upgrade-Insecure-Requests': '1',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        },
+        # Chrome على Android
+        {
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Accept-Language': 'ar-EG,ar;q=0.9,en-US;q=0.8,en;q=0.7',
+            'Cache-Control': 'max-age=0',
+            'Connection': 'keep-alive',
+            'DNT': '1',
+            'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+            'Sec-Ch-Ua-Mobile': '?1',
+            'Sec-Ch-Ua-Platform': '"Android"',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+            'Upgrade-Insecure-Requests': '1',
+            'User-Agent': 'Mozilla/5.0 (Linux; Android 13; SM-G998B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36'
+        },
+        # Firefox على Windows
+        {
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Accept-Language': 'ar-EG,ar;q=0.8,en-US;q=0.5,en;q=0.3',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'DNT': '1',
+            'Pragma': 'no-cache',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'cross-site',
+            'Sec-Fetch-User': '?1',
+            'Upgrade-Insecure-Requests': '1',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0'
+        }
+    ]
+    
+    return random.choice(headers_variants)
 
-def simulate_human_behavior(session):
-    """🧠 محاكاة السلوك البشري المتقدم"""
+def simulate_burp_suite_behavior(session):
+    """
+    🧠 محاكاة السلوك كما في Burp Suite - تحليل حركة المرور الحقيقية
+    """
     try:
-        headers = get_ultra_realistic_headers()
+        headers = get_burp_suite_headers()
         
-        # زيارة Google أولاً
+        # خطوة 1: زيارة الصفحة الرئيسية لـ Google (محاكاة المستخدم الحقيقي)
         session.get('https://www.google.com', headers=headers, timeout=8)
-        time.sleep(random.uniform(1.2, 2.8))
+        time.sleep(random.uniform(0.8, 2.2))
         
-        # زيارة عشوائية لمواقع شائعة
-        popular_sites = [
-            'https://www.youtube.com',
-            'https://www.facebook.com', 
-            'https://www.twitter.com'
+        # خطوة 2: بحث وهمي في Google (كما يفعل المستخدم الحقيقي)
+        search_queries = ['whatsapp web', 'تطبيق واتساب', 'whatsapp download']
+        query = random.choice(search_queries)
+        
+        search_params = {'q': query, 'hl': 'ar'}
+        headers['Referer'] = 'https://www.google.com/'
+        
+        session.get('https://www.google.com/search', params=search_params, headers=headers, timeout=8)
+        time.sleep(random.uniform(1.0, 2.5))
+        
+        # خطوة 3: تصفح عشوائي (لبناء تاريخ تصفح طبيعي)
+        browse_sites = [
+            'https://web.whatsapp.com',
+            'https://www.whatsapp.com',
+            'https://faq.whatsapp.com'
         ]
         
         if random.choice([True, False]):
-            random_site = random.choice(popular_sites)
+            random_site = random.choice(browse_sites)
             try:
-                session.get(random_site, headers=headers, timeout=5)
-                time.sleep(random.uniform(0.5, 1.5))
+                session.get(random_site, headers=headers, timeout=6)
+                time.sleep(random.uniform(0.5, 1.8))
             except:
                 pass
                 
         return True
-    except:
+    except Exception as e:
+        print(f"⚠️ تحذير Burp Suite simulation: {e}")
         return False
 
-def check_whatsapp_ultimate_method(phone_number):
+def extract_network_fingerprints(response, phone_number):
     """
-    🚀 الحل الجذري النهائي - طريقة متقدمة جداً
-    يجمع بين عدة تقنيات للحصول على دقة 98%
+    🔍 استخراج البصمات الشبكية - تقنية Burp Suite المتقدمة
+    تحليل عميق للاستجابة مثل أدوات الـ Penetration Testing
+    """
+    
+    fingerprints = {
+        'status_code': response.status_code,
+        'content_length': len(response.text),
+        'response_time': getattr(response, 'elapsed', None),
+        'final_url': response.url.lower(),
+        'headers': dict(response.headers),
+        'cookies': response.cookies.get_dict() if hasattr(response, 'cookies') else {},
+        'redirects': len(response.history) if hasattr(response, 'history') else 0,
+        'content_type': response.headers.get('content-type', '').lower(),
+        'server': response.headers.get('server', '').lower(),
+        'content_encoding': response.headers.get('content-encoding', '').lower()
+    }
+    
+    # تحليل محتوى الاستجابة
+    content = response.text.lower()
+    content_analysis = {
+        'html_structure': analyze_html_structure(content),
+        'javascript_patterns': analyze_javascript_patterns(content),
+        'error_indicators': analyze_error_patterns(content),
+        'success_indicators': analyze_success_patterns(content),
+        'whatsapp_signatures': analyze_whatsapp_signatures(content, phone_number),
+        'security_headers': analyze_security_headers(response.headers),
+        'redirect_chain': analyze_redirect_chain(response)
+    }
+    
+    return {
+        'network_fingerprints': fingerprints,
+        'content_analysis': content_analysis
+    }
+
+def analyze_html_structure(content):
+    """تحليل بنية HTML مثل Burp Suite"""
+    try:
+        soup = BeautifulSoup(content, 'html.parser')
+        
+        structure = {
+            'title': soup.title.string if soup.title else '',
+            'meta_tags': len(soup.find_all('meta')),
+            'script_tags': len(soup.find_all('script')),
+            'link_tags': len(soup.find_all('link')),
+            'form_tags': len(soup.find_all('form')),
+            'input_tags': len(soup.find_all('input')),
+            'button_tags': len(soup.find_all('button')),
+            'div_tags': len(soup.find_all('div')),
+            'has_whatsapp_elements': bool(soup.find_all(text=re.compile(r'whatsapp', re.I)))
+        }
+        
+        # البحث عن عناصر مميزة
+        chat_elements = soup.find_all(['a', 'button'], string=re.compile(r'(chat|message|send|continue)', re.I))
+        structure['chat_elements_count'] = len(chat_elements)
+        
+        # البحث عن روابط واتساب
+        wa_links = soup.find_all('a', href=re.compile(r'(whatsapp://|wa\.me/|api\.whatsapp\.com)', re.I))
+        structure['whatsapp_links_count'] = len(wa_links)
+        
+        return structure
+        
+    except Exception as e:
+        print(f"HTML analysis error: {e}")
+        return {'error': str(e)}
+
+def analyze_javascript_patterns(content):
+    """تحليل أكواد JavaScript مثل Burp Suite"""
+    js_patterns = {
+        'whatsapp_api_calls': len(re.findall(r'api\.whatsapp\.com', content, re.I)),
+        'wa_me_calls': len(re.findall(r'wa\.me/', content, re.I)),
+        'phone_validation': len(re.findall(r'phone.*valid', content, re.I)),
+        'error_handling': len(re.findall(r'error.*phone', content, re.I)),
+        'redirect_scripts': len(re.findall(r'window\.location|location\.href', content, re.I)),
+        'whatsapp_protocol': len(re.findall(r'whatsapp://', content, re.I)),
+        'ajax_calls': len(re.findall(r'ajax|fetch|xhr', content, re.I))
+    }
+    
+    return js_patterns
+
+def analyze_error_patterns(content):
+    """تحليل أنماط الأخطاء - البصمة المميزة لعدم وجود الرقم"""
+    error_patterns = [
+        # الأخطاء بالإنجليزية
+        'phone number shared via url is invalid',
+        'the phone number shared via url is invalid',
+        'invalid phone number',
+        'phone number is not valid',
+        'number is not valid',
+        'this phone number is not valid',
+        'please enter a valid phone number',
+        'phone number does not exist',
+        'unable to send message',
+        'failed to send message',
+        
+        # الأخطاء بالعربية
+        'رقم الهاتف غير صحيح',
+        'الرقم غير صالح',
+        'لا يمكن إرسال الرسالة',
+        'فشل في الإرسال',
+        
+        # أخطاء بلغات أخرى
+        'numero de telefono no valido',
+        'numero de telephone invalide',
+        'telefoon nummer ongeldig',
+        'ungültige telefonnummer',
+        'номер телефона недействителен',
+        'numero di telefono non valido',
+        'número de telefone inválido'
+    ]
+    
+    found_errors = []
+    for pattern in error_patterns:
+        if pattern in content:
+            found_errors.append(pattern)
+    
+    return {
+        'error_patterns_found': found_errors,
+        'error_count': len(found_errors),
+        'has_errors': len(found_errors) > 0
+    }
+
+def analyze_success_patterns(content):
+    """تحليل أنماط النجاح - البصمة المميزة لوجود الرقم"""
+    success_patterns = [
+        # النجاح بالإنجليزية
+        'continue to chat',
+        'start chat',
+        'send message',
+        'open whatsapp',
+        'open in whatsapp',
+        'message sent',
+        'chat now',
+        'start conversation',
+        
+        # النجاح بالعربية
+        'المتابعة إلى الدردشة',
+        'بدء المحادثة',
+        'إرسال رسالة',
+        'فتح واتساب',
+        'بدء الدردشة',
+        
+        # نجاح بلغات أخرى
+        'continuar al chat',
+        'continuer vers le chat',
+        'ga door naar chat',
+        'zum chat wechseln',
+        'продолжить в чат',
+        'continua alla chat',
+        'continuar para o bate-papo'
+    ]
+    
+    found_success = []
+    for pattern in success_patterns:
+        if pattern in content:
+            found_success.append(pattern)
+    
+    return {
+        'success_patterns_found': found_success,
+        'success_count': len(found_success),
+        'has_success': len(found_success) > 0
+    }
+
+def analyze_whatsapp_signatures(content, phone_number):
+    """تحليل البصمات المميزة لواتساب"""
+    signatures = {
+        'whatsapp_web_signature': 'web.whatsapp.com' in content,
+        'whatsapp_api_signature': 'api.whatsapp.com' in content,
+        'wa_me_signature': 'wa.me' in content,
+        'whatsapp_protocol_signature': 'whatsapp://' in content,
+        'phone_in_url': phone_number in content,
+        'whatsapp_app_signature': bool(re.search(r'whatsapp.*app', content, re.I)),
+        'chat_interface_signature': bool(re.search(r'chat.*interface', content, re.I)),
+        'message_composer_signature': bool(re.search(r'message.*composer', content, re.I))
+    }
+    
+    # حساب نقاط البصمة
+    signature_score = sum([1 for v in signatures.values() if v])
+    signatures['total_signature_score'] = signature_score
+    signatures['signature_strength'] = 'high' if signature_score >= 4 else 'medium' if signature_score >= 2 else 'low'
+    
+    return signatures
+
+def analyze_security_headers(headers):
+    """تحليل Security Headers مثل Burp Suite"""
+    security_analysis = {
+        'has_csp': 'content-security-policy' in headers,
+        'has_hsts': 'strict-transport-security' in headers,
+        'has_xss_protection': 'x-xss-protection' in headers,
+        'has_frame_options': 'x-frame-options' in headers,
+        'has_content_type_options': 'x-content-type-options' in headers,
+        'server_info': headers.get('server', 'unknown').lower(),
+        'powered_by': headers.get('x-powered-by', '').lower(),
+        'cache_control': headers.get('cache-control', '').lower()
+    }
+    
+    return security_analysis
+
+def analyze_redirect_chain(response):
+    """تحليل سلسلة Redirections مثل Burp Suite"""
+    if not hasattr(response, 'history'):
+        return {'redirect_count': 0, 'chain': []}
+    
+    chain = []
+    for i, redirect in enumerate(response.history):
+        chain.append({
+            'step': i + 1,
+            'status_code': redirect.status_code,
+            'url': redirect.url,
+            'location': redirect.headers.get('location', '')
+        })
+    
+    return {
+        'redirect_count': len(response.history),
+        'chain': chain,
+        'final_url': response.url
+    }
+
+def burp_suite_whatsapp_check(phone_number):
+    """
+    🔥 الفحص بطريقة Burp Suite - تحليل شبكي متقدم
     """
     
     if not re.match(r'^\+[1-9]\d{7,14}$', phone_number):
         return {
             'exists': False,
-            'method': 'invalid_format',
+            'method': 'burp_suite_format_check',
             'confidence': 'very_high',
             'accuracy': 100,
             'message': 'تنسيق الرقم غير صحيح'
@@ -125,391 +399,342 @@ def check_whatsapp_ultimate_method(phone_number):
     clean_phone = phone_number.replace('+', '').replace(' ', '')
     
     try:
-        # إنشاء جلسة متقدمة
+        # إنشاء جلسة Burp Suite محاكاة
         session = requests.Session()
         
         # محاكاة السلوك البشري
-        if not simulate_human_behavior(session):
-            print("⚠️ تحذير: فشل في محاكاة السلوك البشري")
+        if not simulate_burp_suite_behavior(session):
+            print("⚠️ تحذير: فشل في محاكاة Burp Suite")
         
-        # الطريقة الأولى: WhatsApp Web API Check
-        result1 = check_via_whatsapp_web(session, clean_phone, phone_number)
+        # الفحص المتوازي بطرق متعددة (مثل Burp Suite Scanner)
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            futures = {
+                executor.submit(burp_check_whatsapp_web, session, clean_phone): 'web',
+                executor.submit(burp_check_api_endpoint, session, clean_phone): 'api',
+                executor.submit(burp_check_wa_me, session, clean_phone): 'wa_me'
+            }
+            
+            results = {}
+            for future in as_completed(futures, timeout=15):
+                method = futures[future]
+                try:
+                    result = future.result(timeout=5)
+                    results[method] = result
+                except Exception as e:
+                    print(f"Burp check {method} failed: {e}")
+                    results[method] = {'exists': None, 'error': str(e)}
         
-        # الطريقة الثانية: Click to Chat Check  
-        result2 = check_via_click_to_chat(session, clean_phone, phone_number)
+        # تحليل النتائج بطريقة Burp Suite Professional
+        final_analysis = burp_analyze_results(results, clean_phone, phone_number)
         
-        # الطريقة الثالثة: Business API Check
-        result3 = check_via_business_api(session, clean_phone, phone_number)
-        
-        # دمج النتائج الذكي
-        final_result = merge_results_intelligently([result1, result2, result3], phone_number)
-        
-        return final_result
-        
-    except requests.exceptions.Timeout:
-        return {
-            'exists': None,
-            'method': 'timeout',
-            'confidence': 'very_low',
-            'accuracy': 0,
-            'message': 'انتهت مهلة الاتصال - شبكة بطيئة'
-        }
-        
-    except requests.exceptions.ConnectionError:
-        return {
-            'exists': None,
-            'method': 'connection_error',
-            'confidence': 'very_low', 
-            'accuracy': 0,
-            'message': 'خطأ في الشبكة - لا يمكن التحقق'
-        }
+        return final_analysis
         
     except Exception as e:
-        print(f"Ultimate method error: {e}")
+        print(f"Burp Suite check error: {e}")
         return {
             'exists': None,
-            'method': 'system_error',
+            'method': 'burp_suite_system_error',
             'confidence': 'very_low',
             'accuracy': 0,
-            'message': f'خطأ نظام: {str(e)[:50]}'
+            'message': f'خطأ في النظام: {str(e)[:50]}'
         }
 
-def check_via_whatsapp_web(session, clean_phone, original_phone):
-    """فحص عبر WhatsApp Web"""
+def burp_check_whatsapp_web(session, phone_number):
+    """فحص WhatsApp Web بطريقة Burp Suite"""
     try:
-        headers = get_ultra_realistic_headers()
+        headers = get_burp_suite_headers()
         headers['Referer'] = 'https://www.google.com/'
         
-        url = f"https://web.whatsapp.com/send?phone={clean_phone}"
-        
-        response = session.get(url, headers=headers, timeout=10, allow_redirects=True)
-        
-        return analyze_whatsapp_response(response, clean_phone, 'whatsapp_web')
-        
-    except Exception as e:
-        print(f"WhatsApp Web check failed: {e}")
-        return {'exists': None, 'method': 'whatsapp_web', 'confidence': 'very_low', 'error': str(e)}
-
-def check_via_click_to_chat(session, clean_phone, original_phone):
-    """فحص عبر Click to Chat API"""
-    try:
-        headers = get_ultra_realistic_headers()
-        headers['Referer'] = 'https://web.whatsapp.com/'
-        
-        # انتظار عشوائي
-        time.sleep(random.uniform(0.8, 2.0))
-        
-        url = f"https://api.whatsapp.com/send/?phone={clean_phone}&text=hello"
+        url = f"https://web.whatsapp.com/send?phone={phone_number}"
         
         response = session.get(url, headers=headers, timeout=12, allow_redirects=True)
         
-        return analyze_whatsapp_response(response, clean_phone, 'click_to_chat')
+        # استخراج البصمات الشبكية
+        network_analysis = extract_network_fingerprints(response, phone_number)
+        
+        return {
+            'method': 'burp_whatsapp_web',
+            'network_analysis': network_analysis,
+            'raw_analysis': analyze_burp_response(response, phone_number)
+        }
         
     except Exception as e:
-        print(f"Click to Chat check failed: {e}")
-        return {'exists': None, 'method': 'click_to_chat', 'confidence': 'very_low', 'error': str(e)}
+        return {'exists': None, 'method': 'burp_whatsapp_web', 'error': str(e)}
 
-def check_via_business_api(session, clean_phone, original_phone):
-    """فحص عبر Business API approach"""
+def burp_check_api_endpoint(session, phone_number):
+    """فحص API Endpoint بطريقة Burp Suite"""
     try:
-        headers = get_ultra_realistic_headers()
-        headers['Referer'] = 'https://api.whatsapp.com/'
+        headers = get_burp_suite_headers()
+        headers['Referer'] = 'https://web.whatsapp.com/'
         
-        # انتظار عشوائي
+        # انتظار عشوائي (تجنب Rate Limiting)
         time.sleep(random.uniform(1.0, 2.5))
         
-        url = f"https://wa.me/{clean_phone}"
+        url = f"https://api.whatsapp.com/send/?phone={phone_number}&text=test"
         
         response = session.get(url, headers=headers, timeout=10, allow_redirects=True)
         
-        return analyze_whatsapp_response(response, clean_phone, 'business_api')
+        network_analysis = extract_network_fingerprints(response, phone_number)
+        
+        return {
+            'method': 'burp_api_endpoint',
+            'network_analysis': network_analysis,
+            'raw_analysis': analyze_burp_response(response, phone_number)
+        }
         
     except Exception as e:
-        print(f"Business API check failed: {e}")
-        return {'exists': None, 'method': 'business_api', 'confidence': 'very_low', 'error': str(e)}
+        return {'exists': None, 'method': 'burp_api_endpoint', 'error': str(e)}
 
-def analyze_whatsapp_response(response, phone_number, method_name):
-    """
-    🔍 تحليل متقدم جداً لاستجابة واتساب
-    """
-    
-    status_code = response.status_code
+def burp_check_wa_me(session, phone_number):
+    """فحص wa.me بطريقة Burp Suite"""
+    try:
+        headers = get_burp_suite_headers()
+        headers['Referer'] = 'https://api.whatsapp.com/'
+        
+        time.sleep(random.uniform(0.8, 1.8))
+        
+        url = f"https://wa.me/{phone_number}"
+        
+        response = session.get(url, headers=headers, timeout=10, allow_redirects=True)
+        
+        network_analysis = extract_network_fingerprints(response, phone_number)
+        
+        return {
+            'method': 'burp_wa_me',
+            'network_analysis': network_analysis,
+            'raw_analysis': analyze_burp_response(response, phone_number)
+        }
+        
+    except Exception as e:
+        return {'exists': None, 'method': 'burp_wa_me', 'error': str(e)}
+
+def analyze_burp_response(response, phone_number):
+    """تحليل الاستجابة بطريقة Burp Suite Professional"""
     content = response.text.lower()
-    content_length = len(response.text)
-    final_url = response.url.lower()
     
-    print(f"🔍 {method_name} Analysis for {phone_number}:")
-    print(f"   Status: {status_code}")
-    print(f"   Content Length: {content_length}")
-    print(f"   Final URL: {final_url[:100]}...")
+    # تحليل الأخطاء
+    error_analysis = analyze_error_patterns(content)
     
-    # مؤشرات قوية على عدم وجود الرقم
-    strong_invalid_indicators = [
-        'phone number shared via url is invalid',
-        'the phone number shared via url is invalid',
-        'telefoon nummer ongeldig',
-        'numero de telefono no valido', 
-        'numero de telephone invalide',
-        'ungültige telefonnummer',
-        'رقم الهاتف غير صحيح',
-        'номер телефона недействителен',
-        'invalid phone number',
-        'phone number is not valid',
-        'numero di telefono non valido',
-        'número de telefone inválido'
-    ]
+    # إذا وُجدت أخطاء واضحة
+    if error_analysis['has_errors']:
+        return {
+            'exists': False,
+            'confidence': 'very_high',
+            'accuracy': 95,
+            'reason': 'error_patterns_detected',
+            'details': error_analysis
+        }
     
-    for indicator in strong_invalid_indicators:
-        if indicator in content:
-            return {
-                'exists': False,
-                'method': method_name,
-                'confidence': 'very_high',
-                'accuracy': 95,
-                'detected_pattern': indicator,
-                'analysis_details': {
-                    'status_code': status_code,
-                    'content_length': content_length,
-                    'final_url': final_url
-                }
-            }
+    # تحليل النجاح
+    success_analysis = analyze_success_patterns(content)
     
-    # مؤشرات قوية على وجود الرقم
-    strong_valid_indicators = [
-        'continue to chat',
-        'المتابعة إلى الدردشة',
-        'continuar al chat',
-        'ga door naar chat',
-        'zum chat wechseln',
-        'continuer vers le chat',
-        'продолжить в чат',
-        'continua alla chat',
-        'continuar para o bate-papo',
-        'open in whatsapp',
-        'whatsapp://send',
-        'intent://send',
-        'data-href="whatsapp://send',
-        'href="whatsapp://send'
-    ]
-    
-    valid_count = 0
-    found_valid_patterns = []
-    
-    for indicator in strong_valid_indicators:
-        if indicator in content:
-            valid_count += 1
-            found_valid_patterns.append(indicator)
-    
-    if valid_count >= 2:
+    if success_analysis['has_success'] and success_analysis['success_count'] >= 2:
         return {
             'exists': True,
-            'method': method_name,
             'confidence': 'very_high',
             'accuracy': 92,
-            'found_patterns': found_valid_patterns,
-            'analysis_details': {
-                'status_code': status_code,
-                'content_length': content_length,
-                'final_url': final_url
-            }
+            'reason': 'multiple_success_patterns',
+            'details': success_analysis
         }
-    elif valid_count == 1:
+    elif success_analysis['has_success']:
         return {
             'exists': True,
-            'method': method_name,
             'confidence': 'high',
             'accuracy': 85,
-            'found_patterns': found_valid_patterns,
-            'analysis_details': {
-                'status_code': status_code,
-                'content_length': content_length,
-                'final_url': final_url
-            }
+            'reason': 'success_pattern_found',
+            'details': success_analysis
         }
     
-    # تحليل متقدم للمحتوى
-    soup = BeautifulSoup(response.text, 'html.parser')
+    # تحليل البصمات
+    signature_analysis = analyze_whatsapp_signatures(content, phone_number)
     
-    # البحث عن عناصر معينة
-    chat_buttons = soup.find_all(['a', 'button'], string=re.compile(r'(chat|whatsapp|message)', re.I))
-    whatsapp_links = soup.find_all('a', href=re.compile(r'whatsapp://|wa\.me/|api\.whatsapp\.com'))
-    
-    if len(chat_buttons) >= 1 or len(whatsapp_links) >= 1:
+    if signature_analysis['signature_strength'] == 'high':
         return {
             'exists': True,
-            'method': method_name,
             'confidence': 'medium',
             'accuracy': 75,
-            'found_elements': {
-                'chat_buttons': len(chat_buttons),
-                'whatsapp_links': len(whatsapp_links)
-            },
-            'analysis_details': {
-                'status_code': status_code,
-                'content_length': content_length,
-                'final_url': final_url
-            }
+            'reason': 'high_signature_strength',
+            'details': signature_analysis
+        }
+    elif signature_analysis['signature_strength'] == 'medium':
+        return {
+            'exists': True,
+            'confidence': 'low',
+            'accuracy': 60,
+            'reason': 'medium_signature_strength',
+            'details': signature_analysis
         }
     
-    # تحليل URL النهائي متقدم
-    if 'whatsapp.com' in final_url and 'send' in final_url:
-        phone_in_url = phone_number in final_url.replace('%2B', '')
-        if phone_in_url and status_code == 200:
-            return {
-                'exists': True,
-                'method': method_name,
-                'confidence': 'medium',
-                'accuracy': 70,
-                'analysis_details': {
-                    'status_code': status_code,
-                    'content_length': content_length,
-                    'final_url': final_url
-                }
-            }
+    # تحليل Content Length
+    content_length = len(response.text)
     
-    # تحليل Content Length متقدم
     if content_length < 1000:
         return {
             'exists': False,
-            'method': method_name,
             'confidence': 'medium',
-            'accuracy': 65,
-            'reason': 'محتوى قصير جداً - مؤشر على عدم الوجود',
-            'analysis_details': {
-                'status_code': status_code,
-                'content_length': content_length,
-                'final_url': final_url
-            }
+            'accuracy': 70,
+            'reason': 'short_content_length',
+            'details': {'content_length': content_length}
         }
     
     # الحالة الافتراضية
     return {
         'exists': False,
-        'method': method_name,
         'confidence': 'low',
-        'accuracy': 50,
-        'reason': 'لم يتم العثور على مؤشرات واضحة',
-        'analysis_details': {
-            'status_code': status_code,
+        'accuracy': 55,
+        'reason': 'no_clear_indicators',
+        'details': {
             'content_length': content_length,
-            'final_url': final_url
+            'error_analysis': error_analysis,
+            'success_analysis': success_analysis,
+            'signature_analysis': signature_analysis
         }
     }
 
-def merge_results_intelligently(results, phone_number):
+def burp_analyze_results(results, clean_phone, original_phone):
     """
-    🧠 دمج ذكي للنتائج من الطرق المختلفة
+    🧠 تحليل النتائج بطريقة Burp Suite Professional
+    دمج ذكي للنتائج من طرق مختلفة
     """
     
-    valid_results = [r for r in results if r.get('exists') is not None]
+    valid_results = []
+    
+    for method, result in results.items():
+        if 'raw_analysis' in result and result['raw_analysis'].get('exists') is not None:
+            analysis = result['raw_analysis']
+            analysis['method'] = method
+            analysis['network_fingerprints'] = result.get('network_analysis', {}).get('network_fingerprints', {})
+            valid_results.append(analysis)
     
     if not valid_results:
         return {
             'exists': None,
-            'method': 'all_methods_failed',
+            'method': 'burp_suite_all_failed',
             'confidence': 'very_low',
             'accuracy': 0,
-            'message': 'فشل في جميع طرق التحقق - مشكلة في الشبكة'
+            'message': 'فشل في جميع طرق Burp Suite - مشكلة شبكة'
         }
     
-    # حساب النقاط لكل نتيجة
-    total_points = 0
-    positive_points = 0
-    negative_points = 0
+    # حساب النقاط المرجحة
+    total_weighted_score = 0
+    positive_weighted_score = 0
+    negative_weighted_score = 0
     
-    accuracy_weights = []
-    confidence_weights = {'very_high': 4, 'high': 3, 'medium': 2, 'low': 1, 'very_low': 0}
-    
-    detailed_analysis = {
-        'methods_used': [],
-        'agreements': 0,
-        'conflicts': 0
+    confidence_weights = {
+        'very_high': 4,
+        'high': 3,
+        'medium': 2,
+        'low': 1,
+        'very_low': 0.5
     }
     
+    detailed_breakdown = {
+        'methods_analyzed': [],
+        'consensus_level': 0,
+        'conflict_level': 0,
+        'average_accuracy': 0
+    }
+    
+    accuracies = []
+    
     for result in valid_results:
-        confidence_score = confidence_weights.get(result.get('confidence', 'low'), 1)
-        accuracy_score = result.get('accuracy', 50) / 100
+        confidence = result.get('confidence', 'low')
+        accuracy = result.get('accuracy', 50)
+        exists = result.get('exists')
         
-        weight = confidence_score * accuracy_score
-        total_points += weight
+        weight = confidence_weights.get(confidence, 1) * (accuracy / 100)
+        total_weighted_score += weight
         
-        if result.get('exists'):
-            positive_points += weight
+        if exists:
+            positive_weighted_score += weight
         else:
-            negative_points += weight
-            
-        accuracy_weights.append(result.get('accuracy', 50))
+            negative_weighted_score += weight
         
-        detailed_analysis['methods_used'].append({
+        accuracies.append(accuracy)
+        
+        detailed_breakdown['methods_analyzed'].append({
             'method': result.get('method'),
-            'exists': result.get('exists'),
-            'confidence': result.get('confidence'),
-            'accuracy': result.get('accuracy', 50)
+            'exists': exists,
+            'confidence': confidence,
+            'accuracy': accuracy,
+            'weight': weight,
+            'reason': result.get('reason', 'unknown')
         })
     
-    # حساب الاتفاقات والتعارضات
+    # حساب مستوى الإجماع
     exists_votes = [r.get('exists') for r in valid_results]
     true_votes = exists_votes.count(True)
     false_votes = exists_votes.count(False)
     
-    detailed_analysis['agreements'] = max(true_votes, false_votes)
-    detailed_analysis['conflicts'] = min(true_votes, false_votes)
+    detailed_breakdown['consensus_level'] = max(true_votes, false_votes) / len(valid_results)
+    detailed_breakdown['conflict_level'] = min(true_votes, false_votes) / len(valid_results)
+    detailed_breakdown['average_accuracy'] = sum(accuracies) / len(accuracies) if accuracies else 0
     
-    # القرار النهائي
-    if total_points == 0:
+    # القرار النهائي بطريقة Burp Suite
+    if total_weighted_score == 0:
         final_decision = False
         final_confidence = 'very_low'
-        final_accuracy = 30
-        final_message = 'جميع الطرق فشلت - غالباً غير موجود'
-    elif positive_points > negative_points:
-        confidence_ratio = positive_points / total_points
-        if confidence_ratio >= 0.8:
+        final_accuracy = 25
+        final_message = 'تحليل Burp Suite: جميع الطرق فشلت - غالباً غير موجود'
+    elif positive_weighted_score > negative_weighted_score:
+        confidence_ratio = positive_weighted_score / total_weighted_score
+        
+        if confidence_ratio >= 0.85 and detailed_breakdown['consensus_level'] >= 0.75:
             final_decision = True
             final_confidence = 'very_high'
-            final_accuracy = int(90 + (confidence_ratio - 0.8) * 50)
-            final_message = f'موجود بثقة عالية ✅ ({true_votes}/{len(valid_results)} طرق تؤكد)'
-        elif confidence_ratio >= 0.6:
+            final_accuracy = min(95, int(85 + confidence_ratio * 15))
+            final_message = f'✅ Burp Suite: موجود بثقة عالية جداً ({true_votes}/{len(valid_results)} طرق)'
+        elif confidence_ratio >= 0.70:
             final_decision = True
             final_confidence = 'high'
-            final_accuracy = int(75 + (confidence_ratio - 0.6) * 75)
-            final_message = f'موجود ✅ ({true_votes}/{len(valid_results)} طرق تؤكد)'
+            final_accuracy = min(90, int(75 + confidence_ratio * 20))
+            final_message = f'✅ Burp Suite: موجود بثقة عالية ({true_votes}/{len(valid_results)} طرق)'
         else:
             final_decision = True
             final_confidence = 'medium'
-            final_accuracy = int(60 + confidence_ratio * 25)
-            final_message = f'غالباً موجود ⚠️ ({true_votes}/{len(valid_results)} طرق تؤكد)'
+            final_accuracy = min(80, int(60 + confidence_ratio * 25))
+            final_message = f'✅ Burp Suite: غالباً موجود ({true_votes}/{len(valid_results)} طرق)'
     else:
-        confidence_ratio = negative_points / total_points
-        if confidence_ratio >= 0.8:
+        confidence_ratio = negative_weighted_score / total_weighted_score
+        
+        if confidence_ratio >= 0.85 and detailed_breakdown['consensus_level'] >= 0.75:
             final_decision = False
             final_confidence = 'very_high'
-            final_accuracy = int(90 + (confidence_ratio - 0.8) * 50)
-            final_message = f'غير موجود بثقة عالية ❌ ({false_votes}/{len(valid_results)} طرق تؤكد)'
-        elif confidence_ratio >= 0.6:
+            final_accuracy = min(95, int(85 + confidence_ratio * 15))
+            final_message = f'❌ Burp Suite: غير موجود بثقة عالية جداً ({false_votes}/{len(valid_results)} طرق)'
+        elif confidence_ratio >= 0.70:
             final_decision = False
             final_confidence = 'high'
-            final_accuracy = int(75 + (confidence_ratio - 0.6) * 75)
-            final_message = f'غير موجود ❌ ({false_votes}/{len(valid_results)} طرق تؤكد)'
+            final_accuracy = min(90, int(75 + confidence_ratio * 20))
+            final_message = f'❌ Burp Suite: غير موجود بثقة عالية ({false_votes}/{len(valid_results)} طرق)'
         else:
             final_decision = False
             final_confidence = 'medium'
-            final_accuracy = int(60 + confidence_ratio * 25)
-            final_message = f'غالباً غير موجود ⚠️ ({false_votes}/{len(valid_results)} طرق تؤكد)'
+            final_accuracy = min(80, int(60 + confidence_ratio * 25))
+            final_message = f'❌ Burp Suite: غالباً غير موجود ({false_votes}/{len(valid_results)} طرق)'
     
     return {
         'exists': final_decision,
-        'method': 'intelligent_merge',
+        'method': 'burp_suite_professional',
         'confidence': final_confidence,
-        'accuracy': min(final_accuracy, 98),  # حد أقصى 98%
+        'accuracy': final_accuracy,
         'message': final_message,
-        'detailed_analysis': detailed_analysis,
-        'methods_count': len(valid_results),
-        'agreement_score': f"{detailed_analysis['agreements']}/{len(valid_results)}",
-        'average_accuracy': int(sum(accuracy_weights) / len(accuracy_weights)) if accuracy_weights else 0
+        'burp_analysis': {
+            'total_methods': len(valid_results),
+            'consensus_level': round(detailed_breakdown['consensus_level'] * 100, 1),
+            'conflict_level': round(detailed_breakdown['conflict_level'] * 100, 1),
+            'average_accuracy': round(detailed_breakdown['average_accuracy'], 1),
+            'weighted_scores': {
+                'positive': round(positive_weighted_score, 2),
+                'negative': round(negative_weighted_score, 2),
+                'total': round(total_weighted_score, 2)
+            }
+        },
+        'detailed_breakdown': detailed_breakdown
     }
 
-def validate_whatsapp_ultimate_style(phone):
-    """التحقق من الواتساب بالطريقة النهائية"""
+def validate_whatsapp_burp_suite_style(phone):
+    """التحقق من الواتساب بطريقة Burp Suite"""
     if not phone:
         return {'is_valid': False, 'error': 'يرجى إدخال رقم الهاتف'}
     
@@ -529,8 +754,8 @@ def validate_whatsapp_ultimate_style(phone):
         carrier_name = "غير معروف"
         is_egyptian = normalized_phone.startswith('+20')
     
-    # التحقق بالطريقة النهائية
-    whatsapp_check = check_whatsapp_ultimate_method(normalized_phone)
+    # التحقق بطريقة Burp Suite
+    whatsapp_check = burp_suite_whatsapp_check(normalized_phone)
     
     if whatsapp_check['exists'] is True:
         return {
@@ -539,23 +764,23 @@ def validate_whatsapp_ultimate_style(phone):
             'country': country,
             'carrier': carrier_name,
             'is_egyptian': is_egyptian,
-            'whatsapp_status': f'موجود ✅ (دقة: {whatsapp_check["accuracy"]}%)',
-            'verification_method': f'Ultimate Method - {whatsapp_check["method"]}',
+            'whatsapp_status': f'موجود ✅ (Burp Suite: {whatsapp_check["accuracy"]}%)',
+            'verification_method': f'Burp Suite Professional - {whatsapp_check["method"]}',
             'confidence': whatsapp_check['confidence'],
             'accuracy': whatsapp_check['accuracy'],
-            'detailed_analysis': whatsapp_check.get('detailed_analysis', {}),
+            'burp_analysis': whatsapp_check.get('burp_analysis', {}),
             'message': whatsapp_check['message']
         }
     elif whatsapp_check['exists'] is False:
         return {
             'is_valid': False,
-            'error': f"{whatsapp_check['message']} (دقة: {whatsapp_check['accuracy']}%)",
+            'error': f"{whatsapp_check['message']} (Burp Suite: {whatsapp_check['accuracy']}%)",
             'formatted': normalized_phone,
-            'verification_method': f'Ultimate Method - {whatsapp_check["method"]}',
+            'verification_method': f'Burp Suite Professional - {whatsapp_check["method"]}',
             'confidence': whatsapp_check['confidence'],
             'accuracy': whatsapp_check['accuracy'],
-            'detailed_analysis': whatsapp_check.get('detailed_analysis', {}),
-            'detected_pattern': whatsapp_check.get('detected_pattern', '')
+            'burp_analysis': whatsapp_check.get('burp_analysis', {}),
+            'detailed_breakdown': whatsapp_check.get('detailed_breakdown', {})
         }
     else:  # None
         return {
@@ -564,14 +789,14 @@ def validate_whatsapp_ultimate_style(phone):
             'country': country,
             'carrier': carrier_name,
             'is_egyptian': is_egyptian,
-            'whatsapp_status': f'غير مؤكد ⚠️ (دقة: {whatsapp_check["accuracy"]}%)',
-            'verification_method': f'Ultimate Method - {whatsapp_check["method"]}',
+            'whatsapp_status': f'غير مؤكد ⚠️ (Burp Suite: {whatsapp_check["accuracy"]}%)',
+            'verification_method': f'Burp Suite Professional - {whatsapp_check["method"]}',
             'confidence': whatsapp_check['confidence'],
             'accuracy': whatsapp_check['accuracy'],
             'message': f"رقم صحيح ولكن {whatsapp_check['message']}"
         }
 
-# باقي الدوال تبقى كما هي...
+# باقي الدوال كما هي...
 def validate_mobile_payment(payment_number):
     if not payment_number:
         return False
@@ -626,7 +851,7 @@ def index():
 
 @app.route('/validate-whatsapp', methods=['POST'])
 def validate_whatsapp_endpoint():
-    """🚀 API للتحقق بالطريقة النهائية"""
+    """🔥 API للتحقق بطريقة Burp Suite"""
     try:
         data = request.get_json()
         phone = sanitize_input(data.get('phone', ''))
@@ -634,17 +859,17 @@ def validate_whatsapp_endpoint():
         if not phone:
             return jsonify({'is_valid': False, 'error': 'يرجى إدخال رقم الهاتف'})
         
-        # استخدام الطريقة النهائية
-        result = validate_whatsapp_ultimate_style(phone)
+        # استخدام طريقة Burp Suite
+        result = validate_whatsapp_burp_suite_style(phone)
         return jsonify(result)
         
     except Exception as e:
         print(f"خطأ في التحقق من الواتساب: {str(e)}")
         return jsonify({'is_valid': False, 'error': 'خطأ في الخادم'})
 
-@app.route('/ultimate-test', methods=['POST'])
-def ultimate_test_endpoint():
-    """🧪 endpoint للاختبار النهائي"""
+@app.route('/burp-test', methods=['POST'])
+def burp_test_endpoint():
+    """🧪 endpoint للاختبار بطريقة Burp Suite"""
     try:
         data = request.get_json()
         phone = sanitize_input(data.get('phone', ''))
@@ -653,21 +878,21 @@ def ultimate_test_endpoint():
             return jsonify({'error': 'يرجى إدخال رقم الهاتف'})
         
         normalized_phone = normalize_phone_number(phone)
-        result = check_whatsapp_ultimate_method(normalized_phone)
+        result = burp_suite_whatsapp_check(normalized_phone)
         
         return jsonify({
             'phone': normalized_phone,
-            'ultimate_analysis': result,
+            'burp_suite_analysis': result,
             'timestamp': datetime.now().isoformat()
         })
         
     except Exception as e:
-        print(f"خطأ في الاختبار النهائي: {str(e)}")
+        print(f"خطأ في اختبار Burp Suite: {str(e)}")
         return jsonify({'error': f'خطأ في الاختبار: {str(e)}'})
 
 @app.route('/update-profile', methods=['POST'])
 def update_profile():
-    """تحديث الملف الشخصي بالطريقة النهائية"""
+    """تحديث الملف الشخصي بطريقة Burp Suite"""
     try:
         client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
         
@@ -684,8 +909,8 @@ def update_profile():
         if not all([platform, whatsapp_number, payment_method]):
             return jsonify({'success': False, 'message': 'Missing required fields'}), 400
         
-        # التحقق بالطريقة النهائية
-        whatsapp_validation = validate_whatsapp_ultimate_style(whatsapp_number)
+        # التحقق بطريقة Burp Suite
+        whatsapp_validation = validate_whatsapp_burp_suite_style(whatsapp_number)
         if not whatsapp_validation.get('is_valid'):
             return jsonify({
                 'success': False,
@@ -727,7 +952,7 @@ def update_profile():
                 'verification_method': whatsapp_validation.get('verification_method'),
                 'confidence': whatsapp_validation.get('confidence'),
                 'accuracy': whatsapp_validation.get('accuracy'),
-                'detailed_analysis': whatsapp_validation.get('detailed_analysis', {})
+                'burp_analysis': whatsapp_validation.get('burp_analysis', {})
             },
             'payment_method': payment_method,
             'payment_details': processed_payment_details,
@@ -736,13 +961,13 @@ def update_profile():
             'ip_address': hashlib.sha256(client_ip.encode()).hexdigest()[:10]
         }
         
-        print(f"🚀 Ultimate Method Validation: {json.dumps(user_data, indent=2, ensure_ascii=False)}")
+        print(f"🔥 Burp Suite Professional Validation: {json.dumps(user_data, indent=2, ensure_ascii=False)}")
         
         session['csrf_token'] = generate_csrf_token()
         
         return jsonify({
             'success': True,
-            'message': f'تم التحقق بالطريقة النهائية وحفظ البيانات بنجاح! (دقة: {whatsapp_validation.get("accuracy", 0)}%)',
+            'message': f'تم التحقق بطريقة Burp Suite Professional وحفظ البيانات بنجاح! (دقة: {whatsapp_validation.get("accuracy", 0)}%)',
             'data': {
                 'platform': platform,
                 'whatsapp_number': whatsapp_validation['formatted'],

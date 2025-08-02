@@ -532,6 +532,38 @@ def generate_telegram_code_endpoint():
         print(f"خطأ في توليد كود التليجرام: {str(e)}")
         return jsonify({'success': False, 'message': 'خطأ في الخادم'})
 
+def notify_website_telegram_linked(code, profile_data, chat_id, first_name, username):
+    """إشعار الموقع بنجاح ربط التليجرام"""
+    try:
+        # تحديث بيانات المستخدم
+        user_id = hashlib.md5(f"{profile_data['whatsapp_number']}-telegram-{code}".encode()).hexdigest()[:12]
+        
+        updated_user_data = {
+            **profile_data,
+            'telegram_linked': True,
+            'telegram_chat_id': chat_id,
+            'telegram_first_name': first_name,
+            'telegram_username_actual': username,
+            'telegram_linked_at': datetime.now().isoformat(),
+            'user_id': user_id
+        }
+        
+        # حفظ في بيانات المستخدمين
+        users_data[user_id] = updated_user_data
+        
+        print(f"🔗 Telegram Linked Successfully!")
+        print(f"   User: {first_name} (@{username})")
+        print(f"   WhatsApp: {profile_data['whatsapp_number']}")
+        print(f"   Platform: {profile_data['platform']}")
+        print(f"   Code: {code}")
+        print(f"   Chat ID: {chat_id}")
+        
+        return True
+        
+    except Exception as e:
+        print(f"خطأ في إشعار الموقع: {str(e)}")
+        return False
+
 @app.route('/telegram-webhook', methods=['POST'])
 def telegram_webhook():
     """استقبال رسائل من التليجرام بوت - محدثة للكود المباشر"""
@@ -562,6 +594,9 @@ def telegram_webhook():
                         telegram_codes[code]['used'] = True
                         telegram_codes[code]['telegram_chat_id'] = chat_id
                         telegram_codes[code]['telegram_username_actual'] = username
+                        
+                        # إرسال إشعار للموقع
+                        notify_website_telegram_linked(code, profile_data, chat_id, first_name, username)
                         
                         # إرسال رسالة ترحيب مخصصة
                         welcome_message = f"""
@@ -628,6 +663,9 @@ def telegram_webhook():
                     telegram_codes[code]['used'] = True
                     telegram_codes[code]['telegram_chat_id'] = chat_id
                     telegram_codes[code]['telegram_username_actual'] = username
+                    
+                    # إرسال إشعار للموقع
+                    notify_website_telegram_linked(code, profile_data, chat_id, first_name, username)
                     
                     # إرسال رسالة ترحيب مخصصة
                     welcome_message = f"""
@@ -730,6 +768,27 @@ def admin_data():
         'users_sample': list(users_data.keys())[:5],
         'telegram_codes_sample': {k: {**v, 'used': v.get('used', False)} for k, v in list(telegram_codes.items())[:5]}
     })
+
+@app.route('/check-telegram-status/<code>')
+def check_telegram_status(code):
+    """فحص حالة ربط التليجرام"""
+    try:
+        if code in telegram_codes:
+            code_data = telegram_codes[code]
+            return jsonify({
+                'success': True,
+                'linked': code_data.get('used', False),
+                'telegram_chat_id': code_data.get('telegram_chat_id'),
+                'telegram_username': code_data.get('telegram_username_actual'),
+                'linked_at': code_data.get('created_at')
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Code not found'
+            })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
 
 # route جديد لإعداد webhook التليجرام
 @app.route('/set-telegram-webhook')

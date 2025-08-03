@@ -48,6 +48,83 @@ def sanitize_input(text):
     text = re.sub(r'<[^>]+>', '', text)
     return text.strip()
 
+def validate_egyptian_mobile_instant(phone_input):
+    """🔥 تحقق فوري من الرقم المصري - نظام المحافظ الرقمية (11 رقم فقط)"""
+    if not phone_input:
+        return {
+            'is_valid': False,
+            'error': 'يرجى إدخال رقم الهاتف',
+            'code': 'empty_input'
+        }
+    
+    # إزالة كل شيء عدا الأرقام
+    clean_digits = re.sub(r'[^\d]', '', str(phone_input).strip())
+    
+    # 🚫 رفض فوري إذا لم يكن 11 رقم بالضبط
+    if len(clean_digits) != 11:
+        return {
+            'is_valid': False,
+            'error': f'يجب أن يكون 11 رقماً بالضبط (تم إدخال {len(clean_digits)} رقم)',
+            'code': 'invalid_length',
+            'entered_length': len(clean_digits),
+            'expected_length': 11
+        }
+    
+    # 🚫 التحقق من بداية الرقم - يجب أن يبدأ بـ 01
+    if not clean_digits.startswith('01'):
+        return {
+            'is_valid': False,
+            'error': 'يجب أن يبدأ الرقم بـ 01 (رقم مصري)',
+            'code': 'invalid_country_prefix'
+        }
+    
+    # 🚫 التحقق من كود الشركة - يجب أن يكون 010/011/012/015
+    carrier_code = clean_digits[:3]
+    if carrier_code not in ['010', '011', '012', '015']:
+        return {
+            'is_valid': False,
+            'error': f'كود الشركة {carrier_code} غير صحيح - يجب أن يكون 010/011/012/015',
+            'code': 'invalid_carrier_code',
+            'entered_carrier': carrier_code,
+            'valid_carriers': ['010', '011', '012', '015']
+        }
+    
+    # ✅ الرقم صحيح - معلومات الشركة
+    carrier_info = EGYPTIAN_CARRIERS.get(carrier_code, {
+        'name': 'غير معروف',
+        'carrier_en': 'Unknown'
+    })
+    
+    # ✅ إرجاع النتيجة النهائية للرقم الصحيح
+    return {
+        'is_valid': True,
+        'clean_number': clean_digits,
+        'formatted_number': f"+2{clean_digits}",
+        'display_number': f"0{clean_digits[1:3]} {clean_digits[3:6]} {clean_digits[6:]}",
+        'carrier_code': carrier_code,
+        'carrier_name': carrier_info['name'],
+        'carrier_en': carrier_info['carrier_en'],
+        'country': 'مصر',
+        'country_code': '+2',
+        'validation_type': 'instant_wallet_style',
+        'message': f'✅ رقم {carrier_info["name"]} صحيح',
+        'code': 'valid_egyptian_mobile'
+    }
+
+def normalize_phone_number(phone):
+    """تطبيع رقم الهاتف - نظام المحافظ (11 رقم فقط)"""
+    if not phone:
+        return ""
+    
+    # 🔥 استخدام التحقق الفوري الجديد
+    validation_result = validate_egyptian_mobile_instant(phone)
+    
+    # إرجاع الرقم المنسق أو فارغ في حالة الخطأ
+    if validation_result['is_valid']:
+        return validation_result['formatted_number']
+    else:
+        return ""  # رفض تام للأرقام غير الصحيحة
+
 def normalize_phone_number(phone):
     """تطبيع رقم الهاتف - محسن للأرقام المصرية 11 رقم فقط"""
     if not phone:
@@ -281,83 +358,81 @@ def check_whatsapp_ultimate_method(phone_number):
     }
 
 def validate_whatsapp_ultimate(phone):
-    """الدالة النهائية للتحقق المبتكر من الواتساب - محسنة للأرقام المصرية"""
-    if not phone:
-        return {'is_valid': False, 'error': 'يرجى إدخال رقم الهاتف'}
+    """🔥 التحقق النهائي من الواتساب - نظام المحافظ الرقمية (11 رقم فقط)"""
     
-    # 🔥 التحقق السريع من الطول أولاً (تحسين الأداء)
-    clean_input = re.sub(r'[^\d]', '', phone)
-    if len(clean_input) != 11 or not clean_input.startswith(('010', '011', '012', '015')):
-        return {
-            'is_valid': False, 
-            'error': 'يجب أن يكون الرقم 11 رقماً ويبدأ بـ 010/011/012/015'
-        }
+    # 🚀 التحقق الفوري السريع مثل المحافظ الرقمية
+    instant_validation = validate_egyptian_mobile_instant(phone)
     
-    # تطبيع الرقم
-    normalized_phone = normalize_phone_number(phone)
-    
-    # التحقق من نجاح التطبيع
-    if not normalized_phone:
-        return {
-            'is_valid': False, 
-            'error': 'تنسيق الرقم غير صحيح - يجب أن يكون رقم مصري صحيح'
-        }
-    
-    # التحقق النهائي من التنسيق (+2 + 11 رقم = 13 حرف)
-    if not re.match(r'^\+2(010|011|012|015)\d{8}$', normalized_phone):
-        return {
-            'is_valid': False, 
-            'error': 'تنسيق الرقم المصري غير صحيح'
-        }
-    
-    # 🚀 التحقق السريع عند وصول 11 رقم صحيح
-    print(f"✅ تم التحقق السريع من الرقم: {normalized_phone}")
-    
-    # التحقق بالطريقة المبتكرة من الواتساب
-    whatsapp_check = check_whatsapp_ultimate_method(normalized_phone)
-    
-    # الحصول على معلومات الشركة المصرية
-    carrier_code = clean_input[:3]  # 010, 011, 012, 015
-    carrier_info = EGYPTIAN_CARRIERS.get(carrier_code, {'name': 'غير معروف', 'carrier_en': 'Unknown'})
-    
-    if whatsapp_check['exists'] is True:
-        return {
-            'is_valid': True,
-            'formatted': normalized_phone,
-            'country': 'مصر',
-            'carrier': carrier_info['name'],
-            'carrier_en': carrier_info['carrier_en'],
-            'whatsapp_status': f'موجود ✅ ({whatsapp_check["confidence"]})',
-            'verification_method': whatsapp_check['method'],
-            'confidence': whatsapp_check['confidence'],
-            'score': whatsapp_check.get('score', 0),
-            'methods_analysis': whatsapp_check.get('details', []),
-            'message': whatsapp_check['message'],
-            'quick_check': True  # إشارة للتحقق السريع
-        }
-    elif whatsapp_check['exists'] is False:
+    # ❌ في حالة فشل التحقق الفوري
+    if not instant_validation['is_valid']:
         return {
             'is_valid': False,
-            'error': f"غير موجود ❌ ({whatsapp_check['confidence']}) - {whatsapp_check['message']}",
-            'formatted': normalized_phone,
-            'verification_method': whatsapp_check['method'],
-            'confidence': whatsapp_check['confidence'],
-            'methods_analysis': whatsapp_check.get('details', []),
-            'quick_check': True
+            'error': instant_validation['error'],
+            'error_code': instant_validation['code'],
+            'validation_details': instant_validation,
+            'validation_type': 'instant_wallet_rejection'
         }
+    
+    # ✅ الرقم نجح في التحقق الفوري
+    mobile_data = instant_validation
+    normalized_phone = mobile_data['formatted_number']
+    
+    # 📱 طباعة إشعار التحقق السريع
+    print(f"⚡ تم التحقق الفوري من الرقم: {mobile_data['display_number']} ({mobile_data['carrier_name']})")
+    
+    # 🔍 التحقق من الواتساب بالطرق المتقدمة
+    whatsapp_check = check_whatsapp_ultimate_method(normalized_phone)
+    
+    # 📊 تحضير النتيجة النهائية الشاملة
+    base_result = {
+        'is_valid': True,
+        'formatted': normalized_phone,
+        'display_number': mobile_data['display_number'],
+        'clean_number': mobile_data['clean_number'],
+        'country': mobile_data['country'],
+        'country_code': mobile_data['country_code'],
+        'carrier': mobile_data['carrier_name'],
+        'carrier_en': mobile_data['carrier_en'],
+        'carrier_code': mobile_data['carrier_code'],
+        'validation_type': 'wallet_style_instant',
+        'instant_check_passed': True,
+        'mobile_validation': mobile_data,
+        'verification_method': whatsapp_check['method'],
+        'methods_analysis': whatsapp_check.get('details', [])
+    }
+    
+    # 🟢 واتساب موجود
+    if whatsapp_check['exists'] is True:
+        return {
+            **base_result,
+            'whatsapp_status': f'موجود ✅ ({whatsapp_check["confidence"]})',
+            'confidence': whatsapp_check['confidence'],
+            'score': whatsapp_check.get('score', 0),
+            'message': f'✅ رقم {mobile_data["carrier_name"]} صحيح - {whatsapp_check["message"]}',
+            'whatsapp_exists': True
+        }
+    
+    # 🔴 واتساب غير موجود
+    elif whatsapp_check['exists'] is False:
+        return {
+            **base_result,
+            'is_valid': False,
+            'error': f"واتساب غير موجود ❌ ({whatsapp_check['confidence']}) - {whatsapp_check['message']}",
+            'whatsapp_status': f'غير موجود ❌ ({whatsapp_check["confidence"]})',
+            'confidence': whatsapp_check['confidence'],
+            'message': f'❌ رقم {mobile_data["carrier_name"]} صحيح لكن الواتساب غير موجود',
+            'whatsapp_exists': False
+        }
+    
+    # ⚠️ واتساب غير مؤكد
     else:
         return {
-            'is_valid': True,  # نقبل الرقم مع تحذير
-            'formatted': normalized_phone,
-            'country': 'مصر',
-            'carrier': carrier_info['name'],
-            'carrier_en': carrier_info['carrier_en'],
+            **base_result,
             'whatsapp_status': f'غير مؤكد ⚠️ ({whatsapp_check["confidence"]})',
-            'verification_method': whatsapp_check['method'],
             'confidence': whatsapp_check['confidence'],
-            'methods_analysis': whatsapp_check.get('details', []),
-            'message': f"رقم صحيح ولكن {whatsapp_check['message']}",
-            'quick_check': True
+            'message': f'⚠️ رقم {mobile_data["carrier_name"]} صحيح - {whatsapp_check["message"]}',
+            'whatsapp_exists': None,
+            'warning': 'لا يمكن التأكد من وجود الواتساب'
         }
 
 # باقي دوال التطبيق

@@ -485,19 +485,181 @@ function setupDynamicInputs() {
         }
     });
     
-    // معالجة خاصة لكارت تيلدا (تنسيق الأرقام)
+// نظام تيلدا المحسن - تنسيق متطور للبطاقات
+function initializeTeldaCardSystem() {
     const teldaInput = document.getElementById('telda_card') || document.getElementById('card-number');
-    if (teldaInput) {
-        teldaInput.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\s/g, '').replace(/[^0-9]/gi, '');
-            let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
-            if (formattedValue !== e.target.value) {
-                e.target.value = formattedValue;
-            }
-            validatePaymentInput(this);
-            checkFormValidity();
-        });
+    if (!teldaInput) return;
+    
+    // إضافة أيقونة تيلدا
+    const inputContainer = teldaInput.parentNode;
+    if (!inputContainer.querySelector('.telda-icon')) {
+        const teldaIcon = document.createElement('div');
+        teldaIcon.className = 'telda-icon';
+        teldaIcon.innerHTML = '<i class="fas fa-credit-card"></i>';
+        inputContainer.style.position = 'relative';
+        inputContainer.appendChild(teldaIcon);
     }
+    
+    // معالج الإدخال المحسن
+    teldaInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/[^\d]/g, ''); // أرقام فقط
+        let formattedValue = '';
+        
+        // تنسيق بصيغة 1234-5678-9012-3456
+        for (let i = 0; i < value.length; i += 4) {
+            if (i > 0) formattedValue += '-';
+            formattedValue += value.substr(i, 4);
+        }
+        
+        // تحديد طول مناسب (16 رقم + 3 شرطات = 19 حرف)
+        if (formattedValue.length <= 19) {
+            e.target.value = formattedValue;
+        }
+        
+        // التحقق الفوري
+        validateTeldaCard(e.target);
+        addTeldaVisualEffects(e.target, value);
+        checkFormValidity();
+    });
+    
+    // معالج اللصق المحسن
+    teldaInput.addEventListener('paste', function(e) {
+        e.preventDefault();
+        let pastedText = (e.clipboardData || window.clipboardData).getData('text');
+        let numbers = pastedText.replace(/[^\d]/g, '');
+        
+        if (numbers.length <= 16) {
+            this.value = numbers;
+            this.dispatchEvent(new Event('input'));
+        }
+    });
+    
+    // تأثيرات التركيز
+    teldaInput.addEventListener('focus', function() {
+        this.parentNode.classList.add('telda-focused');
+    });
+    
+    teldaInput.addEventListener('blur', function() {
+        this.parentNode.classList.remove('telda-focused');
+        finalTeldaValidation(this);
+    });
+}
+
+// التحقق من صحة كارت تيلدا
+function validateTeldaCard(input) {
+    const value = input.value;
+    const numbersOnly = value.replace(/[^\d]/g, '');
+    const container = input.parentNode;
+    
+    // إزالة تأثيرات سابقة
+    container.classList.remove('telda-valid', 'telda-invalid', 'telda-partial');
+    
+    if (numbersOnly.length === 0) {
+        return;
+    } else if (numbersOnly.length < 16) {
+        container.classList.add('telda-partial');
+        showTeldaStatus(input, 'جاري الكتابة...', 'partial');
+    } else if (numbersOnly.length === 16) {
+        container.classList.add('telda-valid');
+        showTeldaStatus(input, '✅ رقم كارت صحيح', 'valid');
+        
+        // اهتزاز نجاح
+        if (navigator.vibrate) {
+            navigator.vibrate([50, 30, 50]);
+        }
+    } else {
+        container.classList.add('telda-invalid');
+        showTeldaStatus(input, '❌ رقم طويل جداً', 'invalid');
+    }
+}
+
+// التحقق النهائي لكارت تيلدا
+function finalTeldaValidation(input) {
+    const numbersOnly = input.value.replace(/[^\d]/g, '');
+    
+    if (numbersOnly.length > 0 && numbersOnly.length !== 16) {
+        showTeldaStatus(input, '⚠️ رقم كارت تيلدا يجب أن يكون 16 رقم', 'invalid');
+    }
+}
+
+// عرض حالة تيلدا
+function showTeldaStatus(input, message, type) {
+    const existingStatus = input.parentNode.querySelector('.telda-status');
+    if (existingStatus) {
+        existingStatus.remove();
+    }
+    
+    if (!message) return;
+    
+    const statusDiv = document.createElement('div');
+    statusDiv.className = `telda-status telda-${type}`;
+    statusDiv.textContent = message;
+    
+    input.parentNode.appendChild(statusDiv);
+    
+    setTimeout(() => {
+        statusDiv.classList.add('show');
+    }, 100);
+    
+    // إزالة تلقائية بعد 3 ثوان للرسائل الجزئية
+    if (type === 'partial') {
+        setTimeout(() => {
+            if (statusDiv.parentNode) {
+                statusDiv.classList.remove('show');
+                setTimeout(() => statusDiv.remove(), 300);
+            }
+        }, 3000);
+    }
+}
+
+// تأثيرات بصرية لتيلدا
+function addTeldaVisualEffects(input, numbersValue) {
+    const container = input.parentNode;
+    
+    // تأثير النبض للأرقام الجديدة
+    if (numbersValue.length > 0 && numbersValue.length % 4 === 0) {
+        container.classList.add('telda-pulse');
+        setTimeout(() => {
+            container.classList.remove('telda-pulse');
+        }, 200);
+    }
+    
+    // شريط التقدم
+    updateTeldaProgressBar(input, numbersValue.length);
+}
+
+// شريط تقدم تيلدا
+function updateTeldaProgressBar(input, length) {
+    let progressBar = input.parentNode.querySelector('.telda-progress');
+    
+    if (!progressBar) {
+        progressBar = document.createElement('div');
+        progressBar.className = 'telda-progress';
+        progressBar.innerHTML = '<div class="telda-progress-fill"></div>';
+        input.parentNode.appendChild(progressBar);
+    }
+    
+    const progressFill = progressBar.querySelector('.telda-progress-fill');
+    const percentage = Math.min((length / 16) * 100, 100);
+    
+    progressFill.style.width = percentage + '%';
+    
+    // ألوان مختلفة حسب التقدم
+    if (percentage < 25) {
+        progressFill.style.background = '#ef4444';
+    } else if (percentage < 50) {
+        progressFill.style.background = '#f97316';
+    } else if (percentage < 75) {
+        progressFill.style.background = '#eab308';
+    } else if (percentage < 100) {
+        progressFill.style.background = '#22c55e';
+    } else {
+        progressFill.style.background = '#10b981';
+    }
+}
+
+// معالجة خاصة لكارت تيلدا (تنسيق الأرقام) - استبدال الكود القديم
+initializeTeldaCardSystem();
 }
 
 // التحقق من صحة حقول الدفع

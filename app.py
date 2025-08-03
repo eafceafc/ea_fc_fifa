@@ -49,20 +49,49 @@ def sanitize_input(text):
     return text.strip()
 
 def normalize_phone_number(phone):
-    """تطبيع رقم الهاتف"""
+    """تطبيع رقم الهاتف - محسن للأرقام المصرية 11 رقم فقط"""
     if not phone:
         return ""
     
+    # إزالة كل شيء عدا الأرقام وعلامة +
     clean_phone = re.sub(r'[^\d+]', '', phone)
     
-    if clean_phone.startswith('00'):
-        clean_phone = '+' + clean_phone[2:]
-    elif clean_phone.startswith('01') and len(clean_phone) == 11:
-        clean_phone = '+2' + clean_phone
-    elif re.match(r'^\d{12,15}$', clean_phone) and not clean_phone.startswith('01'):
-        clean_phone = '+' + clean_phone
+    # 🔥 التحقق من الأرقام المصرية (11 رقم) - التحسين الجديد
+    if clean_phone.startswith('01') and len(clean_phone) == 11:
+        # التحقق من أن الرقم يبدأ بكود شركة صحيح
+        if clean_phone.startswith(('010', '011', '012', '015')):
+            return '+2' + clean_phone  # +2 + 11 رقم = 13 رقم نهائي
+        else:
+            return ""  # رقم مصري غير صحيح
     
-    return clean_phone
+    # للأرقام التي تبدأ بـ 00
+    elif clean_phone.startswith('002') and len(clean_phone) == 14:
+        # التحقق من الكود المصري
+        egyptian_part = clean_phone[3:]  # إزالة 002
+        if len(egyptian_part) == 11 and egyptian_part.startswith(('010', '011', '012', '015')):
+            return '+2' + egyptian_part
+        else:
+            return ""
+    
+    # للأرقام التي تبدأ بـ +2
+    elif clean_phone.startswith('+2') and len(clean_phone) == 13:
+        egyptian_part = clean_phone[2:]  # إزالة +2
+        if len(egyptian_part) == 11 and egyptian_part.startswith(('010', '011', '012', '015')):
+            return clean_phone
+        else:
+            return ""
+    
+    # للأرقام التي تبدأ بـ 2 مباشرة
+    elif clean_phone.startswith('2') and len(clean_phone) == 12:
+        egyptian_part = clean_phone[1:]  # إزالة 2
+        if len(egyptian_part) == 11 and egyptian_part.startswith(('010', '011', '012', '015')):
+            return '+' + clean_phone
+        else:
+            return ""
+    
+    # رفض أي شيء آخر
+    else:
+        return ""
 
 def check_whatsapp_ultimate_method(phone_number):
     """
@@ -252,39 +281,59 @@ def check_whatsapp_ultimate_method(phone_number):
     }
 
 def validate_whatsapp_ultimate(phone):
-    """الدالة النهائية للتحقق المبتكر من الواتساب"""
+    """الدالة النهائية للتحقق المبتكر من الواتساب - محسنة للأرقام المصرية"""
     if not phone:
         return {'is_valid': False, 'error': 'يرجى إدخال رقم الهاتف'}
     
+    # 🔥 التحقق السريع من الطول أولاً (تحسين الأداء)
+    clean_input = re.sub(r'[^\d]', '', phone)
+    if len(clean_input) != 11 or not clean_input.startswith(('010', '011', '012', '015')):
+        return {
+            'is_valid': False, 
+            'error': 'يجب أن يكون الرقم 11 رقماً ويبدأ بـ 010/011/012/015'
+        }
+    
+    # تطبيع الرقم
     normalized_phone = normalize_phone_number(phone)
     
-    if not re.match(r'^\+[1-9]\d{7,14}$', normalized_phone):
-        return {'is_valid': False, 'error': 'تنسيق الرقم غير صحيح'}
+    # التحقق من نجاح التطبيع
+    if not normalized_phone:
+        return {
+            'is_valid': False, 
+            'error': 'تنسيق الرقم غير صحيح - يجب أن يكون رقم مصري صحيح'
+        }
     
-    # التحقق بالطريقة المبتكرة
+    # التحقق النهائي من التنسيق (+2 + 11 رقم = 13 حرف)
+    if not re.match(r'^\+2(010|011|012|015)\d{8}$', normalized_phone):
+        return {
+            'is_valid': False, 
+            'error': 'تنسيق الرقم المصري غير صحيح'
+        }
+    
+    # 🚀 التحقق السريع عند وصول 11 رقم صحيح
+    print(f"✅ تم التحقق السريع من الرقم: {normalized_phone}")
+    
+    # التحقق بالطريقة المبتكرة من الواتساب
     whatsapp_check = check_whatsapp_ultimate_method(normalized_phone)
     
-    # الحصول على معلومات إضافية عن الرقم
-    try:
-        parsed_number = phonenumbers.parse(normalized_phone, None)
-        country = geocoder.description_for_number(parsed_number, "ar") or "غير معروف"
-        carrier_name = carrier.name_for_number(parsed_number, "ar") or "غير معروف"
-    except:
-        country = "غير معروف"
-        carrier_name = "غير معروف"
+    # الحصول على معلومات الشركة المصرية
+    carrier_code = clean_input[:3]  # 010, 011, 012, 015
+    carrier_info = EGYPTIAN_CARRIERS.get(carrier_code, {'name': 'غير معروف', 'carrier_en': 'Unknown'})
     
     if whatsapp_check['exists'] is True:
         return {
             'is_valid': True,
             'formatted': normalized_phone,
-            'country': country,
-            'carrier': carrier_name,
+            'country': 'مصر',
+            'carrier': carrier_info['name'],
+            'carrier_en': carrier_info['carrier_en'],
             'whatsapp_status': f'موجود ✅ ({whatsapp_check["confidence"]})',
             'verification_method': whatsapp_check['method'],
             'confidence': whatsapp_check['confidence'],
             'score': whatsapp_check.get('score', 0),
             'methods_analysis': whatsapp_check.get('details', []),
-            'message': whatsapp_check['message']
+            'message': whatsapp_check['message'],
+            'quick_check': True  # إشارة للتحقق السريع
         }
     elif whatsapp_check['exists'] is False:
         return {
@@ -293,19 +342,22 @@ def validate_whatsapp_ultimate(phone):
             'formatted': normalized_phone,
             'verification_method': whatsapp_check['method'],
             'confidence': whatsapp_check['confidence'],
-            'methods_analysis': whatsapp_check.get('details', [])
+            'methods_analysis': whatsapp_check.get('details', []),
+            'quick_check': True
         }
     else:
         return {
             'is_valid': True,  # نقبل الرقم مع تحذير
             'formatted': normalized_phone,
-            'country': country,
-            'carrier': carrier_name,
+            'country': 'مصر',
+            'carrier': carrier_info['name'],
+            'carrier_en': carrier_info['carrier_en'],
             'whatsapp_status': f'غير مؤكد ⚠️ ({whatsapp_check["confidence"]})',
             'verification_method': whatsapp_check['method'],
             'confidence': whatsapp_check['confidence'],
             'methods_analysis': whatsapp_check.get('details', []),
-            'message': f"رقم صحيح ولكن {whatsapp_check['message']}"
+            'message': f"رقم صحيح ولكن {whatsapp_check['message']}",
+            'quick_check': True
         }
 
 # باقي دوال التطبيق

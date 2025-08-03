@@ -1582,4 +1582,201 @@ window.addEventListener('beforeunload', function() {
     cleanupTelegramTimers();
 });
 
+// نظام إدارة البريد الإلكتروني المتعدد
+let emailAddresses = [];
+const maxEmails = 6; // الحد الأقصى للإيميلات
+
+// إضافة بريد إلكتروني جديد
+function addNewEmail() {
+    const emailInput = document.getElementById('newEmailInput');
+    const email = emailInput.value.trim();
+    
+    if (!email) {
+        showNotification('يرجى إدخال البريد الإلكتروني', 'error');
+        emailInput.focus();
+        return;
+    }
+    
+    if (!isValidEmail(email)) {
+        showNotification('البريد الإلكتروني غير صحيح', 'error');
+        emailInput.focus();
+        return;
+    }
+    
+    if (emailAddresses.includes(email.toLowerCase())) {
+        showNotification('هذا البريد مضاف بالفعل', 'error');
+        emailInput.focus();
+        return;
+    }
+    
+    if (emailAddresses.length >= maxEmails) {
+        showNotification(`لا يمكن إضافة أكثر من ${maxEmails} عناوين بريد`, 'error');
+        return;
+    }
+    
+    // إضافة الإيميل للقائمة
+    emailAddresses.push(email.toLowerCase());
+    
+    // إنشاء عنصر الإيميل الجديد
+    createEmailElement(email, emailAddresses.length);
+    
+    // تنظيف الحقل
+    emailInput.value = '';
+    emailInput.focus();
+    
+    // تحديث الحقل المخفي
+    updateEmailsInput();
+    
+    // تحديث حالة الزر
+    updateAddEmailButton();
+    
+    // رسالة نجاح
+    showNotification(`تم إضافة البريد رقم ${emailAddresses.length}`, 'success');
+    
+    // اهتزاز للهواتف
+    if (navigator.vibrate) {
+        navigator.vibrate([50, 50, 100]);
+    }
+}
+
+// إنشاء عنصر البريد الإلكتروني
+function createEmailElement(email, number) {
+    const container = document.getElementById('emailsContainer');
+    
+    // إزالة رسالة "فارغ" إن وجدت
+    const emptyMsg = container.querySelector('.emails-empty');
+    if (emptyMsg) {
+        emptyMsg.remove();
+    }
+    
+    const emailDiv = document.createElement('div');
+    emailDiv.className = `email-item email-${number}`;
+    emailDiv.setAttribute('data-email', email);
+    
+    emailDiv.innerHTML = `
+        <div class="email-number">${number}</div>
+        <div class="email-text">${email}</div>
+        <button type="button" class="delete-email-btn" onclick="removeEmail('${email}')" title="حذف البريد">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    container.appendChild(emailDiv);
+}
+
+// حذف بريد إلكتروني
+function removeEmail(email) {
+    const emailElement = document.querySelector(`[data-email="${email}"]`);
+    if (!emailElement) return;
+    
+    // تأثير الحذف
+    emailElement.classList.add('removing');
+    
+    setTimeout(() => {
+        // إزالة من القائمة
+        const index = emailAddresses.indexOf(email);
+        if (index > -1) {
+            emailAddresses.splice(index, 1);
+        }
+        
+        // إزالة العنصر
+        emailElement.remove();
+        
+        // إعادة ترقيم الإيميلات
+        renumberEmails();
+        
+        // تحديث الحقل المخفي
+        updateEmailsInput();
+        
+        // تحديث حالة الزر
+        updateAddEmailButton();
+        
+        // إضافة رسالة فارغة إذا لم تعد هناك إيميلات
+        if (emailAddresses.length === 0) {
+            addEmptyMessage();
+        }
+        
+        showNotification('تم حذف البريد الإلكتروني', 'success');
+        
+    }, 400);
+}
+
+// إعادة ترقيم الإيميلات بعد الحذف
+function renumberEmails() {
+    const emailItems = document.querySelectorAll('.email-item:not(.removing)');
+    
+    emailItems.forEach((item, index) => {
+        const newNumber = index + 1;
+        const numberElement = item.querySelector('.email-number');
+        
+        // تحديث الرقم
+        numberElement.textContent = newNumber;
+        
+        // تحديث الكلاس
+        item.className = `email-item email-${newNumber}`;
+    });
+}
+
+// إضافة رسالة فارغة
+function addEmptyMessage() {
+    const container = document.getElementById('emailsContainer');
+    const emptyDiv = document.createElement('div');
+    emptyDiv.className = 'emails-empty';
+    emptyDiv.innerHTML = '<i class="fas fa-envelope-open"></i> لم تتم إضافة أي عناوين بريد إلكتروني';
+    container.appendChild(emptyDiv);
+}
+
+// تحديث الحقل المخفي
+function updateEmailsInput() {
+    const input = document.getElementById('emailAddressesInput');
+    input.value = JSON.stringify(emailAddresses);
+}
+
+// تحديث حالة زر الإضافة
+function updateAddEmailButton() {
+    const button = document.querySelector('.add-email-btn');
+    
+    if (emailAddresses.length >= maxEmails) {
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-check"></i> تم الوصول للحد الأقصى';
+    } else {
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-plus"></i> إضافة بريد إلكتروني';
+    }
+}
+
+// التحقق من صحة البريد الإلكتروني
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+// إضافة مستمع للمفتاح Enter في حقل الإيميل
+document.addEventListener('DOMContentLoaded', function() {
+    const emailInput = document.getElementById('newEmailInput');
+    if (emailInput) {
+        emailInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addNewEmail();
+            }
+        });
+        
+        // التحقق أثناء الكتابة
+        emailInput.addEventListener('input', function() {
+            const email = this.value.trim();
+            if (email && !isValidEmail(email)) {
+                this.style.borderColor = '#EF4444';
+            } else {
+                this.style.borderColor = '';
+            }
+        });
+    }
+    
+    // إضافة رسالة فارغة في البداية
+    if (emailAddresses.length === 0) {
+        addEmptyMessage();
+    }
+});
+
 console.log('🔗 Telegram system updated - Auto-link with single button');

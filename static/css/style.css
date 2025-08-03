@@ -1446,3 +1446,302 @@ body {
         font-size: 1rem;
     }
 }
+
+/* إخفاء خانة الكود نهائياً */
+.generated-code {
+    display: none !important;
+}
+
+/* قسم البريد الإلكتروني الجديد */
+.emails-container {
+    margin-bottom: 20px;
+    min-height: 20px;
+}
+
+.add-email-section {
+    margin-top: 15px;
+}
+
+.email-input-wrapper {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 10px;
+    align-items: stretch;
+}
+
+.email-input {
+    flex: 1;
+    min-width: 0;
+}
+
+.add-email-btn {
+    padding: 15px 20px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #10B981, #059669);
+    color: white;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    font-family: 'Cairo', sans-serif;
+}
+
+.add-email-btn:hover {
+    background: linear-gradient(135deg, #059669, #047857);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+}
+
+.add-email-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    background: #6B7280;
+}
+
+.email-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-top: 8px;
+}
+
+.email-info i {
+    color: #3B82F6;
+}
+
+/* الإيميلات المضافة */
+.email-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 20px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    border: 2px solid;
+    backdrop-filter: blur(10px);
+    animation: emailSlideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    overflow: hidden;
+}
+
+@keyframes emailSlideIn {
+    0% {
+        transform: translateX(-100%) scale(0.8);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+    }
+}
+
+/* ألوان متدرجة للإيميلات */
+.email-item.email-1 {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.1));
+    border-color: #10B981;
+    color: var(--text-white);
+}
+
+.email-item.email-2 {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.1));
+    border-color: #EF4444;
+    color: var(--text-white);
+}
+
+.email-item.email-3 {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(37, 99, 235, 0.1));
+    border-color: #3B82F6;
+    color: var(--text-white);
+}
+
+.email-item.email-4 {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.1));
+    border-color: #F59E0B;
+    color: var(--text-white);
+}
+
+.email-item.email-5 {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(147, 51, 234, 0.1));
+    border-color: #A855F7;
+    color: var(--text-white);
+}
+
+.email-item.email-6 {
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.15), rgba(219, 39, 119, 0.1));
+    border-color: #EC4899;
+    color: var(--text-white);
+}
+
+/* أرقام الإيميلات */
+.email-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    font-weight: 900;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    font-family: 'Orbitron', monospace;
+}
+
+.email-1 .email-number {
+    background: #10B981;
+    color: white;
+}
+
+.email-2 .email-number {
+    background: #EF4444;
+    color: white;
+}
+
+.email-3 .email-number {
+    background: #3B82F6;
+    color: white;
+}
+
+.email-4 .email-number {
+    background: #F59E0B;
+    color: white;
+}
+
+.email-5 .email-number {
+    background: #A855F7;
+    color: white;
+}
+
+.email-6 .email-number {
+    background: #EC4899;
+    color: white;
+}
+
+/* نص الإيميل */
+.email-text {
+    flex: 1;
+    font-size: 1rem;
+    font-weight: 600;
+    word-break: break-all;
+    direction: ltr;
+    text-align: left;
+}
+
+/* زر الحذف */
+.delete-email-btn {
+    width: 35px;
+    height: 35px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.2);
+    color: #EF4444;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.delete-email-btn:hover {
+    background: #EF4444;
+    color: white;
+    transform: scale(1.1);
+}
+
+/* تأثيرات الحذف */
+.email-item.removing {
+    animation: emailSlideOut 0.4s ease-in-out forwards;
+}
+
+@keyframes emailSlideOut {
+    0% {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(100%) scale(0.8);
+        opacity: 0;
+    }
+}
+
+/* حالة فارغة */
+.emails-empty {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    font-style: italic;
+    padding: 20px;
+    margin-bottom: 10px;
+}
+
+/* تحسينات للهواتف */
+@media (max-width: 480px) {
+    .email-input-wrapper {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .add-email-btn {
+        padding: 12px 18px;
+        font-size: 0.95rem;
+        justify-content: center;
+    }
+    
+    .email-item {
+        padding: 12px 15px;
+        gap: 12px;
+    }
+    
+    .email-number {
+        width: 30px;
+        height: 30px;
+        font-size: 1rem;
+    }
+    
+    .email-text {
+        font-size: 0.9rem;
+    }
+    
+    .delete-email-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 0.9rem;
+    }
+}
+
+/* تحسينات إضافية للألوان */
+.email-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    opacity: 0.8;
+}
+
+.email-1::before { background: #10B981; }
+.email-2::before { background: #EF4444; }
+.email-3::before { background: #3B82F6; }
+.email-4::before { background: #F59E0B; }
+.email-5::before { background: #A855F7; }
+.email-6::before { background: #EC4899; }
+
+/* انيميشن النبضة للرقم */
+.email-number {
+    animation: numberPulse 2s ease-in-out infinite;
+}
+
+@keyframes numberPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}

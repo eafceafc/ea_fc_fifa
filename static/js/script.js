@@ -485,19 +485,176 @@ function setupDynamicInputs() {
         }
     });
     
-    // معالجة خاصة لكارت تيلدا (تنسيق الأرقام)
-    const teldaInput = document.getElementById('telda_card') || document.getElementById('card-number');
-    if (teldaInput) {
-        teldaInput.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\s/g, '').replace(/[^0-9]/gi, '');
-            let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
-            if (formattedValue !== e.target.value) {
-                e.target.value = formattedValue;
+// معالجة خاصة لكارت تيلدا (تنسيق الأرقام المحسن)
+const teldaInput = document.getElementById('telda_card') || document.getElementById('card-number');
+if (teldaInput) {
+    // تنسيق فوري أثناء الكتابة
+    teldaInput.addEventListener('input', function(e) {
+        let value = e.target.value;
+        
+        // إزالة كل شيء غير الأرقام والشرطات
+        let numbersOnly = value.replace(/[^0-9-]/g, '');
+        
+        // إزالة الشرطات للحصول على الأرقام فقط
+        let digitsOnly = numbersOnly.replace(/-/g, '');
+        
+        // تحديد الحد الأقصى للأرقام (16 رقم فقط)
+        if (digitsOnly.length > 16) {
+            digitsOnly = digitsOnly.substring(0, 16);
+        }
+        
+        // تطبيق التنسيق التلقائي
+        let formatted = formatTeldaCardNumber(digitsOnly);
+        
+        // تحديث القيمة فقط إذا تغيرت
+        if (formatted !== e.target.value) {
+            e.target.value = formatted;
+            
+            // وضع المؤشر في المكان الصحيح
+            setCursorPosition(e.target, formatted);
+        }
+        
+        // التحقق من صحة الرقم
+        validateTeldaCard(this);
+        checkFormValidity();
+    });
+    
+    // منع لصق نص غير صحيح
+    teldaInput.addEventListener('paste', function(e) {
+        setTimeout(() => {
+            let value = e.target.value;
+            let digitsOnly = value.replace(/[^0-9]/g, '');
+            
+            if (digitsOnly.length > 16) {
+                digitsOnly = digitsOnly.substring(0, 16);
             }
-            validatePaymentInput(this);
+            
+            e.target.value = formatTeldaCardNumber(digitsOnly);
+            validateTeldaCard(e.target);
             checkFormValidity();
-        });
+        }, 10);
+    });
+    
+    // منع كتابة أحرف غير مرغوب فيها
+    teldaInput.addEventListener('keypress', function(e) {
+        // السماح فقط بالأرقام ومفاتيح التحكم
+        const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight'];
+        
+        if (allowedKeys.includes(e.key)) {
+            return; // السماح بمفاتيح التحكم
+        }
+        
+        // السماح فقط بالأرقام
+        if (!/[0-9]/.test(e.key)) {
+            e.preventDefault();
+            return;
+        }
+        
+        // منع كتابة أكثر من 16 رقم
+        let digitsOnly = e.target.value.replace(/[^0-9]/g, '');
+        if (digitsOnly.length >= 16) {
+            e.preventDefault();
+        }
+    });
+}
+
+// دالة تنسيق رقم بطاقة تيلدا
+function formatTeldaCardNumber(digits) {
+    if (!digits) return '';
+    
+    // تقسيم الأرقام إلى مجموعات من 4
+    let formatted = '';
+    for (let i = 0; i < digits.length; i += 4) {
+        if (i > 0) formatted += '-';
+        formatted += digits.substring(i, i + 4);
     }
+    
+    return formatted;
+}
+
+// وضع المؤشر في المكان الصحيح
+function setCursorPosition(input, value) {
+    // حفظ موقع المؤشر الحالي
+    let cursorPos = input.selectionStart;
+    
+    // حساب الموقع الجديد بعد التنسيق
+    let beforeCursor = value.substring(0, cursorPos);
+    let dashesBeforeCursor = (beforeCursor.match(/-/g) || []).length;
+    
+    // وضع المؤشر في المكان الصحيح
+    setTimeout(() => {
+        let newPosition = cursorPos;
+        if (dashesBeforeCursor > 0) {
+            newPosition = cursorPos;
+        }
+        input.setSelectionRange(newPosition, newPosition);
+    }, 0);
+}
+
+// التحقق من صحة بطاقة تيلدا
+function validateTeldaCard(input) {
+    const value = input.value.trim();
+    const digitsOnly = value.replace(/[^0-9]/g, '');
+    
+    // إزالة التحقق السابق
+    const container = input.closest('.form-group');
+    const existingFeedback = container.querySelector('.telda-feedback');
+    if (existingFeedback) {
+        existingFeedback.remove();
+    }
+    
+    if (!value) {
+        updateValidationUI(input, true, '');
+        return true;
+    }
+    
+    // تحديد حالة التحقق
+    let isValid = false;
+    let message = '';
+    let feedbackClass = '';
+    
+    if (digitsOnly.length < 16) {
+        isValid = false;
+        message = `يرجى إدخال ${16 - digitsOnly.length} رقم إضافي`;
+        feedbackClass = 'warning';
+    } else if (digitsOnly.length === 16) {
+        isValid = true;
+        message = 'رقم البطاقة صحيح ✓';
+        feedbackClass = 'success';
+    } else {
+        isValid = false;
+        message = 'رقم البطاقة يجب أن يكون 16 رقماً فقط';
+        feedbackClass = 'error';
+    }
+    
+    // إظهار رسالة التحقق
+    showTeldaFeedback(container, message, feedbackClass);
+    updateValidationUI(input, isValid, isValid ? message : '');
+    
+    return isValid;
+}
+
+// إظهار رسالة تحقق تيلدا
+function showTeldaFeedback(container, message, type) {
+    const feedback = document.createElement('div');
+    feedback.className = `telda-feedback telda-${type}`;
+    
+    const icon = type === 'success' ? 'fa-check-circle' : 
+                 type === 'warning' ? 'fa-exclamation-triangle' : 'fa-times-circle';
+    
+    feedback.innerHTML = `
+        <div class="feedback-content">
+            <i class="fas ${icon}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    container.appendChild(feedback);
+    
+    // انيميشن الظهور
+    setTimeout(() => {
+        feedback.classList.add('show');
+    }, 100);
 }
 
 // التحقق من صحة حقول الدفع

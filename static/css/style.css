@@ -1745,3 +1745,143 @@ body {
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.05); }
 }
+
+/* معاينة روابط InstaPay */
+.instapay-preview {
+    margin-top: 15px;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.15));
+    border: 2px solid #10B981;
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.4s ease;
+}
+
+.instapay-preview.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.preview-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    color: #10B981;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.preview-header i {
+    font-size: 1.2rem;
+}
+
+.extracted-link {
+    margin-bottom: 20px;
+}
+
+.link-label {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.link-url {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 12px 15px;
+    color: #10B981;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95rem;
+    font-weight: 600;
+    word-break: break-all;
+    direction: ltr;
+    text-align: left;
+}
+
+.preview-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.test-link-btn,
+.copy-link-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: 'Cairo', sans-serif;
+}
+
+.test-link-btn {
+    background: linear-gradient(135deg, #3B82F6, #2563EB);
+    color: white;
+    border: 2px solid #3B82F6;
+}
+
+.test-link-btn:hover {
+    background: linear-gradient(135deg, #2563EB, #1D4ED8);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+}
+
+.copy-link-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-white);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.copy-link-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
+}
+
+/* انيميشن للتأكيد */
+.instapay-preview.success {
+    animation: successGlow 1s ease-in-out;
+}
+
+@keyframes successGlow {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 25px rgba(16, 185, 129, 0.6);
+    }
+}
+
+/* تحسينات للهواتف */
+@media (max-width: 480px) {
+    .instapay-preview {
+        padding: 15px;
+    }
+    
+    .preview-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .test-link-btn,
+    .copy-link-btn {
+        padding: 10px 14px;
+        font-size: 0.85rem;
+    }
+    
+    .link-url {
+        font-size: 0.85rem;
+        padding: 10px 12px;
+    }
+}

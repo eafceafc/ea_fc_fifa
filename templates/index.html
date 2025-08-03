@@ -161,6 +161,40 @@
                 </div>
             </div>
 
+<!-- قسم البريد الإلكتروني الجديد -->
+<div class="form-group">
+    <label>
+        <i class="fas fa-envelope"></i>
+        البريد الإلكتروني (اختياري)
+    </label>
+    <div class="emails-container" id="emailsContainer">
+        <!-- هنا هتظهر الإيميلات -->
+    </div>
+    
+    <div class="add-email-section">
+        <div class="email-input-wrapper">
+            <input 
+                type="email" 
+                id="newEmailInput" 
+                class="form-input email-input" 
+                placeholder="مثال: your.email@gmail.com"
+                autocomplete="email"
+            >
+            <button type="button" class="add-email-btn" onclick="addNewEmail()">
+                <i class="fas fa-plus"></i>
+                إضافة بريد إلكتروني
+            </button>
+        </div>
+        <div class="email-info">
+            <i class="fas fa-info-circle"></i>
+            يمكنك إضافة عدة عناوين بريد إلكتروني للتواصل
+        </div>
+    </div>
+    
+    <!-- حقل مخفي لحفظ الإيميلات -->
+    <input type="hidden" name="email_addresses" id="emailAddressesInput" value="">
+</div>
+
             <!-- زر التليجرام الكبير -->
             <div class="telegram-section">
                 <button type="button" class="telegram-btn" id="telegramBtn" onclick="generateTelegramCode()">

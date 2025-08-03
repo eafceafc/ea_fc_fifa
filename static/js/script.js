@@ -657,7 +657,7 @@ function showTeldaFeedback(container, message, type) {
     }, 100);
 }
 
-// التحقق من صحة حقول الدفع
+// تحديث دالة validatePaymentInput لتدعم تيلدا المحسن
 function validatePaymentInput(input) {
     const value = input.value.trim();
     const inputId = input.id;
@@ -665,7 +665,7 @@ function validatePaymentInput(input) {
     let errorMessage = '';
     
     if (!value) {
-        updateValidationUI(input, true, ''); // فارغ = صحيح للحقول الاختيارية
+        updateValidationUI(input, true, '');
         return true;
     }
     
@@ -675,11 +675,10 @@ function validatePaymentInput(input) {
         isValid = /^01[0125][0-9]{8}$/.test(value) && value.length === 11;
         errorMessage = isValid ? '' : 'رقم المحفظة يجب أن يكون 11 رقم ويبدأ بـ 010، 011، 012، أو 015';
     }
-    // التحقق من كارت تيلدا (16 رقم)
+    // التحقق المحسن من كارت تيلدا (16 رقم مع شرطات)
     else if (['telda_card', 'card-number'].includes(inputId)) {
-        const numbersOnly = value.replace(/\s/g, '');
-        isValid = /^\d{16}$/.test(numbersOnly);
-        errorMessage = isValid ? '' : 'رقم كارت تيلدا يجب أن يكون 16 رقم';
+        // استخدام الدالة المخصصة لتيلدا
+        return validateTeldaCard(input);
     }
     // التحقق من رابط إنستا باي
     else if (['instapay_link', 'payment-link'].includes(inputId)) {
@@ -690,6 +689,62 @@ function validatePaymentInput(input) {
     updateValidationUI(input, isValid, errorMessage);
     return isValid;
 }
+
+// إضافة أنماط بصرية للحقل
+function updateValidationUI(input, isValid, message) {
+    const container = input.closest('.form-group');
+    if (!container) return;
+    
+    // إزالة الكلاسات الموجودة
+    container.classList.remove('valid', 'invalid');
+    input.classList.remove('valid', 'invalid', 'telda-valid', 'telda-warning', 'telda-invalid');
+    
+    // إزالة رسائل الخطأ الموجودة (باستثناء رسائل تيلدا)
+    const existingError = container.querySelector('.error-message');
+    const existingSuccess = container.querySelector('.success-message');
+    if (existingError) existingError.remove();
+    if (existingSuccess) existingSuccess.remove();
+    
+    if (message) {
+        if (isValid) {
+            container.classList.add('valid');
+            input.classList.add('valid');
+            
+            // إضافة كلاس خاص لتيلدا
+            if (['telda_card', 'card-number'].includes(input.id)) {
+                input.classList.add('telda-valid');
+            }
+            
+            if (message.includes('✓')) {
+                const successMsg = document.createElement('div');
+                successMsg.className = 'success-message';
+                successMsg.textContent = message;
+                container.appendChild(successMsg);
+            }
+        } else {
+            container.classList.add('invalid');
+            input.classList.add('invalid');
+            
+            // إضافة كلاس خاص لتيلدا
+            if (['telda_card', 'card-number'].includes(input.id)) {
+                input.classList.add('telda-invalid');
+            }
+            
+            const errorMsg = document.createElement('div');
+            errorMsg.className = 'error-message';
+            errorMsg.textContent = message;
+            container.appendChild(errorMsg);
+        }
+    } else if (isValid) {
+        container.classList.add('valid');
+        input.classList.add('valid');
+        
+        if (['telda_card', 'card-number'].includes(input.id)) {
+            input.classList.add('telda-valid');
+        }
+    }
+}
+
 
 // التحقق الشامل من طرق الدفع
 function validatePaymentMethod() {

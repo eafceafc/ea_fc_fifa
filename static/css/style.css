@@ -1885,3 +1885,132 @@ body {
         padding: 10px 12px;
     }
 }
+
+/* تحسينات بطاقة تيلدا */
+.telda-feedback {
+    margin-top: 12px;
+    padding: 12px 15px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+.telda-feedback.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.feedback-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* أنواع رسائل التحقق */
+.telda-success {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.1));
+    border: 2px solid #10B981;
+    color: var(--text-white);
+}
+
+.telda-success .feedback-content i {
+    color: #10B981;
+    animation: successBounce 1s ease-out;
+}
+
+.telda-warning {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.1));
+    border: 2px solid #F59E0B;
+    color: var(--text-white);
+}
+
+.telda-warning .feedback-content i {
+    color: #F59E0B;
+    animation: warningPulse 2s infinite;
+}
+
+.telda-error {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.1));
+    border: 2px solid #EF4444;
+    color: var(--text-white);
+}
+
+.telda-error .feedback-content i {
+    color: #EF4444;
+    animation: errorShake 0.5s ease-in-out;
+}
+
+/* انيميشن النجاح */
+@keyframes successBounce {
+    0% { transform: scale(0.5); opacity: 0; }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* انيميشن التحذير */
+@keyframes warningPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+/* انيميشن الخطأ */
+@keyframes errorShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-3px); }
+    75% { transform: translateX(3px); }
+}
+
+/* تحسين مظهر حقل تيلدا */
+#card-number,
+#telda_card {
+    font-family: 'Courier New', monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-align: center;
+}
+
+/* حالات التحقق البصرية */
+.form-input.telda-valid {
+    border-color: #10B981 !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(5, 150, 105, 0.02)) !important;
+}
+
+.form-input.telda-warning {
+    border-color: #F59E0B !important;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2) !important;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(217, 119, 6, 0.02)) !important;
+}
+
+.form-input.telda-invalid {
+    border-color: #EF4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), rgba(220, 38, 38, 0.02)) !important;
+}
+
+/* تحسينات للهواتف */
+@media (max-width: 480px) {
+    .telda-feedback {
+        padding: 10px 12px;
+        font-size: 0.85rem;
+    }
+    
+    #card-number,
+    #telda_card {
+        font-size: 1rem;
+    }
+}
+
+/* تأثير لوحة المفاتيح على الهواتف */
+@media (max-width: 768px) {
+    #card-number:focus,
+    #telda_card:focus {
+        transform: scale(1.02);
+        transition: transform 0.2s ease;
+    }
+}

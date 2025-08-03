@@ -321,25 +321,139 @@ def validate_card_number(card_number):
     clean_number = re.sub(r'\D', '', card_number)
     return len(clean_number) == 16 and clean_number.isdigit()
 
-def validate_instapay_link(link):
-    if not link:
-        return False, ""
-    url_pattern = r'https?://[^\s<>"{}|\\^`\[\]]+[^\s<>"{}|\\^`\[\].,;!?]'
-    urls = re.findall(url_pattern, link, re.IGNORECASE)
-    if not urls:
+def validate_instapay_link(input_text):
+    """استخلاص وتحقق ذكي من روابط InstaPay"""
+    if not input_text:
         return False, ""
     
-    valid_domains = ['instapay.com.eg', 'instapay.app', 'app.instapay.com.eg']
+    # تنظيف النص من الأسطر الجديدة والمسافات الزائدة
+    clean_text = input_text.strip().replace('\n', ' ').replace('\r', ' ')
     
-    for url in urls:
-        try:
-            parsed = urlparse(url.lower())
-            domain = parsed.netloc.replace('www.', '')
-            if any(valid_domain in domain for valid_domain in valid_domains) or 'instapay' in domain:
-                return True, url
-        except:
-            continue
+    # أنماط البحث المتقدمة لروابط InstaPay
+    instapay_patterns = [
+        # الأنماط الأساسية
+        r'https?://(?:www\.)?ipn\.eg/S/[^/\s]+/instapay/[A-Za-z0-9]+',
+        r'https?://(?:www\.)?instapay\.com\.eg/[^\s<>"{}|\\^`\[\]]+',
+        r'https?://(?:www\.)?app\.instapay\.com\.eg/[^\s<>"{}|\\^`\[\]]+',
+        r'https?://(?:www\.)?instapay\.app/[^\s<>"{}|\\^`\[\]]+',
+        
+        # أنماط متقدمة للروابط المختصرة
+        r'https?://(?:www\.)?ipn\.eg/[^\s<>"{}|\\^`\[\]]+',
+        r'https?://(?:www\.)?pay\.instapay\.com\.eg/[^\s<>"{}|\\^`\[\]]+',
+        
+        # أنماط للروابط مع معاملات
+        r'https?://[^\s<>"{}|\\^`\[\]]*instapay[^\s<>"{}|\\^`\[\]]*',
+    ]
+    
+    extracted_links = []
+    
+    # البحث باستخدام كل نمط
+    for pattern in instapay_patterns:
+        matches = re.findall(pattern, clean_text, re.IGNORECASE)
+        extracted_links.extend(matches)
+    
+    # إزالة المكررات والاحتفاظ بالترتيب
+    unique_links = list(dict.fromkeys(extracted_links))
+    
+    # فلترة الروابط وتنظيفها
+    valid_links = []
+    for link in unique_links:
+        # تنظيف الرابط من العلامات في النهاية
+        cleaned_link = re.sub(r'[.,;!?]+$', '', link.strip())
+        
+        # التحقق من صحة الرابط
+        if is_valid_instapay_url(cleaned_link):
+            valid_links.append(cleaned_link)
+    
+    # إرجاع أفضل رابط موجود
+    if valid_links:
+        best_link = select_best_instapay_link(valid_links)
+        return True, best_link
+    
     return False, ""
+
+def is_valid_instapay_url(url):
+    """التحقق من صحة رابط InstaPay"""
+    if not url or not url.startswith(('http://', 'https://')):
+        return False
+    
+    # قائمة النطاقات الصحيحة
+    valid_domains = [
+        'ipn.eg',
+        'instapay.com.eg',
+        'app.instapay.com.eg',
+        'instapay.app',
+        'pay.instapay.com.eg'
+    ]
+    
+    try:
+        from urllib.parse import urlparse
+        parsed = urlparse(url.lower())
+        domain = parsed.netloc.replace('www.', '')
+        
+        # التحقق من النطاق
+        domain_valid = any(valid_domain in domain for valid_domain in valid_domains)
+        
+        # التحقق من طول الرابط (ليس قصير جداً)
+        length_valid = len(url) >= 20
+        
+        # التحقق من وجود معرف في الرابط
+        has_identifier = len(parsed.path) > 3
+        
+        return domain_valid and length_valid and has_identifier
+        
+    except:
+        return False
+
+def select_best_instapay_link(links):
+    """اختيار أفضل رابط من القائمة"""
+    if not links:
+        return ""
+    
+    # ترتيب الأولويات
+    priority_domains = [
+        'ipn.eg/S/',  # الأولوية العليا
+        'instapay.com.eg',
+        'app.instapay.com.eg',
+        'instapay.app'
+    ]
+    
+    # البحث عن رابط بأولوية عالية
+    for priority in priority_domains:
+        for link in links:
+            if priority in link.lower():
+                return link
+    
+    # إذا لم يوجد، إرجاع الأول
+    return links[0]
+
+def extract_instapay_info(url):
+    """استخلاص معلومات إضافية من رابط InstaPay"""
+    info = {
+        'url': url,
+        'domain': '',
+        'username': '',
+        'code': '',
+        'type': 'unknown'
+    }
+    
+    try:
+        from urllib.parse import urlparse
+        parsed = urlparse(url)
+        info['domain'] = parsed.netloc.replace('www.', '')
+        
+        # استخلاص اسم المستخدم والكود من رابط ipn.eg
+        if 'ipn.eg' in info['domain']:
+            path_parts = parsed.path.strip('/').split('/')
+            if len(path_parts) >= 4 and path_parts[0] == 'S':
+                info['username'] = path_parts[1]
+                info['code'] = path_parts[3] if len(path_parts) > 3 else ''
+                info['type'] = 'standard'
+        
+    except:
+        pass
+    
+    return info
 
 @app.before_request
 def before_request():

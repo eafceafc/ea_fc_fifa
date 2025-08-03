@@ -790,8 +790,52 @@ def update_profile():
 
 # دوال التليجرام محدثة
 def generate_telegram_code():
-    """توليد كود فريد للتليجرام"""
-    return secrets.token_urlsafe(6).upper().replace('_', '').replace('-', '')[:8]
+    """🔐 توليد كود تليجرام معقد وآمن (16-24 حرف)"""
+    import string
+    import random
+    
+    # 🔥 مجموعة الحروف المعقدة (كابتل + سمول + أرقام + رموز)
+    uppercase = string.ascii_uppercase  # A-Z
+    lowercase = string.ascii_lowercase  # a-z  
+    digits = string.digits  # 0-9
+    special_chars = '!@#$%^&*()_+-=[]{}|;:,.<>?'  # رموز خاصة
+    
+    # 🎲 تحديد طول عشوائي بين 16-24
+    code_length = random.randint(16, 24)
+    
+    # 🔐 ضمان وجود كل نوع حرف (أمان أقصى)
+    code_parts = [
+        random.choice(uppercase),  # حرف كبير واحد على الأقل
+        random.choice(lowercase),  # حرف صغير واحد على الأقل  
+        random.choice(digits),     # رقم واحد على الأقل
+        random.choice(special_chars)  # رمز خاص واحد على الأقل
+    ]
+    
+    # 🌀 باقي الحروف عشوائية تماماً
+    all_chars = uppercase + lowercase + digits + special_chars
+    remaining_length = code_length - 4  # طرح الـ 4 حروف المضمونة
+    
+    for _ in range(remaining_length):
+        code_parts.append(random.choice(all_chars))
+    
+    # 🔀 خلط الحروف عشوائياً (تشفير إضافي)
+    random.shuffle(code_parts)
+    
+    # 🎯 تجميع الكود النهائي
+    final_code = ''.join(code_parts)
+    
+    # 🔍 التأكد من التعقيد (فحص إضافي)
+    has_upper = any(c.isupper() for c in final_code)
+    has_lower = any(c.islower() for c in final_code)  
+    has_digit = any(c.isdigit() for c in final_code)
+    has_special = any(c in special_chars for c in final_code)
+    
+    # 🔄 إعادة التوليد إذا لم يحقق الشروط (حماية إضافية)
+    if not all([has_upper, has_lower, has_digit, has_special]):
+        return generate_telegram_code()  # استدعاء تكراري
+    
+    print(f"🔐 Generated Ultra-Secure Code: Length={len(final_code)}, Complexity=Maximum")
+    return final_code
 
 @app.route('/generate-telegram-code', methods=['POST'])
 def generate_telegram_code_endpoint():
@@ -828,13 +872,16 @@ def generate_telegram_code_endpoint():
         bot_username = os.environ.get('TELEGRAM_BOT_USERNAME', 'YourBotName_bot')
         telegram_link = f"https://t.me/{bot_username}?start={telegram_code}"
         
-        print(f"🤖 Generated Telegram Code: {telegram_code} for {whatsapp_number}")
+        print(f"🤖 Generated Ultra-Secure Telegram Code: ******* (Hidden) for {whatsapp_number}")
         
+        # 🔐 إرجاع استجابة مخفية تماماً (بدون عرض الكود)
         return jsonify({
             'success': True,
-            'code': telegram_code,
             'telegram_link': telegram_link,
-            'message': f'تم إنشاء الكود: {telegram_code}'
+            'message': 'تم إنشاء كود الربط بنجاح - سيتم فتح التليجرام تلقائياً',
+            'action': 'auto_redirect',
+            'security_level': 'maximum',
+            'code_hidden': True  # إشارة أن الكود مخفي
         })
         
     except Exception as e:

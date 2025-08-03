@@ -1,15 +1,11 @@
 services:
   - type: web
-    name: fc26-profile
+    name: ea-fc-fifa
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
     envVars:
-      - key: SECRET_KEY
+      - key: PYTHON_VERSION
+        value: 3.10.0
+      - key: PORT
         generateValue: true
-      - key: FLASK_ENV
-        value: production
-      - key: TELEGRAM_BOT_TOKEN
-        value: YOUR_BOT_TOKEN_HERE
-      - key: TELEGRAM_BOT_USERNAME
-        value: YourBotName

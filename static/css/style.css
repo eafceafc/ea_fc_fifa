@@ -1351,3 +1351,98 @@ body {
         font-size: 1rem;
     }
 }
+
+/* زر التليجرام الكبير المحدث */
+.telegram-open-btn-big {
+    width: 100%;
+    background: linear-gradient(135deg, #0088cc 0%, #005599 50%, #0099dd 100%);
+    color: white;
+    border: none;
+    padding: 20px 25px;
+    border-radius: 15px;
+    font-weight: 800;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    font-family: 'Cairo', sans-serif;
+    box-shadow: 0 10px 30px rgba(0, 136, 204, 0.4);
+    position: relative;
+    overflow: hidden;
+}
+
+.telegram-open-btn-big::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.6s;
+}
+
+.telegram-open-btn-big:hover::before {
+    left: 100%;
+}
+
+.telegram-open-btn-big:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 15px 40px rgba(0, 136, 204, 0.6);
+    background: linear-gradient(135deg, #0099dd 0%, #0066aa 50%, #00aaee 100%);
+}
+
+.telegram-open-btn-big i {
+    font-size: 1.8rem;
+    animation: telegramBounce 2s ease-in-out infinite;
+}
+
+@keyframes telegramBounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* التعليمات المبسطة */
+.single-step {
+    text-align: center;
+    padding: 18px 20px;
+    background: linear-gradient(135deg, rgba(0, 136, 204, 0.15), rgba(0, 85, 153, 0.2));
+    border-radius: 15px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #0088cc;
+    border: 2px solid rgba(0, 136, 204, 0.3);
+    box-shadow: 0 5px 15px rgba(0, 136, 204, 0.1);
+    animation: stepGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes stepGlow {
+    from { 
+        box-shadow: 0 5px 15px rgba(0, 136, 204, 0.1);
+        border-color: rgba(0, 136, 204, 0.3);
+    }
+    to { 
+        box-shadow: 0 8px 25px rgba(0, 136, 204, 0.3);
+        border-color: rgba(0, 136, 204, 0.5);
+    }
+}
+
+/* تحسينات للهواتف */
+@media (max-width: 480px) {
+    .telegram-open-btn-big {
+        padding: 16px 20px;
+        font-size: 1.1rem;
+    }
+    
+    .telegram-open-btn-big i {
+        font-size: 1.5rem;
+    }
+    
+    .single-step {
+        padding: 15px;
+        font-size: 1rem;
+    }
+}

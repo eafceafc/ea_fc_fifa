@@ -378,7 +378,7 @@ def validate_whatsapp_endpoint():
 
 @app.route('/update-profile', methods=['POST'])
 def update_profile():
-    """تحديث الملف الشخصي - محدثة لحل مشكلة CSRF"""
+    """تحديث الملف الشخصي - محدثة مع البريد الإلكتروني المتعدد"""
     try:
         client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
         
@@ -399,12 +399,37 @@ def update_profile():
                 'new_csrf_token': session['csrf_token']
             }), 403
         
+        # استقبال البيانات الأساسية
         platform = sanitize_input(request.form.get('platform'))
         whatsapp_number = sanitize_input(request.form.get('whatsapp_number'))
         payment_method = sanitize_input(request.form.get('payment_method'))
         payment_details = sanitize_input(request.form.get('payment_details'))
         telegram_username = sanitize_input(request.form.get('telegram_username'))
         
+        # استقبال البريد الإلكتروني المتعدد الجديد
+        email_addresses_json = sanitize_input(request.form.get('email_addresses', '[]'))
+        try:
+            email_addresses = json.loads(email_addresses_json) if email_addresses_json else []
+            # تنظيف وفلترة الإيميلات
+            email_addresses = [email.lower().strip() for email in email_addresses if email and '@' in email and '.' in email]
+            # إزالة المكررات والحد الأقصى
+            email_addresses = list(dict.fromkeys(email_addresses))  # إزالة المكررات مع الحفاظ على الترتيب
+            email_addresses = email_addresses[:6]  # الحد الأقصى 6 إيميلات
+            
+            # التحقق من صحة كل إيميل
+            valid_emails = []
+            for email in email_addresses:
+                if re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', email):
+                    valid_emails.append(email)
+            email_addresses = valid_emails
+            
+        except Exception as e:
+            print(f"خطأ في معالجة الإيميلات: {str(e)}")
+            email_addresses = []
+        
+        print(f"📧 Email addresses received: {email_addresses}")
+        
+        # التحقق من البيانات المطلوبة
         if not all([platform, whatsapp_number, payment_method]):
             return jsonify({'success': False, 'message': 'Missing required fields'}), 400
         
@@ -418,6 +443,7 @@ def update_profile():
         
         processed_payment_details = ""
         
+        # التحقق من طرق الدفع
         if payment_method in ['vodafone_cash', 'etisalat_cash', 'orange_cash', 'we_cash', 'bank_wallet']:
             if not validate_mobile_payment(payment_details):
                 return jsonify({'success': False, 'message': 'Invalid mobile payment number'}), 400
@@ -434,6 +460,7 @@ def update_profile():
                 return jsonify({'success': False, 'message': 'Invalid InstaPay link'}), 400
             processed_payment_details = extracted_link
         
+        # إنشاء بيانات المستخدم المحدثة
         user_data = {
             'platform': platform,
             'whatsapp_number': whatsapp_validation['formatted'],
@@ -449,20 +476,37 @@ def update_profile():
             'payment_method': payment_method,
             'payment_details': processed_payment_details,
             'telegram_username': telegram_username,
+            'email_addresses': email_addresses,  # البيانات الجديدة
+            'email_count': len(email_addresses),  # عدد الإيميلات
+            'email_details': {  # تفاصيل إضافية للإيميلات
+                'primary_email': email_addresses[0] if email_addresses else None,
+                'secondary_emails': email_addresses[1:] if len(email_addresses) > 1 else [],
+                'total_count': len(email_addresses),
+                'domains': list(set([email.split('@')[1] for email in email_addresses])) if email_addresses else []
+            },
             'created_at': datetime.now().isoformat(),
-            'ip_address': hashlib.sha256(client_ip.encode()).hexdigest()[:10]
+            'updated_at': datetime.now().isoformat(),
+            'ip_address': hashlib.sha256(client_ip.encode()).hexdigest()[:10],
+            'user_agent': hashlib.sha256(request.headers.get('User-Agent', '').encode()).hexdigest()[:10]
         }
         
         # حفظ في الذاكرة المؤقتة
         user_id = hashlib.md5(f"{whatsapp_number}-{datetime.now().isoformat()}".encode()).hexdigest()[:12]
         users_data[user_id] = user_data
         
-        print(f"🔥 New Ultimate Validation (ID: {user_id}): {json.dumps(user_data, indent=2, ensure_ascii=False)}")
+        # طباعة البيانات المحفوظة للتأكيد
+        print(f"🔥 New Ultimate Profile Saved (ID: {user_id}):")
+        print(f"   📱 WhatsApp: {whatsapp_validation['formatted']}")
+        print(f"   🎯 Platform: {platform}")
+        print(f"   💳 Payment: {payment_method}")
+        print(f"   📧 Emails ({len(email_addresses)}): {email_addresses}")
+        print(f"   📊 Full Data: {json.dumps(user_data, indent=2, ensure_ascii=False)}")
         
         # توليد token جديد للأمان
         session['csrf_token'] = generate_csrf_token()
         
-        return jsonify({
+        # تحضير الاستجابة المحسنة
+        response_data = {
             'success': True,
             'message': 'تم التحقق بالطرق المبتكرة وحفظ البيانات بنجاح!',
             'user_id': user_id,
@@ -471,13 +515,24 @@ def update_profile():
                 'platform': platform,
                 'whatsapp_number': whatsapp_validation['formatted'],
                 'whatsapp_info': user_data['whatsapp_info'],
-                'payment_method': payment_method
+                'payment_method': payment_method,
+                'email_addresses': email_addresses,
+                'email_count': len(email_addresses),
+                'email_summary': {
+                    'primary': email_addresses[0] if email_addresses else None,
+                    'total': len(email_addresses),
+                    'domains': len(set([email.split('@')[1] for email in email_addresses])) if email_addresses else 0
+                }
             }
-        })
+        }
+        
+        return jsonify(response_data)
         
     except Exception as e:
         print(f"Error updating profile: {str(e)}")
+        print(f"Error details: {repr(e)}")
         return jsonify({'success': False, 'message': 'Internal server error'}), 500
+
 
 # دوال التليجرام محدثة
 def generate_telegram_code():

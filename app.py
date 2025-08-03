@@ -454,11 +454,24 @@ def update_profile():
                 return jsonify({'success': False, 'message': 'Invalid card number'}), 400
             processed_payment_details = re.sub(r'\D', '', payment_details)
             
-        elif payment_method == 'instapay':
-            is_valid, extracted_link = validate_instapay_link(payment_details)
-            if not is_valid:
-                return jsonify({'success': False, 'message': 'Invalid InstaPay link'}), 400
-            processed_payment_details = extracted_link
+elif payment_method == 'instapay':
+    is_valid, extracted_link = validate_instapay_link(payment_details)
+    if not is_valid:
+        return jsonify({
+            'success': False, 
+            'message': 'لم يتم العثور على رابط InstaPay صحيح في النص المدخل'
+        }), 400
+    
+    # استخلاص معلومات إضافية
+    instapay_info = extract_instapay_info(extracted_link)
+    processed_payment_details = extracted_link
+    
+    print(f"🔗 InstaPay Link Extracted:")
+    print(f"   Original Text: {payment_details[:100]}...")
+    print(f"   Extracted URL: {extracted_link}")
+    print(f"   Domain: {instapay_info['domain']}")
+    print(f"   Username: {instapay_info['username']}")
+    print(f"   Code: {instapay_info['code']}")
         
         # إنشاء بيانات المستخدم المحدثة
         user_data = {

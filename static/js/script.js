@@ -1465,10 +1465,9 @@ function openTelegramAppDirect() {
         btn.style.opacity = '0.6';
     });
     
-    // روابط التليجرام
-    const telegramAppUrl = `tg://resolve?domain=${correctBotUsername}&start=${code}`;
-    const telegramWebUrl = `https://t.me/${correctBotUsername}?start=${code}`;
-    
+// بهذا (ضع اسم البوت الحقيقي):
+const telegramUrl = `tg://resolve?domain=ea_fc_fifa_bot&text=${encodedMessage}`;
+const telegramWebUrl = `https://t.me/ea_fc_fifa_bot?text=${encodedMessage}`;    
     console.log('🚀 AUTO-LINKING Telegram:', correctBotUsername, 'Code:', code);
     
     // فتح التليجرام حسب النوع

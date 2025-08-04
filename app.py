@@ -1112,9 +1112,22 @@ def generate_telegram_code_endpoint():
         return jsonify({'success': False, 'message': 'خطأ في الخادم'})
 
 def notify_website_telegram_linked(code, profile_data, chat_id, first_name, username):
-    """إشعار الموقع بنجاح ربط التليجرام"""
+    """إشعار الموقع بنجاح ربط التليجرام - محدث"""
     try:
-        # تحديث بيانات المستخدم
+        # تحديث في قاعدة البيانات
+        conn = get_db_connection()
+        if conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                UPDATE telegram_codes 
+                SET used = TRUE, telegram_chat_id = %s, telegram_username_actual = %s, used_at = NOW()
+                WHERE code = %s
+            """, (chat_id, username, code))
+            conn.commit()
+            conn.close()
+            print(f"✅ تم تحديث كود التليجرام في قاعدة البيانات: {code}")
+        
+        # تحديث بيانات المستخدم في الذاكرة
         user_id = hashlib.md5(f"{profile_data['whatsapp_number']}-telegram-{code}".encode()).hexdigest()[:12]
         
         updated_user_data = {
@@ -1129,6 +1142,15 @@ def notify_website_telegram_linked(code, profile_data, chat_id, first_name, user
         
         # حفظ في بيانات المستخدمين
         users_data[user_id] = updated_user_data
+        
+        # تحديث كود التليجرام في الذاكرة
+        if code in telegram_codes:
+            telegram_codes[code].update({
+                'used': True,
+                'telegram_chat_id': chat_id,
+                'telegram_username_actual': username,
+                'used_at': datetime.now().isoformat()
+            })
         
         print(f"🔗 Telegram Linked Successfully!")
         print(f"   User: {first_name} (@{username})")
@@ -1362,8 +1384,30 @@ def admin_data():
 
 @app.route('/check-telegram-status/<code>')
 def check_telegram_status(code):
-    """فحص حالة ربط التليجرام"""
+    """فحص حالة ربط التليجرام - محدث"""
     try:
+        # البحث في قاعدة البيانات أولاً
+        conn = get_db_connection()
+        if conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT used, telegram_chat_id, telegram_username_actual, used_at
+                FROM telegram_codes 
+                WHERE code = %s
+            """, (code,))
+            result = cursor.fetchone()
+            conn.close()
+            
+            if result:
+                return jsonify({
+                    'success': True,
+                    'linked': result['used'],
+                    'telegram_chat_id': result['telegram_chat_id'],
+                    'telegram_username': result['telegram_username_actual'],
+                    'linked_at': result['used_at'].isoformat() if result['used_at'] else None
+                })
+        
+        # البحث في الذاكرة كبديل
         if code in telegram_codes:
             code_data = telegram_codes[code]
             return jsonify({

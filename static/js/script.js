@@ -911,6 +911,11 @@ async function handleFormSubmit(e) {
                 showNotification('تم إرسال البيانات بنجاح! سيتم التواصل معك قريباً', 'success');
             }
             
+// الانتقال التلقائي لصفحة الكوينز
+setTimeout(() => {
+    window.location.href = '/coins-order';
+}, 3000);
+
             // اهتزاز نجاح
             if (navigator.vibrate) {
                 navigator.vibrate([200, 100, 200]);

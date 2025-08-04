@@ -16,9 +16,125 @@ from bs4 import BeautifulSoup
 import numpy as np
 import sqlite3
 import threading
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', secrets.token_urlsafe(32))
+
+# إعدادات قاعدة البيانات PostgreSQL
+def get_db_connection():
+    """إنشاء اتصال بقاعدة البيانات PostgreSQL"""
+    try:
+        database_url = os.environ.get('DATABASE_URL')
+        if not database_url:
+            print("❌ DATABASE_URL غير موجود في متغيرات البيئة")
+            return None
+        
+        # تعديل URL للتوافق مع psycopg2
+        if database_url.startswith('postgres://'):
+            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        
+        conn = psycopg2.connect(database_url, cursor_factory=RealDictCursor)
+        return conn
+    except Exception as e:
+        print(f"خطأ في الاتصال بقاعدة البيانات: {str(e)}")
+        return None
+
+def get_db_cursor():
+    """الحصول على cursor لقاعدة البيانات"""
+    conn = get_db_connection()
+    if conn:
+        return conn.cursor()
+    return None
+
+def init_database():
+    """تهيئة قاعدة البيانات وإنشاء الجداول"""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            print("❌ فشل الاتصال بقاعدة البيانات")
+            return False
+        
+        cursor = conn.cursor()
+        
+        # إنشاء جدول المستخدمين
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS users_profiles (
+                id SERIAL PRIMARY KEY,
+                user_id VARCHAR(50) UNIQUE NOT NULL,
+                platform VARCHAR(20) NOT NULL,
+                whatsapp_number VARCHAR(20) NOT NULL,
+                whatsapp_info TEXT,
+                payment_method VARCHAR(50) NOT NULL,
+                payment_details TEXT,
+                telegram_username VARCHAR(100),
+                email_addresses TEXT,
+                email_count INTEGER DEFAULT 0,
+                telegram_linked BOOLEAN DEFAULT FALSE,
+                telegram_chat_id BIGINT,
+                telegram_username_actual VARCHAR(100),
+                telegram_linked_at TIMESTAMP,
+                ip_address VARCHAR(20),
+                user_agent VARCHAR(20),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        # إنشاء جدول طلبات الكوينز الجديد
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS coins_orders (
+                id SERIAL PRIMARY KEY,
+                transfer_type VARCHAR(20) NOT NULL,
+                coins_amount INTEGER NOT NULL,
+                ea_email VARCHAR(255) NOT NULL,
+                ea_password VARCHAR(255) NOT NULL,
+                backup_codes TEXT,
+                payment_method VARCHAR(50) NOT NULL,
+                payment_details TEXT,
+                notes TEXT,
+                base_price DECIMAL(10,2),
+                transfer_fee DECIMAL(10,2),
+                total_price DECIMAL(10,2),
+                status VARCHAR(20) DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        # إنشاء جدول أكواد التليجرام
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS telegram_codes (
+                id SERIAL PRIMARY KEY,
+                code VARCHAR(100) UNIQUE NOT NULL,
+                platform VARCHAR(20),
+                whatsapp_number VARCHAR(20),
+                payment_method VARCHAR(50),
+                payment_details TEXT,
+                telegram_username VARCHAR(100),
+                used BOOLEAN DEFAULT FALSE,
+                telegram_chat_id BIGINT,
+                telegram_username_actual VARCHAR(100),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                used_at TIMESTAMP
+            )
+        """)
+        
+        conn.commit()
+        print("✅ تم إنشاء جميع الجداول بنجاح")
+        return True
+        
+    except Exception as e:
+        print(f"❌ خطأ في تهيئة قاعدة البيانات: {str(e)}")
+        return False
+    finally:
+        if conn:
+            conn.close()
+
+# تهيئة قاعدة البيانات عند بدء التطبيق
+init_database()
+
+# إعدادات الأمان محدثة
 
 # إعدادات الأمان محدثة
 app.config['SESSION_COOKIE_SECURE'] = False  # تم تعطيل HTTPS للتطوير

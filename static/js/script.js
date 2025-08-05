@@ -1460,7 +1460,8 @@ async function generateTelegramCode() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCSRFToken()
             },
             body: JSON.stringify(formData)
         });
@@ -1471,7 +1472,6 @@ async function generateTelegramCode() {
         if (result.success) {
             // حفظ الكود
             currentTelegramCode = result.code;
-            document.getElementById('generatedCode').textContent = result.code;
             
             // تحديث زر التليجرام ليصبح زر فتح مباشر
             telegramBtn.innerHTML = `
@@ -1489,14 +1489,14 @@ async function generateTelegramCode() {
                 openTelegramAppDirect();
             };
             
-// إظهار منطقة الكود (بدون زر النسخ)
-telegramCodeResult.innerHTML = `
-    <div class="code-container">
-        <div class="code-header">
-            <i class="fas fa-rocket"></i>
-            <span>جاهز للربط التلقائي</span>
-        </div>
-        <div class="generated-code" style="display: none;">${result.code}</div>
+            // إظهار منطقة الكود
+            telegramCodeResult.innerHTML = `
+                <div class="code-container">
+                    <div class="code-header">
+                        <i class="fas fa-rocket"></i>
+                        <span>جاهز للربط التلقائي</span>
+                    </div>
+                    <div class="generated-code" style="display: none;">${result.code}</div>
                     <div class="telegram-actions">
                         <button type="button" class="telegram-open-btn-big" onclick="openTelegramAppDirect()">
                             <i class="fab fa-telegram"></i>
@@ -1514,18 +1514,11 @@ telegramCodeResult.innerHTML = `
             telegramCodeResult.style.display = 'block';
             setTimeout(() => {
                 telegramCodeResult.classList.add('show');
-                
-                // تمرير تلقائي
                 telegramCodeResult.scrollIntoView({
                     behavior: 'smooth',
                     block: 'center'
                 });
             }, 100);
-            
-            // اهتزاز نجاح
-            if (navigator.vibrate) {
-                navigator.vibrate([100, 50, 100]);
-            }
             
             showNotification('✅ جاهز للربط! اضغط على الزر لفتح التليجرام', 'success');
             

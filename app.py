@@ -1231,7 +1231,7 @@ def generate_telegram_code_endpoint():
         }
         
         # الحصول على username البوت من متغيرات البيئة
-        bot_username = os.environ.get('TELEGRAM_BOT_USERNAME', 'YourBotName_bot')
+        bot_username = os.environ.get('TELEGRAM_BOT_USERNAME', 'ea_fc_fifa_bot')
         telegram_app_url = f"tg://resolve?domain={bot_username}&start={telegram_code}"
         telegram_web_url = f"https://t.me/{bot_username}?start={telegram_code}"
         
@@ -1474,7 +1474,7 @@ def get_payment_display_text(payment_method, payment_details):
 @app.route('/get-bot-username')
 def get_bot_username():
     """الحصول على username البوت"""
-    bot_username = os.environ.get('TELEGRAM_BOT_USERNAME', 'YourBotName_bot')
+    bot_username = os.environ.get('TELEGRAM_BOT_USERNAME', 'ea_fc_fifa_bot')
     return jsonify({'bot_username': bot_username})
 
 def send_telegram_message(chat_id, text):

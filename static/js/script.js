@@ -820,8 +820,7 @@ function setupFormSubmission(form) {
     form.addEventListener('submit', handleFormSubmit);
 }
 
-// معالجة إرسال النموذج
-async function handleFormSubmit(e) {
+// معالجة إرسال النموذجasync function handleFormSubmit(e) {
     e.preventDefault();
     
     // منع الإرسال المتكرر
@@ -857,7 +856,7 @@ async function handleFormSubmit(e) {
     // تحديث زر الإرسال
     if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...';
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ والربط...';
     }
     
     // اهتزاز للهواتف
@@ -868,27 +867,14 @@ async function handleFormSubmit(e) {
     try {
         const formData = new FormData(e.target);
         
-        // محاولة كلا الـ endpoints
-        let response;
-        try {
-            response = await fetch('/update-profile', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': getCSRFToken()
-                }
-            });
-        } catch (e) {
-            response = await fetch('/submit_profile', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': getCSRFToken()
-                }
-            });
-        }
+        const response = await fetch('/update-profile', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCSRFToken()
+            }
+        });
         
         const result = await response.json();
         
@@ -897,35 +883,46 @@ async function handleFormSubmit(e) {
         if (loadingSpinner) loadingSpinner.style.display = 'none';
         
         if (response.ok && result.success) {
-            // رسالة النجاح المحسنة
-            let successText = '✅ تم حفظ بياناتك بنجاح!';
-            if (result.data && result.data.whatsapp_info) {
-                const info = result.data.whatsapp_info;
-                successText += `<br><small>رقم الواتساب: ${result.data.whatsapp_number}<br>البلد: ${info.country} | الشركة: ${info.carrier}</small>`;
-            }
-            
-            if (successMessage) {
-                successMessage.innerHTML = successText;
-                successMessage.classList.add('show');
+            // 🔥 التحقق من وجود تكامل التليجرام
+            if (result.telegram_integration && result.telegram_code) {
+                
+                // رسالة النجاح المؤقتة
+                if (successMessage) {
+                    successMessage.innerHTML = '✅ تم حفظ البيانات! جاري فتح التليجرام...';
+                    successMessage.classList.add('show');
+                } else {
+                    showNotification('✅ تم حفظ البيانات! جاري فتح التليجرام...', 'success');
+                }
+                
+                // انتظار ثانية واحدة ثم فتح التليجرام مباشرة
+                setTimeout(() => {
+                    openTelegramAutomatic(result);
+                }, 1000);
+                
+                // اهتزاز نجاح
+                if (navigator.vibrate) {
+                    navigator.vibrate([200, 100, 200]);
+                }
+                
             } else {
-                showNotification('تم إرسال البيانات بنجاح! سيتم التواصل معك قريباً', 'success');
+                // الطريقة القديمة - بدون تليجرام
+                let successText = '✅ تم حفظ بياناتك بنجاح!';
+                if (result.data && result.data.whatsapp_number) {
+                    successText += `<br><small>رقم الواتساب: ${result.data.whatsapp_number}</small>`;
+                }
+                
+                if (successMessage) {
+                    successMessage.innerHTML = successText;
+                    successMessage.classList.add('show');
+                } else {
+                    showNotification('تم إرسال البيانات بنجاح!', 'success');
+                }
+                
+                // الانتقال التلقائي بعد 3 ثوان
+                setTimeout(() => {
+                    window.location.href = result.next_step || '/coins-order';
+                }, 3000);
             }
-            
-// الانتقال التلقائي لصفحة الكوينز
-setTimeout(() => {
-    window.location.href = '/coins-order';
-}, 3000);
-
-            // اهتزاز نجاح
-            if (navigator.vibrate) {
-                navigator.vibrate([200, 100, 200]);
-            }
-            
-            // إعادة تعيين النموذج بعد النجاح
-            setTimeout(() => {
-                console.log('تم حفظ البيانات بنجاح:', result.data);
-                // يمكن إضافة إعادة توجيه هنا إذا لزم الأمر
-            }, 2000);
             
         } else {
             const errorText = result.message || 'حدث خطأ غير متوقع';
@@ -967,6 +964,113 @@ setTimeout(() => {
     updateSubmitButton();
 }
 
+// 🚀 دالة فتح التليجرام التلقائي الجديدة
+function openTelegramAutomatic(serverResponse) {
+    const telegramCode = serverResponse.telegram_code;
+    const telegramAppUrl = serverResponse.telegram_app_url;
+    const telegramWebUrl = serverResponse.telegram_web_url;
+    const botUsername = serverResponse.bot_username;
+    
+    console.log(`🚀 فتح التليجرام التلقائي - الكود: ${telegramCode}`);
+    
+    // عرض رسالة التوجيه
+    showNotification('📱 جاري فتح التليجرام...', 'info');
+    
+    // فتح التليجرام حسب نوع الجهاز
+    if (navigator.userAgent.match(/(iPhone|iPad|iPod|Android)/i)) {
+        // الأجهزة المحمولة - محاولة فتح التطبيق أولاً
+        const tempLink = document.createElement('a');
+        tempLink.href = telegramAppUrl;
+        tempLink.style.display = 'none';
+        document.body.appendChild(tempLink);
+        tempLink.click();
+        document.body.removeChild(tempLink);
+        
+        // احتياطي - فتح الويب بعد ثانية
+        setTimeout(() => {
+            window.open(telegramWebUrl, '_blank');
+        }, 1000);
+        
+    } else {
+        // أجهزة الكمبيوتر - فتح مباشر
+        window.open(telegramWebUrl, '_blank');
+    }
+    
+    // رسالة إرشادية
+    setTimeout(() => {
+        showNotification('⚡ اضغط "Start" في البوت لإكمال الربط', 'info');
+    }, 2000);
+    
+    // 🔥 بدء مراقبة الربط التلقائي
+    startTelegramLinkMonitoring(telegramCode, serverResponse.next_step);
+}
+
+// 🔍 مراقبة حالة الربط كل 3 ثوان
+function startTelegramLinkMonitoring(telegramCode, nextStepUrl) {
+    let attemptCount = 0;
+    const maxAttempts = 30; // 1.5 دقيقة
+    
+    const linkChecker = setInterval(async () => {
+        attemptCount++;
+        
+        try {
+            const response = await fetch(`/check-telegram-status/${telegramCode}`);
+            const result = await response.json();
+            
+            if (result.success && result.linked) {
+                // ✅ تم الربط بنجاح!
+                clearInterval(linkChecker);
+                
+                showNotification('🎉 تم ربط التليجرام بنجاح! جاري الانتقال...', 'success');
+                
+                // اهتزاز نجاح قوي
+                if (navigator.vibrate) {
+                    navigator.vibrate([100, 50, 100, 50, 200]);
+                }
+                
+                // انتقال تلقائي لصفحة الكوينز بعد ثانيتين
+                setTimeout(() => {
+                    window.location.href = nextStepUrl || '/coins-order';
+                }, 2000);
+                
+                return;
+            }
+            
+            // رسالة تقدم كل 15 ثانية
+            if (attemptCount % 5 === 0) {
+                showNotification(`⏳ في انتظار الربط... (${Math.floor(attemptCount/10 * 3)} ثانية)`, 'info');
+            }
+            
+        } catch (error) {
+            console.error('خطأ في فحص حالة الربط:', error);
+        }
+        
+        // انتهاء المهلة الزمنية
+        if (attemptCount >= maxAttempts) {
+            clearInterval(linkChecker);
+            showTelegramTimeoutOptions(telegramCode, nextStepUrl);
+        }
+        
+    }, 3000); // فحص كل 3 ثوان
+}
+
+// ⏰ خيارات في حالة انتهاء الوقت
+function showTelegramTimeoutOptions(telegramCode, nextStepUrl) {
+    const timeoutMessage = `
+        ⏰ لم يتم اكتشاف الربط تلقائياً. 
+        هل تريد:
+        1️⃣ المحاولة مرة أخرى
+        2️⃣ الانتقال لصفحة الكوينز مباشرة
+    `;
+    
+    if (confirm(timeoutMessage + '\nاضغط OK للمحاولة مرة أخرى، أو Cancel للانتقال مباشرة')) {
+        // إعادة المحاولة
+        startTelegramLinkMonitoring(telegramCode, nextStepUrl);
+    } else {
+        // الانتقال المباشر
+        window.location.href = nextStepUrl || '/coins-order';
+    }
+}
 // معالجة مفتاح Enter
 function setupEnterKeyHandling() {
     // منع إرسال النموذج بالضغط على Enter في الحقول

@@ -1036,6 +1036,119 @@ def generate_telegram_code():
     print(f"🔐 Generated Ultra-Secure Code: Length={len(final_code)}, Complexity=Maximum")
     return final_code
 
+# 🆕 ضع الدالة الجديدة هنا
+@app.route('/api/link_telegram', methods=['POST'])
+def link_telegram():
+    try:
+        data = request.get_json()
+        whatsapp_number = sanitize_input(data.get('whatsapp_number', ''))
+        telegram_code = sanitize_input(data.get('telegram_code', ''))
+        
+        # التحقق من صحة البيانات
+        if not whatsapp_number or not telegram_code:
+            return jsonify({
+                'success': False, 
+                'message': 'رقم الواتساب والكود مطلوبان'
+            }), 400
+        
+        # التحقق من صحة رقم الواتساب المصري
+        if not re.match(r'^(010|011|012|015)\d{8}$', whatsapp_number):
+            return jsonify({
+                'success': False, 
+                'message': 'رقم الواتساب غير صحيح. يجب أن يبدأ بـ 010 أو 011 أو 012 أو 015'
+            }), 400
+        
+        # البحث عن الكود في قاعدة البيانات
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({
+                'success': False, 
+                'message': 'خطأ في الاتصال بقاعدة البيانات'
+            }), 500
+        
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT code, used, platform, whatsapp_number, payment_method, payment_details 
+            FROM telegram_codes 
+            WHERE code = %s
+        """, (telegram_code,))
+        
+        code_result = cursor.fetchone()
+        
+        if not code_result:
+            cursor.close()
+            conn.close()
+            return jsonify({
+                'success': False, 
+                'message': 'الكود غير صحيح أو غير موجود'
+            }), 400
+        
+        if code_result['used']:
+            cursor.close()
+            conn.close()
+            return jsonify({
+                'success': False, 
+                'message': 'هذا الكود تم استخدامه من قبل'
+            }), 400
+        
+        # التحقق من تطابق رقم الواتساب
+        stored_whatsapp = code_result['whatsapp_number']
+        # تطبيع الأرقام للمقارنة
+        clean_input = re.sub(r'[^\d]', '', whatsapp_number)
+        clean_stored = re.sub(r'[^\d]', '', stored_whatsapp)
+        
+        if clean_input != clean_stored:
+            cursor.close()
+            conn.close()
+            return jsonify({
+                'success': False, 
+                'message': 'رقم الواتساب المدخل لا يطابق رقم الكود'
+            }), 400
+        
+        # تحديث حالة الكود إلى مستخدم
+        cursor.execute("""
+            UPDATE telegram_codes 
+            SET used = TRUE, used_at = NOW() 
+            WHERE code = %s
+        """, (telegram_code,))
+        
+        # البحث عن المستخدم وتحديث حالة الربط
+        cursor.execute("""
+            SELECT id FROM users_profiles 
+            WHERE whatsapp_number LIKE %s 
+            ORDER BY created_at DESC 
+            LIMIT 1
+        """, (f"%{clean_input}%",))
+        
+        user_result = cursor.fetchone()
+        
+        if user_result:
+            cursor.execute("""
+                UPDATE users_profiles 
+                SET telegram_linked = TRUE, updated_at = NOW()
+                WHERE id = %s
+            """, (user_result['id'],))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True, 
+            'message': 'تم ربط حساب التليجرام بنجاح! ✅',
+            'redirect': '/coins-order'
+        })
+        
+    except Exception as e:
+        print(f"خطأ في ربط التليجرام: {str(e)}")
+        if 'conn' in locals():
+            conn.close()
+        return jsonify({
+            'success': False, 
+            'message': 'حدث خطأ أثناء ربط الحساب. حاول مرة أخرى.'
+        }), 500
+
+# ═══ هنا تبدأ الدالة الموجودة أصلاً ═══
 @app.route('/generate-telegram-code', methods=['POST'])
 def generate_telegram_code_endpoint():
     """API لتوليد كود التليجرام - محدثة مع الفتح التلقائي"""

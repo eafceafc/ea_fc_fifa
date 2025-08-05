@@ -820,7 +820,8 @@ function setupFormSubmission(form) {
     form.addEventListener('submit', handleFormSubmit);
 }
 
-// معالجة إرسال النموذجasync function handleFormSubmit(e) {
+// معالجة إرسال النموذج
+async function handleFormSubmit(e) {
     e.preventDefault();
     
     // منع الإرسال المتكرر

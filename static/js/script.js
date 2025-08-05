@@ -965,12 +965,14 @@ async function handleFormSubmit(e) {
     updateSubmitButton();
 }
 
-// 🚀 دالة فتح التليجرام التلقائي الجديدة
+// 🚀 دالة فتح التليجرام التلقائي الجديدة - محدثة ومُصححة
 function openTelegramAutomatic(serverResponse) {
     const telegramCode = serverResponse.telegram_code;
-    const telegramAppUrl = serverResponse.telegram_app_url;
-    const telegramWebUrl = serverResponse.telegram_web_url;
-    const botUsername = serverResponse.bot_username;
+    const botUsername = serverResponse.bot_username || 'ea_fc_fifa_bot';
+    
+    // 🔗 بناء الروابط الصحيحة
+    const telegramAppUrl = `tg://resolve?domain=${botUsername}&start=${telegramCode}`;
+    const telegramWebUrl = `https://t.me/${botUsername}?start=${telegramCode}`;
     
     console.log(`🚀 فتح التليجرام التلقائي - الكود: ${telegramCode}`);
     console.log(`📱 رابط التطبيق: ${telegramAppUrl}`);
@@ -984,16 +986,21 @@ function openTelegramAutomatic(serverResponse) {
         // الأجهزة المحمولة - محاولة فتح التطبيق أولاً
         console.log('📱 جهاز محمول - فتح التطبيق');
         
-        // محاولة 1: فتح التطبيق مباشرة
-        window.location.href = telegramAppUrl;
+        // إنشاء رابط مخفي للتطبيق
+        const appLink = document.createElement('a');
+        appLink.href = telegramAppUrl;
+        appLink.style.display = 'none';
+        document.body.appendChild(appLink);
+        appLink.click();
+        document.body.removeChild(appLink);
         
-        // محاولة 2: نافذة جديدة كـ backup
+        // محاولة احتياطية - فتح الويب بعد ثانية ونصف
         setTimeout(() => {
             window.open(telegramWebUrl, '_blank');
         }, 1500);
         
     } else {
-        // أجهزة الكمبيوتر - فتح مباشر
+        // أجهزة الكمبيوتر - فتح الويب مباشرة
         console.log('💻 جهاز كمبيوتر - فتح الويب');
         window.open(telegramWebUrl, '_blank');
     }
@@ -1007,21 +1014,40 @@ function openTelegramAutomatic(serverResponse) {
     startTelegramLinkMonitoring(telegramCode, serverResponse.next_step);
 }
 
-// 🔍 مراقبة حالة الربط كل 3 ثوان
+
+// 🔍 مراقبة حالة الربط كل 3 ثوان - محدثة ومُصححة
 function startTelegramLinkMonitoring(telegramCode, nextStepUrl) {
     let attemptCount = 0;
     const maxAttempts = 30; // 1.5 دقيقة
+    
+    // إظهار رسالة بدء المراقبة
+    showNotification('🔍 جاري مراقبة حالة الربط...', 'info');
     
     const linkChecker = setInterval(async () => {
         attemptCount++;
         
         try {
-            const response = await fetch(`/check-telegram-status/${telegramCode}`);
+            console.log(`🔍 فحص الربط - المحاولة ${attemptCount}/${maxAttempts}`);
+            
+            const response = await fetch(`/check-telegram-status/${telegramCode}`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Cache-Control': 'no-cache'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
             const result = await response.json();
+            console.log(`📊 نتيجة الفحص:`, result);
             
             if (result.success && result.linked) {
                 // ✅ تم الربط بنجاح!
                 clearInterval(linkChecker);
+                console.log('🎉 تم الربط بنجاح!');
                 
                 showNotification('🎉 تم ربط التليجرام بنجاح! جاري الانتقال...', 'success');
                 
@@ -1038,13 +1064,19 @@ function startTelegramLinkMonitoring(telegramCode, nextStepUrl) {
                 return;
             }
             
-            // رسالة تقدم كل 15 ثانية
+            // رسالة تقدم كل 15 ثانية (كل 5 محاولات)
             if (attemptCount % 5 === 0) {
-                showNotification(`⏳ في انتظار الربط... (${Math.floor(attemptCount/10 * 3)} ثانية)`, 'info');
+                const timeElapsed = Math.floor(attemptCount * 3); // 3 ثوان لكل محاولة
+                showNotification(`⏳ في انتظار الربط... (${timeElapsed} ثانية)`, 'info');
             }
             
         } catch (error) {
-            console.error('خطأ في فحص حالة الربط:', error);
+            console.error('❌ خطأ في فحص حالة الربط:', error);
+            
+            // رسالة خطأ كل 10 محاولات
+            if (attemptCount % 10 === 0) {
+                showNotification('⚠️ مشكلة في الاتصال، يرجى التحقق من الإنترنت', 'error');
+            }
         }
         
         // انتهاء المهلة الزمنية
@@ -1056,23 +1088,31 @@ function startTelegramLinkMonitoring(telegramCode, nextStepUrl) {
     }, 3000); // فحص كل 3 ثوان
 }
 
-// ⏰ خيارات في حالة انتهاء الوقت
+
+// ⏰ خيارات في حالة انتهاء الوقت - محدثة
 function showTelegramTimeoutOptions(telegramCode, nextStepUrl) {
-    const timeoutMessage = `
-        ⏰ لم يتم اكتشاف الربط تلقائياً. 
-        هل تريد:
-        1️⃣ المحاولة مرة أخرى
-        2️⃣ الانتقال لصفحة الكوينز مباشرة
-    `;
+    // إظهار خيارات للمستخدم
+    const userChoice = confirm(`⏰ انتهت مهلة انتظار الربط التلقائي.
+
+هل تريد:
+✅ الانتقال لصفحة الكوينز (اضغط موافق)
+🔄 المحاولة مرة أخرى (اضغط إلغاء)
+
+ملاحظة: يمكنك إكمال الربط لاحقاً من التليجرام`);
     
-    if (confirm(timeoutMessage + '\nاضغط OK للمحاولة مرة أخرى، أو Cancel للانتقال مباشرة')) {
-        // إعادة المحاولة
-        startTelegramLinkMonitoring(telegramCode, nextStepUrl);
+    if (userChoice) {
+        // الانتقال المباشر لصفحة الكوينز
+        showNotification('📄 جاري الانتقال لصفحة الكوينز...', 'info');
+        setTimeout(() => {
+            window.location.href = nextStepUrl || '/coins-order';
+        }, 1000);
     } else {
-        // الانتقال المباشر
-        window.location.href = nextStepUrl || '/coins-order';
+        // إعادة المحاولة
+        showNotification('🔄 إعادة بدء مراقبة الربط...', 'info');
+        startTelegramLinkMonitoring(telegramCode, nextStepUrl);
     }
 }
+
 // معالجة مفتاح Enter
 function setupEnterKeyHandling() {
     // منع إرسال النموذج بالضغط على Enter في الحقول
@@ -1570,8 +1610,8 @@ function openTelegramAppDirect() {
     });
     
 // بهذا (ضع اسم البوت الحقيقي):
-const telegramUrl = `tg://resolve?domain=ea_fc_fifa_bot&text=${encodedMessage}`;
-const telegramWebUrl = `https://t.me/ea_fc_fifa_bot?text=${encodedMessage}`;
+const telegramUrl = `tg://resolve?domain=ea_fc_fifa_bot&start=${encodedMessage}`;
+const telegramWebUrl = `https://t.me/ea_fc_fifa_bot?start=${encodedMessage}`;
     console.log('🚀 AUTO-LINKING Telegram:', correctBotUsername, 'Code:', code);
     
     // فتح التليجرام حسب النوع

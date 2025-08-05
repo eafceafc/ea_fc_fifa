@@ -1566,8 +1566,8 @@ def check_telegram_status(code):
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
-@app.route('/generate-telegram-code', methods=['POST'])
-def generate_telegram_code():
+@app.route('/create-telegram-code', methods=['POST'])
+def create_telegram_code_endpoint():
     """توليد كود التليجرام للربط (الـ endpoint المفقود)"""
     try:
         data = request.get_json()
@@ -1577,7 +1577,7 @@ def generate_telegram_code():
         if not whatsapp_number:
             return jsonify({'success': False, 'message': 'رقم الواتساب غير صحيح'}), 400
         
-        # توليد الكود
+        # توليد الكود (استخدام الدالة المساعدة)
         telegram_code = generate_telegram_code()
         
         # حفظ البيانات في قاعدة البيانات
@@ -1617,8 +1617,9 @@ def generate_telegram_code():
         })
         
     except Exception as e:
-        print(f"❌ خطأ في generate_telegram_code: {str(e)}")
+        print(f"❌ خطأ في create_telegram_code_endpoint: {str(e)}")
         return jsonify({'success': False, 'message': 'خطأ في الخادم'}), 500
+
 
 # route جديد لإعداد webhook التليجرام
 @app.route('/set-telegram-webhook')

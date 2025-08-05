@@ -1456,7 +1456,7 @@ async function generateTelegramCode() {
         
         console.log('📤 Generating Telegram code with data:', formData);
         
-        const response = await fetch('/create-telegram-code', {
+        const response = await fetch('/generate-telegram-code', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

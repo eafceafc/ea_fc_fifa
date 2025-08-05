@@ -735,7 +735,7 @@ def validate_whatsapp_endpoint():
 
 @app.route('/update-profile', methods=['POST'])
 def update_profile():
-    """تحديث الملف الشخصي - محدثة مع الانتقال التلقائي"""
+    """تحديث الملف الشخصي مع الربط الفوري للتليجرام"""
     try:
         client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
         
@@ -811,13 +811,18 @@ def update_profile():
                 }), 400
             processed_payment_details = extracted_link
         
+        # 🔥 توليد كود تليجرام فوري
+        telegram_code = generate_telegram_code()
+        
         # حفظ البيانات في قاعدة البيانات
         conn = get_db_connection()
+        user_id = hashlib.md5(f"{whatsapp_number}-{datetime.now().isoformat()}".encode()).hexdigest()[:12]
+        
         if conn:
             try:
                 cursor = conn.cursor()
-                user_id = hashlib.md5(f"{whatsapp_number}-{datetime.now().isoformat()}".encode()).hexdigest()[:12]
                 
+                # حفظ بيانات المستخدم
                 cursor.execute("""
                     INSERT INTO users_profiles 
                     (user_id, platform, whatsapp_number, whatsapp_info, payment_method, 
@@ -833,6 +838,17 @@ def update_profile():
                     hashlib.sha256(request.headers.get('User-Agent', '').encode()).hexdigest()[:10]
                 ))
                 
+                # حفظ كود التليجرام
+                cursor.execute("""
+                    INSERT INTO telegram_codes 
+                    (code, platform, whatsapp_number, payment_method, payment_details, 
+                     telegram_username, used, created_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, NOW())
+                """, (
+                    telegram_code, platform, whatsapp_validation['formatted'], 
+                    payment_method, processed_payment_details, telegram_username, False
+                ))
+                
                 conn.commit()
                 print(f"✅ تم حفظ البيانات في قاعدة البيانات - User ID: {user_id}")
                 
@@ -843,6 +859,7 @@ def update_profile():
         
         # حفظ في الذاكرة المؤقتة أيضاً
         user_data = {
+            'user_id': user_id,
             'platform': platform,
             'whatsapp_number': whatsapp_validation['formatted'],
             'whatsapp_info': whatsapp_validation.get('whatsapp_info', {}),
@@ -850,31 +867,42 @@ def update_profile():
             'payment_details': processed_payment_details,
             'telegram_username': telegram_username,
             'email_addresses': email_addresses,
+            'telegram_code': telegram_code,
             'created_at': datetime.now().isoformat(),
             'ip_address': hashlib.sha256(client_ip.encode()).hexdigest()[:10]
         }
         
-        user_id = hashlib.md5(f"{whatsapp_number}-{datetime.now().isoformat()}".encode()).hexdigest()[:12]
         users_data[user_id] = user_data
+        telegram_codes[telegram_code] = user_data
         
-        # حفظ بيانات المستخدم في الجلسة للانتقال
+        # حفظ بيانات المستخدم في الجلسة
         session['user_profile'] = user_data
         session['user_id'] = user_id
+        session['telegram_code'] = telegram_code
         
         # توليد token جديد للأمان
         session['csrf_token'] = generate_csrf_token()
         
-        print(f"🔥 Profile Saved Successfully - User ID: {user_id}")
+        print(f"🔥 Profile Saved & Telegram Code Generated - User ID: {user_id}, Code: {telegram_code}")
         
-        # تحضير الاستجابة مع رابط الانتقال
+        # 🚀 بناء روابط التليجرام للفتح المباشر
+        bot_username = os.environ.get('TELEGRAM_BOT_USERNAME', 'ea_fc_fifa_bot')
+        telegram_app_url = f"tg://resolve?domain={bot_username}&start={telegram_code}"
+        telegram_web_url = f"https://t.me/{bot_username}?start={telegram_code}"
+        
+        # تحضير الاستجابة مع الربط التلقائي
         response_data = {
             'success': True,
-            'message': 'تم حفظ بياناتك بنجاح! سيتم الانتقال لطلب بيع الكوينز...',
+            'message': 'تم حفظ بياناتك بنجاح! سيتم فتح التليجرام للربط...',
             'user_id': user_id,
             'new_csrf_token': session['csrf_token'],
-            'next_step': '/coins-order',  # رابط الانتقال
-            'auto_redirect': True,        # تفعيل الانتقال التلقائي
-            'redirect_delay': 2000,       # تأخير 2 ثانية
+            'telegram_integration': True,  # 🔥 تفعيل الربط التلقائي
+            'telegram_code': telegram_code,
+            'telegram_app_url': telegram_app_url,
+            'telegram_web_url': telegram_web_url,
+            'bot_username': bot_username,
+            'auto_redirect_after_link': True,  # انتقال تلقائي بعد الربط
+            'next_step': '/coins-order',
             'data': {
                 'platform': platform,
                 'whatsapp_number': whatsapp_validation['formatted'],

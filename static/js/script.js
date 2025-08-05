@@ -973,6 +973,8 @@ function openTelegramAutomatic(serverResponse) {
     const botUsername = serverResponse.bot_username;
     
     console.log(`🚀 فتح التليجرام التلقائي - الكود: ${telegramCode}`);
+    console.log(`📱 رابط التطبيق: ${telegramAppUrl}`);
+    console.log(`🌐 رابط الويب: ${telegramWebUrl}`);
     
     // عرض رسالة التوجيه
     showNotification('📱 جاري فتح التليجرام...', 'info');
@@ -980,20 +982,19 @@ function openTelegramAutomatic(serverResponse) {
     // فتح التليجرام حسب نوع الجهاز
     if (navigator.userAgent.match(/(iPhone|iPad|iPod|Android)/i)) {
         // الأجهزة المحمولة - محاولة فتح التطبيق أولاً
-        const tempLink = document.createElement('a');
-        tempLink.href = telegramAppUrl;
-        tempLink.style.display = 'none';
-        document.body.appendChild(tempLink);
-        tempLink.click();
-        document.body.removeChild(tempLink);
+        console.log('📱 جهاز محمول - فتح التطبيق');
         
-        // احتياطي - فتح الويب بعد ثانية
+        // محاولة 1: فتح التطبيق مباشرة
+        window.location.href = telegramAppUrl;
+        
+        // محاولة 2: نافذة جديدة كـ backup
         setTimeout(() => {
             window.open(telegramWebUrl, '_blank');
-        }, 1000);
+        }, 1500);
         
     } else {
         // أجهزة الكمبيوتر - فتح مباشر
+        console.log('💻 جهاز كمبيوتر - فتح الويب');
         window.open(telegramWebUrl, '_blank');
     }
     
@@ -1577,7 +1578,7 @@ function openTelegramAppDirect() {
     
 // بهذا (ضع اسم البوت الحقيقي):
 const telegramUrl = `tg://resolve?domain=ea_fc_fifa_bot&text=${encodedMessage}`;
-const telegramWebUrl = `https://t.me/ea_fc_fifa_bot?text=${encodedMessage}`;    
+const telegramWebUrl = `https://t.me/ea_fc_fifa_bot?text=${encodedMessage}`;
     console.log('🚀 AUTO-LINKING Telegram:', correctBotUsername, 'Code:', code);
     
     // فتح التليجرام حسب النوع

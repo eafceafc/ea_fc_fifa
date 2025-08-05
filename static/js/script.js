@@ -1750,6 +1750,7 @@ function showTimeoutError() {
 function resetTelegramButton() {
     const telegramBtn = document.getElementById('telegramBtn');
     if (telegramBtn) {
+        telegramBtn.disabled = false;
         telegramBtn.innerHTML = `
             <div class="telegram-btn-content">
                 <i class="fab fa-telegram telegram-icon"></i>
@@ -1759,11 +1760,6 @@ function resetTelegramButton() {
                 </div>
             </div>
         `;
-        telegramBtn.onclick = function() {
-            generateTelegramCode();
-        };
-        telegramBtn.disabled = false;
-        telegramBtn.classList.remove('generating');
     }
 }
 

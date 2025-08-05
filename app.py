@@ -1566,6 +1566,60 @@ def check_telegram_status(code):
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
+@app.route('/generate-telegram-code', methods=['POST'])
+def generate_telegram_code():
+    """توليد كود التليجرام للربط (الـ endpoint المفقود)"""
+    try:
+        data = request.get_json()
+        
+        # التحقق من البيانات
+        whatsapp_number = normalize_phone_number(data.get('whatsapp_number', ''))
+        if not whatsapp_number:
+            return jsonify({'success': False, 'message': 'رقم الواتساب غير صحيح'}), 400
+        
+        # توليد الكود
+        telegram_code = generate_telegram_code()
+        
+        # حفظ البيانات في قاعدة البيانات
+        user_data = {
+            'platform': sanitize_input(data.get('platform')),
+            'whatsapp_number': whatsapp_number,
+            'payment_method': sanitize_input(data.get('payment_method')),
+            'payment_details': sanitize_input(data.get('payment_details')),
+            'telegram_username': sanitize_input(data.get('telegram_username', ''))
+        }
+        
+        conn = get_db_connection()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "INSERT INTO telegram_codes (code, user_data) VALUES (%s, %s)",
+                    (telegram_code, json.dumps(user_data))
+                )
+                conn.commit()
+            except Exception as e:
+                print(f"❌ خطأ في حفظ الكود: {str(e)}")
+                return jsonify({'success': False, 'message': 'خطأ في الحفظ'}), 500
+            finally:
+                conn.close()
+        
+        # إرجاع معلومات الربط
+        bot_username = os.environ.get('TELEGRAM_BOT_USERNAME', 'ea_fc_fifa_bot')
+        
+        return jsonify({
+            'success': True,
+            'message': 'تم إنشاء الكود بنجاح!',
+            'telegram_code': telegram_code,
+            'telegram_app_url': f"tg://resolve?domain={bot_username}&start={telegram_code}",
+            'telegram_web_url': f"https://t.me/{bot_username}?start={telegram_code}",
+            'bot_username': bot_username
+        })
+        
+    except Exception as e:
+        print(f"❌ خطأ في generate_telegram_code: {str(e)}")
+        return jsonify({'success': False, 'message': 'خطأ في الخادم'}), 500
+
 # route جديد لإعداد webhook التليجرام
 @app.route('/set-telegram-webhook')
 def set_telegram_webhook():

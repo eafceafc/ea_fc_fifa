@@ -2168,3 +2168,236 @@ isValidInstaPayLink = function(link) {
 };
 
 console.log('🚀 InstaPay Smart Link Extraction System - Initialized');
+
+console.log('🚀 InstaPay Smart Link Extraction System - Initialized');
+
+// 🆕 ضع الدوال الجديدة هنا
+// دالة ربط التليجرام - إضافة جديدة كاملة
+async function linkTelegram() {
+    // الحصول على العناصر المطلوبة
+    const whatsappInput = document.getElementById('whatsapp') || document.getElementById('whatsappInput');
+    const telegramCodeInput = document.getElementById('telegramCodeInput') || document.getElementById('generatedCode');
+    
+    if (!whatsappInput || !telegramCodeInput) {
+        showNotification('عناصر النموذج غير موجودة', 'error');
+        return;
+    }
+    
+    const whatsappNumber = whatsappInput.value ? whatsappInput.value.trim() : '';
+    const telegramCode = telegramCodeInput.value ? telegramCodeInput.value.trim() : telegramCodeInput.textContent ? telegramCodeInput.textContent.trim() : '';
+    
+    // العثور على زر الإرسال
+    const submitBtn = document.getElementById('submitBtn') || document.querySelector('.submit-btn') || document.querySelector('button[type="submit"]');
+    
+    // إنشاء عنصر الحالة إذا لم يكن موجوداً
+    let statusDiv = document.getElementById('status');
+    if (!statusDiv) {
+        statusDiv = document.createElement('div');
+        statusDiv.id = 'status';
+        statusDiv.className = 'status-message';
+        statusDiv.style.display = 'none';
+        
+        // البحث عن مكان مناسب لوضع الحالة
+        const container = document.querySelector('.telegram-form') || 
+                         document.querySelector('.form-container') || 
+                         document.querySelector('.container') ||
+                         document.body;
+        container.appendChild(statusDiv);
+    }
+    
+    // إخفاء أي رسائل سابقة
+    statusDiv.style.display = 'none';
+    statusDiv.className = 'status-message';
+    
+    // التحقق من البيانات المدخلة
+    if (!whatsappNumber) {
+        showStatus('يرجى إدخال رقم الواتساب', 'error');
+        whatsappInput.focus();
+        return;
+    }
+    
+    if (!telegramCode) {
+        showStatus('يرجى إدخال كود التليجرام', 'error');
+        if (telegramCodeInput.focus) telegramCodeInput.focus();
+        return;
+    }
+    
+    // التحقق من صحة رقم الواتساب
+    const whatsappRegex = /^(010|011|012|015)\d{8}$/;
+    const cleanWhatsapp = whatsappNumber.replace(/[^\d]/g, '');
+    
+    if (!whatsappRegex.test(cleanWhatsapp)) {
+        showStatus('رقم الواتساب غير صحيح. يجب أن يبدأ بـ 010 أو 011 أو 012 أو 015', 'error');
+        whatsappInput.focus();
+        return;
+    }
+    
+    // تعطيل الزر أثناء المعالجة
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الربط...';
+    }
+    
+    try {
+        const response = await fetch('/api/link_telegram', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                whatsapp_number: cleanWhatsapp,
+                telegram_code: telegramCode
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showStatus(data.message, 'success');
+            
+            // إنشاء انيميشن نجاح
+            createSuccessAnimation();
+            
+            // اهتزاز نجاح
+            if (navigator.vibrate) {
+                navigator.vibrate([200, 100, 200, 100, 400]);
+            }
+            
+            // الانتقال إلى صفحة الكوينز بعد 2 ثانية
+            setTimeout(() => {
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                } else {
+                    window.location.href = '/coins-order';
+                }
+            }, 2000);
+            
+        } else {
+            showStatus(data.message, 'error');
+            
+            // اهتزاز خطأ
+            if (navigator.vibrate) {
+                navigator.vibrate([300, 100, 300]);
+            }
+        }
+        
+    } catch (error) {
+        console.error('خطأ في الشبكة:', error);
+        showStatus('حدث خطأ في الاتصال. تأكد من اتصالك بالإنترنت وحاول مرة أخرى.', 'error');
+    } finally {
+        // إعادة تفعيل الزر
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-link"></i> ربط الحساب';
+        }
+    }
+}
+
+// دالة عرض رسائل الحالة
+function showStatus(message, type) {
+    let statusDiv = document.getElementById('status');
+    
+    // إنشاء العنصر إذا لم يكن موجوداً
+    if (!statusDiv) {
+        statusDiv = document.createElement('div');
+        statusDiv.id = 'status';
+        const container = document.querySelector('.container') || document.body;
+        container.appendChild(statusDiv);
+    }
+    
+    statusDiv.textContent = message;
+    statusDiv.className = `status-message ${type}`;
+    statusDiv.style.display = 'block';
+    
+    // إضافة انيميشن
+    statusDiv.style.animation = 'fadeInUp 0.5s ease-out';
+    
+    // إضافة الأنماط إذا لم تكن موجودة
+    addStatusStyles();
+}
+
+// دالة إنشاء انيميشن النجاح
+function createSuccessAnimation() {
+    // إنشاء جسيمات نجاح
+    for (let i = 0; i < 20; i++) {
+        createSuccessParticle();
+    }
+}
+
+function createSuccessParticle() {
+    const particle = document.createElement('div');
+    particle.innerHTML = '✨';
+    particle.style.position = 'fixed';
+    particle.style.left = Math.random() * window.innerWidth + 'px';
+    particle.style.top = Math.random() * window.innerHeight + 'px';
+    particle.style.fontSize = '20px';
+    particle.style.zIndex = '9999';
+    particle.style.pointerEvents = 'none';
+    particle.style.animation = 'particleFloat 3s ease-out forwards';
+    
+    document.body.appendChild(particle);
+    
+    // إزالة الجسيم بعد انتهاء الانيميشن
+    setTimeout(() => {
+        particle.remove();
+    }, 3000);
+}
+
+// إضافة أنماط CSS المطلوبة
+function addStatusStyles() {
+    if (document.getElementById('telegram-link-styles')) return;
+    
+    const style = document.createElement('style');
+    style.id = 'telegram-link-styles';
+    style.textContent = `
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes particleFloat {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px) scale(0);
+            }
+        }
+        
+        .status-message {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: bold;
+            text-align: center;
+            font-family: 'Cairo', sans-serif;
+            display: none;
+        }
+        
+        .status-message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+console.log('✅ linkTelegram function added successfully');
+
+// ═══ النهاية - لا تضع أي شيء بعد هذا ═══

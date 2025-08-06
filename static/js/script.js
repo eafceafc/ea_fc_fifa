@@ -970,29 +970,24 @@ function openTelegramAutomatic(serverResponse) {
     const telegramCode = serverResponse.telegram_code;
     const botUsername = serverResponse.bot_username || 'ea_fc_fifa_bot';
     
-    // 🔗 بناء الروابط الصحيحة
+    // 🔗 بناء الروابط الصحيحة مع START تلقائي
     const telegramAppUrl = `tg://resolve?domain=${botUsername}&start=${telegramCode}`;
     const telegramWebUrl = `https://t.me/${botUsername}?start=${telegramCode}`;
     
-    console.log(`🚀 فتح التليجرام التلقائي - الكود: ${telegramCode}`);
+    console.log(`🚀 فتح التليجرام التلقائي مع START - الكود: ${telegramCode}`);
     console.log(`📱 رابط التطبيق: ${telegramAppUrl}`);
     console.log(`🌐 رابط الويب: ${telegramWebUrl}`);
     
     // عرض رسالة التوجيه
-    showNotification('📱 جاري فتح التليجرام...', 'info');
+    showNotification('📱 جاري فتح التليجرام مع START تلقائي...', 'info');
     
     // فتح التليجرام حسب نوع الجهاز
     if (navigator.userAgent.match(/(iPhone|iPad|iPod|Android)/i)) {
-        // الأجهزة المحمولة - محاولة فتح التطبيق أولاً
-        console.log('📱 جهاز محمول - فتح التطبيق');
+        // الأجهزة المحمولة - فتح مباشر مع START
+        console.log('📱 جهاز محمول - فتح مع START تلقائي');
         
-        // إنشاء رابط مخفي للتطبيق
-        const appLink = document.createElement('a');
-        appLink.href = telegramAppUrl;
-        appLink.style.display = 'none';
-        document.body.appendChild(appLink);
-        appLink.click();
-        document.body.removeChild(appLink);
+        // محاولة فتح التطبيق أولاً
+        window.location.href = telegramAppUrl;
         
         // محاولة احتياطية - فتح الويب بعد ثانية ونصف
         setTimeout(() => {
@@ -1000,19 +995,20 @@ function openTelegramAutomatic(serverResponse) {
         }, 1500);
         
     } else {
-        // أجهزة الكمبيوتر - فتح الويب مباشرة
-        console.log('💻 جهاز كمبيوتر - فتح الويب');
+        // أجهزة الكمبيوتر - فتح الويب مباشرة مع START
+        console.log('💻 جهاز كمبيوتر - فتح الويب مع START');
         window.open(telegramWebUrl, '_blank');
     }
     
-    // رسالة إرشادية
+    // رسائل إرشادية
     setTimeout(() => {
-        showNotification('⚡ اضغط "Start" في البوت لإكمال الربط', 'info');
+        showNotification('✅ تم إرسال /start تلقائياً - انتظر التأكيد', 'success');
     }, 2000);
     
     // 🔥 بدء مراقبة الربط التلقائي
     startTelegramLinkMonitoring(telegramCode, serverResponse.next_step);
 }
+
 
 
 // 🔍 مراقبة حالة الربط كل 3 ثوان - محدثة ومُصححة

@@ -1447,18 +1447,26 @@ let currentTelegramCode = null;
 let telegramStatusChecker = null;
 let correctBotUsername = null;
 
-// تحميل username البوت الصحيح
+// تحميل username البوت الصحيح - مُصحح
 async function loadBotUsername() {
     try {
         const response = await fetch('/get-bot-username');
+        if (!response.ok) {
+            throw new Error('فشل في تحميل معلومات البوت');
+        }
+        
         const result = await response.json();
-        correctBotUsername = result.bot_username;
+        correctBotUsername = result.bot_username || 'ea_fc_fifa_bot';
         console.log('✅ Bot username loaded:', correctBotUsername);
+        return correctBotUsername;
+        
     } catch (error) {
         console.error('❌ Failed to load bot username:', error);
-        correctBotUsername = 'YourBotName_bot'; // fallback
+        correctBotUsername = 'ea_fc_fifa_bot'; // استخدام الاسم المعروف
+        return correctBotUsername;
     }
 }
+
 
 // دالة توليد كود التليجرام - محدثة
 async function generateTelegramCode() {
@@ -1579,18 +1587,20 @@ async function generateTelegramCode() {
     telegramBtn.disabled = false;
 }
 
-// دالة فتح التليجرام المباشر - الربط التلقائي
+// 🚀 دالة فتح التليجرام التلقائي الجديدة - مُصححة
 function openTelegramAppDirect() {
-    const code = currentTelegramCode || document.getElementById('generatedCode').textContent;
+    const code = currentTelegramCode || document.querySelector('.generated-code')?.textContent || document.getElementById('generatedCode')?.textContent;
     
     if (!code) {
         showNotification('❌ لا يوجد كود للربط', 'error');
         return;
     }
     
+    // تحميل معلومات البوت إذا لم تكن محملة
     if (!correctBotUsername) {
         showNotification('جاري تحميل معلومات البوت...', 'info');
         loadBotUsername().then(() => {
+            // إعادة المحاولة بعد تحميل اسم البوت
             openTelegramAppDirect();
         });
         return;
@@ -1610,10 +1620,13 @@ function openTelegramAppDirect() {
         btn.style.opacity = '0.6';
     });
     
-// بهذا (ضع اسم البوت الحقيقي):
-const telegramUrl = `tg://resolve?domain=ea_fc_fifa_bot&start=${encodedMessage}`;
-const telegramWebUrl = `https://t.me/ea_fc_fifa_bot?start=${encodedMessage}`;
+    // 🔗 بناء الروابط الصحيحة - المُصحح
+    const telegramAppUrl = `tg://resolve?domain=${correctBotUsername}&start=${code}`;
+    const telegramWebUrl = `https://t.me/${correctBotUsername}?start=${code}`;
+    
     console.log('🚀 AUTO-LINKING Telegram:', correctBotUsername, 'Code:', code);
+    console.log('📱 App URL:', telegramAppUrl);
+    console.log('🌐 Web URL:', telegramWebUrl);
     
     // فتح التليجرام حسب النوع
     if (navigator.userAgent.match(/(iPhone|iPad|iPod|Android)/i)) {
@@ -1648,51 +1661,86 @@ const telegramWebUrl = `https://t.me/ea_fc_fifa_bot?start=${encodedMessage}`;
     startAutoTelegramLinking(code);
 }
 
-// نظام الربط التلقائي المطور
+
+// نظام الربط التلقائي المطور - مُصحح
 function startAutoTelegramLinking(code) {
     let attemptCount = 0;
-    const maxAttempts = 45; // 2.25 دقيقة
+    const maxAttempts = 30; // 1.5 دقيقة
+    
+    console.log(`🔍 بدء مراقبة الربط التلقائي للكود: ${code}`);
     
     const autoLinker = setInterval(async () => {
         attemptCount++;
         
         try {
-            const response = await fetch(`/check-telegram-status/${code}`);
+            console.log(`🔍 فحص الربط - المحاولة ${attemptCount}/${maxAttempts}`);
+            
+            const response = await fetch(`/check-telegram-status/${code}`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Cache-Control': 'no-cache'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
             const result = await response.json();
+            console.log(`📊 نتيجة الفحص:`, result);
             
             if (result.success && result.linked) {
-                // نجح الربط!
+                // ✅ تم الربط بنجاح!
                 clearInterval(autoLinker);
-                console.log('🎉 AUTO-LINK SUCCESS!');
+                console.log('🎉 تم الربط بنجاح! جاري الانتقال...');
                 
-                // إظهار النجاح الفوري
-                showUltimateSuccess();
+                showNotification('🎉 تم ربط التليجرام بنجاح! جاري الانتقال...', 'success');
+                
+                // اهتزاز نجاح قوي
+                if (navigator.vibrate) {
+                    navigator.vibrate([100, 50, 100, 50, 200]);
+                }
+                
+                // انتقال فوري لصفحة الكوينز
+                setTimeout(() => {
+                    console.log('🔄 انتقال تلقائي لصفحة الكوينز');
+                    window.location.href = '/coins-order';
+                }, 1500);
+                
                 return;
             }
             
-            // تحديثات الحالة
-            if (attemptCount === 5) {
-                showNotification('📡 البحث عن الربط...', 'info');
-            } else if (attemptCount === 10) {
-                showNotification('🔍 فحص حالة الاتصال...', 'info');
-            } else if (attemptCount === 20) {
-                showNotification('⏳ يرجى التأكد من إرسال الكود للبوت', 'info');
-            } else if (attemptCount === 30) {
-                showNotification('⚠️ تأكد من فتح التليجرام وإرسال الكود', 'info');
+            // رسالة تقدم كل 15 ثانية (كل 5 محاولات)
+            if (attemptCount % 5 === 0) {
+                const timeElapsed = Math.floor(attemptCount * 3); // 3 ثوان لكل محاولة
+                showNotification(`⏳ في انتظار الربط... (${timeElapsed} ثانية)`, 'info');
             }
             
         } catch (error) {
-            console.error('خطأ في الربط التلقائي:', error);
+            console.error('❌ خطأ في فحص حالة الربط:', error);
+            
+            // رسالة خطأ كل 10 محاولات
+            if (attemptCount % 10 === 0) {
+                showNotification('⚠️ مشكلة في الاتصال، يرجى التحقق من الإنترنت', 'error');
+            }
         }
         
-        // انتهاء المحاولات
+        // انتهاء المهلة الزمنية
         if (attemptCount >= maxAttempts) {
             clearInterval(autoLinker);
-            showTimeoutError();
+            
+            // انتقال مباشر بعد انتهاء الوقت
+            showNotification('⏰ انتهت مهلة الانتظار - جاري الانتقال لصفحة الكوينز...', 'info');
+            
+            setTimeout(() => {
+                window.location.href = '/coins-order';
+            }, 2000);
         }
         
     }, 3000); // فحص كل 3 ثوان
 }
+
 
 // عرض النجاح النهائي
 function showUltimateSuccess() {

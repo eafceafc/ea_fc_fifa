@@ -970,7 +970,7 @@ function openTelegramAutomatic(serverResponse) {
     const telegramCode = serverResponse.telegram_code;
     const botUsername = serverResponse.bot_username || 'ea_fc_fifa_bot';
     
-    // 🔗 بناء الروابط الصحيحة
+    // 🔗 بناء الروابط الصحيحة مع /start تلقائي
     const telegramAppUrl = `tg://resolve?domain=${botUsername}&start=${telegramCode}`;
     const telegramWebUrl = `https://t.me/${botUsername}?start=${telegramCode}`;
     
@@ -979,12 +979,12 @@ function openTelegramAutomatic(serverResponse) {
     console.log(`🌐 رابط الويب: ${telegramWebUrl}`);
     
     // عرض رسالة التوجيه
-    showNotification('📱 جاري فتح التليجرام...', 'info');
+    showNotification('📱 جاري فتح التليجرام مع /start تلقائي...', 'info');
     
     // فتح التليجرام حسب نوع الجهاز
     if (navigator.userAgent.match(/(iPhone|iPad|iPod|Android)/i)) {
         // الأجهزة المحمولة - محاولة فتح التطبيق أولاً
-        console.log('📱 جهاز محمول - فتح التطبيق');
+        console.log('📱 جهاز محمول - فتح التطبيق مع /start');
         
         // إنشاء رابط مخفي للتطبيق
         const appLink = document.createElement('a');
@@ -1001,18 +1001,19 @@ function openTelegramAutomatic(serverResponse) {
         
     } else {
         // أجهزة الكمبيوتر - فتح الويب مباشرة
-        console.log('💻 جهاز كمبيوتر - فتح الويب');
+        console.log('💻 جهاز كمبيوتر - فتح الويب مع /start');
         window.open(telegramWebUrl, '_blank');
     }
     
-    // رسالة إرشادية
+    // رسالة إرشادية محدثة
     setTimeout(() => {
-        showNotification('⚡ اضغط "Start" في البوت لإكمال الربط', 'info');
+        showNotification('⚡ سيتم إرسال /start تلقائياً - انتظر...', 'info');
     }, 2000);
     
     // 🔥 بدء مراقبة الربط التلقائي
     startTelegramLinkMonitoring(telegramCode, serverResponse.next_step);
 }
+
 
 
 // 🔍 مراقبة حالة الربط كل 3 ثوان - محدثة ومُصححة

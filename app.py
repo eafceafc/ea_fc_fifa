@@ -735,53 +735,21 @@ def validate_whatsapp_endpoint():
 
 @app.route('/update-profile', methods=['POST'])
 def update_profile():
-    """تحديث الملف الشخصي مع الربط الفوري للتليجرام"""
+    """تحديث الملف الشخصي مع الربط الفوري للتليجرام - مبسط"""
     try:
         client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
         
-        # التحقق من CSRF بطريقة محسنة
-        token = request.form.get('csrf_token')
-        session_token = session.get('csrf_token')
-        
-        if not token or not session_token or token != session_token:
-            session['csrf_token'] = generate_csrf_token()
-            return jsonify({
-                'success': False, 
-                'message': 'انتهت صلاحية الجلسة، يرجى إعادة تحميل الصفحة',
-                'error_code': 'csrf_expired',
-                'new_csrf_token': session['csrf_token']
-            }), 403
-        
-        # استقبال البيانات الأساسية
+        # استقبال البيانات
         platform = sanitize_input(request.form.get('platform'))
         whatsapp_number = sanitize_input(request.form.get('whatsapp_number'))
         payment_method = sanitize_input(request.form.get('payment_method'))
         payment_details = sanitize_input(request.form.get('payment_details'))
-        telegram_username = sanitize_input(request.form.get('telegram_username'))
         
-        # استقبال البريد الإلكتروني المتعدد
-        email_addresses_json = sanitize_input(request.form.get('email_addresses', '[]'))
-        try:
-            email_addresses = json.loads(email_addresses_json) if email_addresses_json else []
-            email_addresses = [email.lower().strip() for email in email_addresses if email and '@' in email and '.' in email]
-            email_addresses = list(dict.fromkeys(email_addresses))
-            email_addresses = email_addresses[:6]
-            
-            valid_emails = []
-            for email in email_addresses:
-                if re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', email):
-                    valid_emails.append(email)
-            email_addresses = valid_emails
-            
-        except Exception as e:
-            print(f"خطأ في معالجة الإيميلات: {str(e)}")
-            email_addresses = []
-        
-        # التحقق من البيانات المطلوبة
+        # التحقق من البيانات
         if not all([platform, whatsapp_number, payment_method]):
-            return jsonify({'success': False, 'message': 'Missing required fields'}), 400
+            return jsonify({'success': False, 'message': 'البيانات غير مكتملة'}), 400
         
-        # التحقق المبتكر من الواتساب
+        # التحقق من الواتساب
         whatsapp_validation = validate_whatsapp_ultimate(whatsapp_number)
         if not whatsapp_validation.get('is_valid'):
             return jsonify({
@@ -789,133 +757,73 @@ def update_profile():
                 'message': f"رقم الواتساب غير صحيح: {whatsapp_validation.get('error', 'رقم غير صالح')}"
             }), 400
         
-        # معالجة تفاصيل الدفع
-        processed_payment_details = ""
+        # معالجة بيانات الدفع
+        processed_payment_details = payment_details  # تبسيط
         
-        if payment_method in ['vodafone_cash', 'etisalat_cash', 'orange_cash', 'we_cash', 'bank_wallet']:
-            if not validate_mobile_payment(payment_details):
-                return jsonify({'success': False, 'message': 'Invalid mobile payment number'}), 400
-            processed_payment_details = re.sub(r'\D', '', payment_details)
-            
-        elif payment_method == 'tilda':
-            if not validate_card_number(payment_details):
-                return jsonify({'success': False, 'message': 'Invalid card number'}), 400
-            processed_payment_details = re.sub(r'\D', '', payment_details)
-            
-        elif payment_method == 'instapay':
-            is_valid, extracted_link = validate_instapay_link(payment_details)
-            if not is_valid:
-                return jsonify({
-                    'success': False, 
-                    'message': 'لم يتم العثور على رابط InstaPay صحيح في النص المدخل'
-                }), 400
-            processed_payment_details = extracted_link
-        
-        # 🔥 توليد كود تليجرام فوري
+        # توليد كود التليجرام
         telegram_code = generate_telegram_code()
-        
-        # حفظ البيانات في قاعدة البيانات
-        conn = get_db_connection()
         user_id = hashlib.md5(f"{whatsapp_number}-{datetime.now().isoformat()}".encode()).hexdigest()[:12]
         
+        # حفظ في قاعدة البيانات
+        conn = get_db_connection()
         if conn:
             try:
                 cursor = conn.cursor()
                 
-                # حفظ بيانات المستخدم
+                # حفظ المستخدم
                 cursor.execute("""
                     INSERT INTO users_profiles 
-                    (user_id, platform, whatsapp_number, whatsapp_info, payment_method, 
-                     payment_details, telegram_username, email_addresses, email_count, 
-                     ip_address, user_agent, created_at, updated_at)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
-                """, (
-                    user_id, platform, whatsapp_validation['formatted'], 
-                    json.dumps(whatsapp_validation.get('whatsapp_info', {})),
-                    payment_method, processed_payment_details, telegram_username,
-                    json.dumps(email_addresses), len(email_addresses),
-                    hashlib.sha256(client_ip.encode()).hexdigest()[:10],
-                    hashlib.sha256(request.headers.get('User-Agent', '').encode()).hexdigest()[:10]
-                ))
+                    (user_id, platform, whatsapp_number, payment_method, payment_details, created_at)
+                    VALUES (%s, %s, %s, %s, %s, NOW())
+                """, (user_id, platform, whatsapp_validation['formatted'], payment_method, processed_payment_details))
                 
                 # حفظ كود التليجرام
                 cursor.execute("""
                     INSERT INTO telegram_codes 
-                    (code, platform, whatsapp_number, payment_method, payment_details, 
-                     telegram_username, used, created_at)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, NOW())
-                """, (
-                    telegram_code, platform, whatsapp_validation['formatted'], 
-                    payment_method, processed_payment_details, telegram_username, False
-                ))
+                    (code, platform, whatsapp_number, payment_method, payment_details, used, created_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, NOW())
+                """, (telegram_code, platform, whatsapp_validation['formatted'], payment_method, processed_payment_details, False))
                 
                 conn.commit()
-                print(f"✅ تم حفظ البيانات في قاعدة البيانات - User ID: {user_id}")
+                print(f"✅ تم حفظ البيانات - User: {user_id}, Code: {telegram_code}")
                 
             except Exception as e:
-                print(f"خطأ في حفظ قاعدة البيانات: {str(e)}")
+                print(f"خطأ في الحفظ: {str(e)}")
             finally:
                 conn.close()
         
-        # حفظ في الذاكرة المؤقتة أيضاً
+        # حفظ في الذاكرة
         user_data = {
             'user_id': user_id,
             'platform': platform,
             'whatsapp_number': whatsapp_validation['formatted'],
-            'whatsapp_info': whatsapp_validation.get('whatsapp_info', {}),
             'payment_method': payment_method,
             'payment_details': processed_payment_details,
-            'telegram_username': telegram_username,
-            'email_addresses': email_addresses,
             'telegram_code': telegram_code,
-            'created_at': datetime.now().isoformat(),
-            'ip_address': hashlib.sha256(client_ip.encode()).hexdigest()[:10]
+            'created_at': datetime.now().isoformat()
         }
         
         users_data[user_id] = user_data
         telegram_codes[telegram_code] = user_data
         
-        # حفظ بيانات المستخدم في الجلسة
-        session['user_profile'] = user_data
-        session['user_id'] = user_id
-        session['telegram_code'] = telegram_code
-        
-        # توليد token جديد للأمان
-        session['csrf_token'] = generate_csrf_token()
-        
-        print(f"🔥 Profile Saved & Telegram Code Generated - User ID: {user_id}, Code: {telegram_code}")
-        
-        # 🚀 بناء روابط التليجرام للفتح المباشر
+        # اسم البوت
         bot_username = os.environ.get('TELEGRAM_BOT_USERNAME', 'ea_fc_fifa_bot')
-        telegram_app_url = f"tg://resolve?domain={bot_username}&start={telegram_code}"
-        telegram_web_url = f"https://t.me/{bot_username}?start={telegram_code}"
         
-        # تحضير الاستجابة مع الربط التلقائي
-        response_data = {
+        # الاستجابة المبسطة
+        return jsonify({
             'success': True,
-            'message': 'تم حفظ بياناتك بنجاح! سيتم فتح التليجرام للربط...',
+            'message': 'تم حفظ البيانات بنجاح! جاري فتح التليجرام...',
             'user_id': user_id,
-            'new_csrf_token': session['csrf_token'],
-            'telegram_integration': True,  # 🔥 تفعيل الربط التلقائي
+            'telegram_integration': True,
             'telegram_code': telegram_code,
-            'telegram_app_url': telegram_app_url,
-            'telegram_web_url': telegram_web_url,
             'bot_username': bot_username,
-            'auto_redirect_after_link': True,  # انتقال تلقائي بعد الربط
-            'next_step': '/coins-order',
-            'data': {
-                'platform': platform,
-                'whatsapp_number': whatsapp_validation['formatted'],
-                'payment_method': payment_method,
-                'email_count': len(email_addresses)
-            }
-        }
-        
-        return jsonify(response_data)
+            'auto_redirect_after_link': True,
+            'next_step': '/coins-order'
+        })
         
     except Exception as e:
-        print(f"Error updating profile: {str(e)}")
-        return jsonify({'success': False, 'message': 'Internal server error'}), 500
+        print(f"خطأ في update_profile: {str(e)}")
+        return jsonify({'success': False, 'message': 'خطأ في الخادم'}), 500
 
 
 @app.route('/coins-order')

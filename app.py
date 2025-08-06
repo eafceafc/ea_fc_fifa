@@ -1308,7 +1308,7 @@ def notify_website_telegram_linked(code, profile_data, chat_id, first_name, user
 
 @app.route('/telegram-webhook', methods=['POST'])
 def telegram_webhook():
-    """استقبال رسائل من التليجرام بوت - محدثة مع تفاصيل الدفع"""
+    """استقبال رسائل من التليجرام بوت - نظام تلقائي كامل"""
     try:
         update = request.get_json()
         print(f"🤖 Telegram Webhook received: {json.dumps(update, indent=2, ensure_ascii=False)}")
@@ -1322,98 +1322,71 @@ def telegram_webhook():
         username = message.get('from', {}).get('username', 'Unknown')
         first_name = message.get('from', {}).get('first_name', 'مستخدم')
         
-        # التحقق من كود /start
+        # 🔥 النظام التلقائي الكامل - معالجة /start مع الكود
         if text.startswith('/start'):
             if ' ' in text:
-                code = text.split(' ', 1)[1].strip()
-                print(f"🔍 Looking for /start code: {code}")
+                code = text.replace('/start ', '').strip()
+                print(f"🚀 معالجة تلقائية للكود: {code}")
                 
                 # البحث في قاعدة البيانات أولاً
                 conn = get_db_connection()
                 if conn:
-                    try:
-                        cursor = conn.cursor()
+                    cursor = conn.cursor()
+                    cursor.execute("""
+                        SELECT code, used, platform, whatsapp_number, payment_method, payment_details 
+                        FROM telegram_codes 
+                        WHERE code = %s AND used = FALSE
+                    """, (code,))
+                    result = cursor.fetchone()
+                    
+                    if result:
+                        # ✅ تم العثور على الكود - تفعيل تلقائي
                         cursor.execute("""
-                            SELECT * FROM telegram_codes 
-                            WHERE code = %s AND used = FALSE
-                        """, (code,))
-                        code_data = cursor.fetchone()
+                            UPDATE telegram_codes 
+                            SET used = TRUE, telegram_chat_id = %s, telegram_username_actual = %s, used_at = NOW() 
+                            WHERE code = %s
+                        """, (chat_id, username, code))
                         
-                        if code_data:
-                            # تحديث الكود كمستخدم
-                            cursor.execute("""
-                                UPDATE telegram_codes 
-                                SET used = TRUE, 
-                                    telegram_chat_id = %s, 
-                                    telegram_username_actual = %s, 
-                                    used_at = NOW()
-                                WHERE code = %s
-                            """, (chat_id, username, code))
-                            
-                            # تحديث ملف المستخدم
-                            cursor.execute("""
-                                UPDATE users_profiles 
-                                SET telegram_linked = TRUE,
-                                    telegram_chat_id = %s,
-                                    telegram_username_actual = %s,
-                                    telegram_linked_at = NOW(),
-                                    updated_at = NOW()
-                                WHERE whatsapp_number = %s
-                                ORDER BY created_at DESC
-                                LIMIT 1
-                            """, (chat_id, username, code_data['whatsapp_number']))
-                            
-                            conn.commit()
-                            
-                            # تحديد نص الدفع
-                            payment_text = get_payment_display_text(
-                                code_data['payment_method'], 
-                                code_data.get('payment_details', '')
-                            )
-                            
-                            # إرسال رسالة ترحيب مخصصة
-                            welcome_message = f"""🎮 أهلاً بك {first_name} في FC 26 Profile System!
-
-✅ تم ربط حسابك بنجاح!
-
-📋 بيانات ملفك الشخصي:
-🎯 المنصة: {code_data['platform'].title() if code_data['platform'] else 'غير محدد'}
-📱 رقم الواتساب: {code_data['whatsapp_number']}
-💳 طريقة الدفع: {code_data['payment_method'].replace('_', ' ').title() if code_data['payment_method'] else 'غير محدد'}
-{payment_text}
-
-🔗 رابط الموقع: https://ea-fc-fifa-5jbn.onrender.com/
-
-شكراً لاختيارك FC 26! 🏆"""
-                            
-                            send_telegram_message(chat_id, welcome_message.strip())
-                            print(f"✅ /start Code {code} activated for user {first_name} (@{username})")
-                            
-                        else:
-                            # الكود غير موجود أو مستخدم
-                            cursor.execute("""
-                                SELECT used FROM telegram_codes WHERE code = %s
-                            """, (code,))
-                            used_check = cursor.fetchone()
-                            
-                            if used_check and used_check['used']:
-                                send_telegram_message(chat_id, f"""❌ هذا الكود ({code}) تم استخدامه من قبل.
-
-يرجى الحصول على كود جديد من الموقع:
-🔗 https://ea-fc-fifa-5jbn.onrender.com/""")
-                            else:
-                                send_telegram_message(chat_id, f"""❌ الكود ({code}) غير صحيح أو منتهي الصلاحية.
-
-يرجى الحصول على كود جديد من الموقع:
-🔗 https://ea-fc-fifa-5jbn.onrender.com/""")
-                                
-                    except Exception as e:
-                        print(f"خطأ في معالجة الكود: {str(e)}")
-                    finally:
+                        # تحديث بيانات المستخدم أيضاً
+                        cursor.execute("""
+                            UPDATE users_profiles 
+                            SET telegram_linked = TRUE, telegram_chat_id = %s, telegram_username_actual = %s, updated_at = NOW()
+                            WHERE whatsapp_number LIKE %s
+                        """, (chat_id, username, f"%{result['whatsapp_number']}%"))
+                        
+                        conn.commit()
                         conn.close()
                         
-                # البحث في الذاكرة كـ fallback
-                elif code in telegram_codes:
+                        # 🎉 رسالة نجاح فورية
+                        success_message = f"""🎮 أهلاً وسهلاً {first_name}! 
+
+✅ تم ربط حسابك تلقائياً بنجاح!
+
+📋 بيانات ملفك الشخصي:
+🎯 المنصة: {result['platform'].upper()}
+📱 الواتساب: {result['whatsapp_number']}
+💳 طريقة الدفع: {result['payment_method'].replace('_', ' ').title()}
+
+🚀 تم حفظ جميع بياناتك بأمان!
+🔗 يمكنك الآن استخدام جميع خدماتنا.
+
+شكراً لاختيارك FC 26! 🏆"""
+                        
+                        send_telegram_message(chat_id, success_message)
+                        
+                        # تحديث الكود في الذاكرة أيضاً
+                        if code in telegram_codes:
+                            telegram_codes[code]['used'] = True
+                            telegram_codes[code]['telegram_chat_id'] = chat_id
+                            telegram_codes[code]['telegram_username_actual'] = username
+                        
+                        print(f"🎉 تم الربط التلقائي بنجاح - المستخدم: {first_name} - الكود: {code}")
+                        return jsonify({'ok': True})
+                    
+                    conn.close()
+                
+                # البحث في الذاكرة كبديل
+                if code in telegram_codes:
                     profile_data = telegram_codes[code]
                     if not profile_data.get('used', False):
                         # تحديث الكود كمستخدم
@@ -1421,64 +1394,47 @@ def telegram_webhook():
                         telegram_codes[code]['telegram_chat_id'] = chat_id
                         telegram_codes[code]['telegram_username_actual'] = username
                         
-                        # إرسال إشعار للموقع
-                        notify_website_telegram_linked(code, profile_data, chat_id, first_name, username)
-                        
-                        # تحديد نص الدفع
-                        payment_text = get_payment_display_text(profile_data['payment_method'], profile_data.get('payment_details', ''))
-                        
-                        # إرسال رسالة ترحيب مخصصة
-                        welcome_message = f"""🎮 أهلاً بك {first_name} في FC 26 Profile System!
+                        # رسالة نجاح فورية
+                        success_message = f"""🎮 أهلاً وسهلاً {first_name}! 
 
-✅ تم ربط حسابك بنجاح!
+✅ تم ربط حسابك تلقائياً بنجاح!
 
 📋 بيانات ملفك الشخصي:
-🎯 المنصة: {profile_data['platform'].title()}
-📱 رقم الواتساب: {profile_data['whatsapp_number']}
+🎯 المنصة: {profile_data['platform'].upper()}
+📱 الواتساب: {profile_data['whatsapp_number']}
 💳 طريقة الدفع: {profile_data['payment_method'].replace('_', ' ').title()}
-{payment_text}
 
-🔗 رابط الموقع: https://ea-fc-fifa-5jbn.onrender.com/
+🚀 تم حفظ جميع بياناتك بأمان!
 
 شكراً لاختيارك FC 26! 🏆"""
                         
-                        send_telegram_message(chat_id, welcome_message.strip())
-                        print(f"✅ /start Code {code} activated for user {first_name} (@{username})")
-                        
+                        send_telegram_message(chat_id, success_message)
+                        print(f"🎉 تم الربط التلقائي من الذاكرة - المستخدم: {first_name} - الكود: {code}")
+                        return jsonify({'ok': True})
                     else:
-                        send_telegram_message(chat_id, f"""❌ هذا الكود ({code}) تم استخدامه من قبل.
-
-يرجى الحصول على كود جديد من الموقع:
-🔗 https://ea-fc-fifa-5jbn.onrender.com/""")
-                        
+                        send_telegram_message(chat_id, f"❌ هذا الكود ({code}) تم استخدامه من قبل.")
                 else:
-                    send_telegram_message(chat_id, f"""❌ الكود ({code}) غير صحيح أو منتهي الصلاحية.
-
-يرجى الحصول على كود جديد من الموقع:
-🔗 https://ea-fc-fifa-5jbn.onrender.com/""")
+                    send_telegram_message(chat_id, f"❌ الكود ({code}) غير صحيح أو منتهي الصلاحية.")
             else:
-                # رسالة بداية عامة
-                send_telegram_message(chat_id, f"""🎮 مرحباً بك {first_name} في FC 26 Profile System!
+                # رسالة ترحيب عامة
+                send_telegram_message(chat_id, f"""🎮 أهلاً بك {first_name} في FC 26!
 
-للربط مع حسابك، يرجى:
-1️⃣ الذهاب للموقع
-2️⃣ إكمال بيانات الملف الشخصي  
-3️⃣ الضغط على "ربط مع التليجرام"
-4️⃣ سيتم فتح التليجرام تلقائياً بالكود
-
-🔗 الموقع: https://ea-fc-fifa-5jbn.onrender.com/
-
-شكراً! 🏆""")
-        
-        else:
-            # رد عام للرسائل الأخرى
-            send_telegram_message(chat_id, f"""🤖 مرحباً {first_name}! أنا بوت FC 26 Profile System.
-
-للتفاعل معي، يمكنك:
-📝 /start - البدء والمساعدة
+للحصول على حسابك:
+1️⃣ سجل في الموقع أولاً
+2️⃣ اضغط "فتح التليجرام" 
+3️⃣ سيتم الربط تلقائياً!
 
 🔗 الموقع: https://ea-fc-fifa-5jbn.onrender.com/""")
-            
+        else:
+            # رد عام للرسائل الأخرى
+            send_telegram_message(chat_id, f"""🤖 مرحباً {first_name}!
+
+للحصول على حسابك:
+🌐 اذهب للموقع واضغط "فتح التليجرام"
+🚀 سيتم الربط تلقائياً!
+
+🔗 https://ea-fc-fifa-5jbn.onrender.com/""")
+        
         return jsonify({'ok': True})
         
     except Exception as e:

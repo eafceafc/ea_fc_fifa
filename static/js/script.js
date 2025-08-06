@@ -485,181 +485,181 @@ function setupDynamicInputs() {
         }
     });
     
-// نظام تيلدا المحسن - تنسيق متطور للبطاقات
-function initializeTeldaCardSystem() {
-    const teldaInput = document.getElementById('telda_card') || document.getElementById('card-number');
-    if (!teldaInput) return;
-    
-    // إضافة أيقونة تيلدا
-    const inputContainer = teldaInput.parentNode;
-    if (!inputContainer.querySelector('.telda-icon')) {
-        const teldaIcon = document.createElement('div');
-        teldaIcon.className = 'telda-icon';
-        teldaIcon.innerHTML = '<i class="fas fa-credit-card"></i>';
-        inputContainer.style.position = 'relative';
-        inputContainer.appendChild(teldaIcon);
-    }
-    
-    // معالج الإدخال المحسن
-    teldaInput.addEventListener('input', function(e) {
-        let value = e.target.value.replace(/[^\d]/g, ''); // أرقام فقط
-        let formattedValue = '';
+    // نظام تيلدا المحسن - تنسيق متطور للبطاقات
+    function initializeTeldaCardSystem() {
+        const teldaInput = document.getElementById('telda_card') || document.getElementById('card-number');
+        if (!teldaInput) return;
         
-        // تنسيق بصيغة 1234-5678-9012-3456
-        for (let i = 0; i < value.length; i += 4) {
-            if (i > 0) formattedValue += '-';
-            formattedValue += value.substr(i, 4);
+        // إضافة أيقونة تيلدا
+        const inputContainer = teldaInput.parentNode;
+        if (!inputContainer.querySelector('.telda-icon')) {
+            const teldaIcon = document.createElement('div');
+            teldaIcon.className = 'telda-icon';
+            teldaIcon.innerHTML = '<i class="fas fa-credit-card"></i>';
+            inputContainer.style.position = 'relative';
+            inputContainer.appendChild(teldaIcon);
         }
         
-        // تحديد طول مناسب (16 رقم + 3 شرطات = 19 حرف)
-        if (formattedValue.length <= 19) {
-            e.target.value = formattedValue;
-        }
-        
-        // التحقق الفوري
-        validateTeldaCard(e.target);
-        addTeldaVisualEffects(e.target, value);
-        checkFormValidity();
-    });
-    
-    // معالج اللصق المحسن
-    teldaInput.addEventListener('paste', function(e) {
-        e.preventDefault();
-        let pastedText = (e.clipboardData || window.clipboardData).getData('text');
-        let numbers = pastedText.replace(/[^\d]/g, '');
-        
-        if (numbers.length <= 16) {
-            this.value = numbers;
-            this.dispatchEvent(new Event('input'));
-        }
-    });
-    
-    // تأثيرات التركيز
-    teldaInput.addEventListener('focus', function() {
-        this.parentNode.classList.add('telda-focused');
-    });
-    
-    teldaInput.addEventListener('blur', function() {
-        this.parentNode.classList.remove('telda-focused');
-        finalTeldaValidation(this);
-    });
-}
-
-// التحقق من صحة كارت تيلدا
-function validateTeldaCard(input) {
-    const value = input.value;
-    const numbersOnly = value.replace(/[^\d]/g, '');
-    const container = input.parentNode;
-    
-    // إزالة تأثيرات سابقة
-    container.classList.remove('telda-valid', 'telda-invalid', 'telda-partial');
-    
-    if (numbersOnly.length === 0) {
-        return;
-    } else if (numbersOnly.length < 16) {
-        container.classList.add('telda-partial');
-        showTeldaStatus(input, 'جاري الكتابة...', 'partial');
-    } else if (numbersOnly.length === 16) {
-        container.classList.add('telda-valid');
-        showTeldaStatus(input, '✅ رقم كارت صحيح', 'valid');
-        
-        // اهتزاز نجاح
-        if (navigator.vibrate) {
-            navigator.vibrate([50, 30, 50]);
-        }
-    } else {
-        container.classList.add('telda-invalid');
-        showTeldaStatus(input, '❌ رقم طويل جداً', 'invalid');
-    }
-}
-
-// التحقق النهائي لكارت تيلدا
-function finalTeldaValidation(input) {
-    const numbersOnly = input.value.replace(/[^\d]/g, '');
-    
-    if (numbersOnly.length > 0 && numbersOnly.length !== 16) {
-        showTeldaStatus(input, '⚠️ رقم كارت تيلدا يجب أن يكون 16 رقم', 'invalid');
-    }
-}
-
-// عرض حالة تيلدا
-function showTeldaStatus(input, message, type) {
-    const existingStatus = input.parentNode.querySelector('.telda-status');
-    if (existingStatus) {
-        existingStatus.remove();
-    }
-    
-    if (!message) return;
-    
-    const statusDiv = document.createElement('div');
-    statusDiv.className = `telda-status telda-${type}`;
-    statusDiv.textContent = message;
-    
-    input.parentNode.appendChild(statusDiv);
-    
-    setTimeout(() => {
-        statusDiv.classList.add('show');
-    }, 100);
-    
-    // إزالة تلقائية بعد 3 ثوان للرسائل الجزئية
-    if (type === 'partial') {
-        setTimeout(() => {
-            if (statusDiv.parentNode) {
-                statusDiv.classList.remove('show');
-                setTimeout(() => statusDiv.remove(), 300);
+        // معالج الإدخال المحسن
+        teldaInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/[^\d]/g, ''); // أرقام فقط
+            let formattedValue = '';
+            
+            // تنسيق بصيغة 1234-5678-9012-3456
+            for (let i = 0; i < value.length; i += 4) {
+                if (i > 0) formattedValue += '-';
+                formattedValue += value.substr(i, 4);
             }
-        }, 3000);
+            
+            // تحديد طول مناسب (16 رقم + 3 شرطات = 19 حرف)
+            if (formattedValue.length <= 19) {
+                e.target.value = formattedValue;
+            }
+            
+            // التحقق الفوري
+            validateTeldaCard(e.target);
+            addTeldaVisualEffects(e.target, value);
+            checkFormValidity();
+        });
+        
+        // معالج اللصق المحسن
+        teldaInput.addEventListener('paste', function(e) {
+            e.preventDefault();
+            let pastedText = (e.clipboardData || window.clipboardData).getData('text');
+            let numbers = pastedText.replace(/[^\d]/g, '');
+            
+            if (numbers.length <= 16) {
+                this.value = numbers;
+                this.dispatchEvent(new Event('input'));
+            }
+        });
+        
+        // تأثيرات التركيز
+        teldaInput.addEventListener('focus', function() {
+            this.parentNode.classList.add('telda-focused');
+        });
+        
+        teldaInput.addEventListener('blur', function() {
+            this.parentNode.classList.remove('telda-focused');
+            finalTeldaValidation(this);
+        });
     }
-}
 
-// تأثيرات بصرية لتيلدا
-function addTeldaVisualEffects(input, numbersValue) {
-    const container = input.parentNode;
-    
-    // تأثير النبض للأرقام الجديدة
-    if (numbersValue.length > 0 && numbersValue.length % 4 === 0) {
-        container.classList.add('telda-pulse');
+    // التحقق من صحة كارت تيلدا
+    function validateTeldaCard(input) {
+        const value = input.value;
+        const numbersOnly = value.replace(/[^\d]/g, '');
+        const container = input.parentNode;
+        
+        // إزالة تأثيرات سابقة
+        container.classList.remove('telda-valid', 'telda-invalid', 'telda-partial');
+        
+        if (numbersOnly.length === 0) {
+            return;
+        } else if (numbersOnly.length < 16) {
+            container.classList.add('telda-partial');
+            showTeldaStatus(input, 'جاري الكتابة...', 'partial');
+        } else if (numbersOnly.length === 16) {
+            container.classList.add('telda-valid');
+            showTeldaStatus(input, '✅ رقم كارت صحيح', 'valid');
+            
+            // اهتزاز نجاح
+            if (navigator.vibrate) {
+                navigator.vibrate([50, 30, 50]);
+            }
+        } else {
+            container.classList.add('telda-invalid');
+            showTeldaStatus(input, '❌ رقم طويل جداً', 'invalid');
+        }
+    }
+
+    // التحقق النهائي لكارت تيلدا
+    function finalTeldaValidation(input) {
+        const numbersOnly = input.value.replace(/[^\d]/g, '');
+        
+        if (numbersOnly.length > 0 && numbersOnly.length !== 16) {
+            showTeldaStatus(input, '⚠️ رقم كارت تيلدا يجب أن يكون 16 رقم', 'invalid');
+        }
+    }
+
+    // عرض حالة تيلدا
+    function showTeldaStatus(input, message, type) {
+        const existingStatus = input.parentNode.querySelector('.telda-status');
+        if (existingStatus) {
+            existingStatus.remove();
+        }
+        
+        if (!message) return;
+        
+        const statusDiv = document.createElement('div');
+        statusDiv.className = `telda-status telda-${type}`;
+        statusDiv.textContent = message;
+        
+        input.parentNode.appendChild(statusDiv);
+        
         setTimeout(() => {
-            container.classList.remove('telda-pulse');
-        }, 200);
+            statusDiv.classList.add('show');
+        }, 100);
+        
+        // إزالة تلقائية بعد 3 ثوان للرسائل الجزئية
+        if (type === 'partial') {
+            setTimeout(() => {
+                if (statusDiv.parentNode) {
+                    statusDiv.classList.remove('show');
+                    setTimeout(() => statusDiv.remove(), 300);
+                }
+            }, 3000);
+        }
     }
-    
-    // شريط التقدم
-    updateTeldaProgressBar(input, numbersValue.length);
-}
 
-// شريط تقدم تيلدا
-function updateTeldaProgressBar(input, length) {
-    let progressBar = input.parentNode.querySelector('.telda-progress');
-    
-    if (!progressBar) {
-        progressBar = document.createElement('div');
-        progressBar.className = 'telda-progress';
-        progressBar.innerHTML = '<div class="telda-progress-fill"></div>';
-        input.parentNode.appendChild(progressBar);
+    // تأثيرات بصرية لتيلدا
+    function addTeldaVisualEffects(input, numbersValue) {
+        const container = input.parentNode;
+        
+        // تأثير النبض للأرقام الجديدة
+        if (numbersValue.length > 0 && numbersValue.length % 4 === 0) {
+            container.classList.add('telda-pulse');
+            setTimeout(() => {
+                container.classList.remove('telda-pulse');
+            }, 200);
+        }
+        
+        // شريط التقدم
+        updateTeldaProgressBar(input, numbersValue.length);
     }
-    
-    const progressFill = progressBar.querySelector('.telda-progress-fill');
-    const percentage = Math.min((length / 16) * 100, 100);
-    
-    progressFill.style.width = percentage + '%';
-    
-    // ألوان مختلفة حسب التقدم
-    if (percentage < 25) {
-        progressFill.style.background = '#ef4444';
-    } else if (percentage < 50) {
-        progressFill.style.background = '#f97316';
-    } else if (percentage < 75) {
-        progressFill.style.background = '#eab308';
-    } else if (percentage < 100) {
-        progressFill.style.background = '#22c55e';
-    } else {
-        progressFill.style.background = '#10b981';
-    }
-}
 
-// معالجة خاصة لكارت تيلدا (تنسيق الأرقام) - استبدال الكود القديم
-initializeTeldaCardSystem();
+    // شريط تقدم تيلدا
+    function updateTeldaProgressBar(input, length) {
+        let progressBar = input.parentNode.querySelector('.telda-progress');
+        
+        if (!progressBar) {
+            progressBar = document.createElement('div');
+            progressBar.className = 'telda-progress';
+            progressBar.innerHTML = '<div class="telda-progress-fill"></div>';
+            input.parentNode.appendChild(progressBar);
+        }
+        
+        const progressFill = progressBar.querySelector('.telda-progress-fill');
+        const percentage = Math.min((length / 16) * 100, 100);
+        
+        progressFill.style.width = percentage + '%';
+        
+        // ألوان مختلفة حسب التقدم
+        if (percentage < 25) {
+            progressFill.style.background = '#ef4444';
+        } else if (percentage < 50) {
+            progressFill.style.background = '#f97316';
+        } else if (percentage < 75) {
+            progressFill.style.background = '#eab308';
+        } else if (percentage < 100) {
+            progressFill.style.background = '#22c55e';
+        } else {
+            progressFill.style.background = '#10b981';
+        }
+    }
+
+    // معالجة خاصة لكارت تيلدا (تنسيق الأرقام) - استبدال الكود القديم
+    initializeTeldaCardSystem();
 }
 
 // التحقق من صحة حقول الدفع
@@ -820,7 +820,7 @@ function setupFormSubmission(form) {
     form.addEventListener('submit', handleFormSubmit);
 }
 
-// معالجة إرسال النموذج
+// معالجة إرسال النموذج - مبسط بدون تليجرام
 async function handleFormSubmit(e) {
     e.preventDefault();
     
@@ -857,7 +857,7 @@ async function handleFormSubmit(e) {
     // تحديث زر الإرسال
     if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ والربط...';
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
     }
     
     // اهتزاز للهواتف
@@ -883,32 +883,29 @@ async function handleFormSubmit(e) {
         if (loading) loading.classList.remove('show');
         if (loadingSpinner) loadingSpinner.style.display = 'none';
         
-// ✅ الكود الجديد المبسط - استبدل به الجزء المحذوف
-if (response.ok && result.success) {
-    // عرض رسالة النجاح
-    let successText = '✅ تم حفظ بياناتك بنجاح!';
-    if (result.data && result.data.whatsapp_number) {
-        successText += `<br><small>رقم الواتساب: ${result.data.whatsapp_number}</small>`;
-    }
-    
-    if (successMessage) {
-        successMessage.innerHTML = successText;
-        successMessage.classList.add('show');
-    } else {
-        showNotification('تم إرسال البيانات بنجاح!', 'success');
-    }
-    
-    // اهتزاز نجاح
-    if (navigator.vibrate) {
-        navigator.vibrate([200, 100, 200]);
-    }
-    
-    // الانتقال التلقائي بعد ثانيتين
-    setTimeout(() => {
-        window.location.href = result.next_step || '/coins-order';
-    }, 2000);
-}
-
+        if (response.ok && result.success) {
+            // عرض رسالة النجاح
+            let successText = '✅ تم حفظ بياناتك بنجاح!';
+            if (result.data && result.data.whatsapp_number) {
+                successText += `<br><small>رقم الواتساب: ${result.data.whatsapp_number}</small>`;
+            }
+            
+            if (successMessage) {
+                successMessage.innerHTML = successText;
+                successMessage.classList.add('show');
+            } else {
+                showNotification('تم إرسال البيانات بنجاح!', 'success');
+            }
+            
+            // اهتزاز نجاح
+            if (navigator.vibrate) {
+                navigator.vibrate([200, 100, 200]);
+            }
+            
+            // الانتقال التلقائي بعد ثانيتين
+            setTimeout(() => {
+                window.location.href = result.next_step || '/coins-order';
+            }, 2000);
             
         } else {
             const errorText = result.message || 'حدث خطأ غير متوقع';
@@ -949,12 +946,6 @@ if (response.ok && result.success) {
     isSubmitting = false;
     updateSubmitButton();
 }
-
-
-
-
-
-
 
 // معالجة مفتاح Enter
 function setupEnterKeyHandling() {
@@ -1102,659 +1093,94 @@ function showTooltip(e) {
         tooltip.style.opacity = '1';
     }, 100);
     
-    e.target._tooltip = tooltip;
+    e.target.tooltipElement = tooltip;
 }
 
 // إخفاء tooltip
 function hideTooltip(e) {
-    const tooltip = e.target._tooltip;
-    if (tooltip) {
+    if (e.target.tooltipElement) {
+        const tooltip = e.target.tooltipElement;
         tooltip.style.opacity = '0';
         setTimeout(() => {
             if (tooltip.parentNode) {
                 tooltip.parentNode.removeChild(tooltip);
             }
         }, 300);
-        delete e.target._tooltip;
+        delete e.target.tooltipElement;
     }
 }
 
 // تهيئة الانيميشن
 function initializeAnimations() {
-    // انيميشن أقسام النموذج عند التمرير
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('animate-in');
-            }
+    // تهيئة Intersection Observer للانيميشن
+    if ('IntersectionObserver' in window) {
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-in');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+        
+        // إضافة العناصر للمراقبة
+        document.querySelectorAll('.form-group, .platform-card, .payment-btn').forEach(el => {
+            observer.observe(el);
         });
-    }, {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
-    });
-    
-    document.querySelectorAll('.form-section, .form-group').forEach(section => {
-        observer.observe(section);
-    });
-    
-    // تمرير سلس للروابط
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                target.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-            }
-        });
-    });
+    }
 }
 
 // تهيئة الميزات المتقدمة
 function initializeAdvancedFeatures() {
-    // تهيئة tooltips والانيميشن
-    initializeTooltips();
-    initializeAnimations();
-    
-    // معالجة أحداث النافذة
-    setupWindowEvents();
-    
-    // تحسينات اللمس للهواتف
-    setupTouchOptimizations();
-    
-    // منع التكبير على iOS
-    setupIOSOptimizations();
-    
-    console.log('FC 26 Profile Setup - تم تهيئة جميع الميزات المتقدمة');
-}
-
-// إعداد أحداث النافذة
-function setupWindowEvents() {
-    // تحسين الأداء عند تغيير حجم النافذة
-    window.addEventListener('resize', debounce(function() {
-        if (window.innerWidth <= 768) {
-            optimizeForMobile();
-        }
-    }, 250));
-}
-
-// تحسينات اللمس للهواتف
-function setupTouchOptimizations() {
-    if ('ontouchstart' in window) {
-        document.addEventListener('touchstart', function() {}, {passive: true});
-        
-        // تحسين التفاعل مع العناصر القابلة للنقر
-        document.querySelectorAll('.platform-card, .payment-btn, button').forEach(element => {
-            element.addEventListener('touchstart', function() {
-                this.classList.add('touch-active');
-            }, {passive: true});
-            
-            element.addEventListener('touchend', function() {
-                setTimeout(() => {
-                    this.classList.remove('touch-active');
-                }, 150);
-            }, {passive: true});
-        });
-    }
-}
-
-// تحسينات iOS لمنع التكبير
-function setupIOSOptimizations() {
-    if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-        const viewport = document.querySelector('meta[name=viewport]');
-        
-        document.addEventListener('focusin', function(e) {
-            if (e.target.matches('input, select, textarea')) {
-                if (viewport) {
-                    viewport.setAttribute('content', 
-                        'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'
-                    );
-                }
-            }
-        });
-        
-        document.addEventListener('focusout', function() {
-            if (viewport) {
-                viewport.setAttribute('content', 'width=device-width, initial-scale=1');
-            }
-        });
-    }
-}
-
-// دالة تأخير التنفيذ
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-// إعادة تعيين حالات التحقق
-function clearValidationStates() {
-    validationStates = {
-        whatsapp: false,
-        paymentMethod: false,
-        platform: false
-    };
-    
-    // إزالة جميع واجهات التحقق
-    document.querySelectorAll('.form-group').forEach(group => {
-        group.classList.remove('valid', 'invalid');
-        const errorMsg = group.querySelector('.error-message');
-        const successMsg = group.querySelector('.success-message');
-        if (errorMsg) errorMsg.remove();
-        if (successMsg) successMsg.remove();
-    });
-    
-    // إزالة معلومات الهاتف
-    clearPhoneInfo();
-    
-    // تحديث زر الإرسال
-    updateSubmitButton();
-}
-
-// تسجيل Service Worker للـ PWA
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js').then(function(registration) {
-            console.log('ServiceWorker تم تسجيله بنجاح');
-        }, function(err) {
-            console.log('فشل تسجيل ServiceWorker');
-        });
-    });
-}
-
-// تصدير الوظائف للاستخدام الخارجي أو الاختبار
-window.FC26ProfileSetup = {
-    validateWhatsAppReal,
-    validatePaymentMethod,
-    showNotification,
-    clearValidationStates,
-    checkFormValidity,
-    updateSubmitButton
-};
-
-// رسالة تأكيد التهيئة
-console.log('FC 26 Profile Setup - تم تهيئة JavaScript المدمج بنجاح');
-
-
-// دالة إغلاق شاشة النجاح محدثة
-function closeSuccessOverlay() {
-    const successOverlay = document.getElementById('telegramSuccessOverlay');
-    if (successOverlay) {
-        successOverlay.classList.remove('show');
-        
-        // إعادة التمرير
-        document.body.style.overflow = '';
-        
-        // إعادة الحاوي الرئيسي
-        const formContainer = document.querySelector('.container');
-        if (formContainer) {
-            formContainer.style.opacity = '1';
-            formContainer.style.transform = 'scale(1)';
-        }
+    // تحسين الأداء للهواتف
+    if (window.innerWidth <= 768) {
+        document.body.classList.add('mobile-optimized');
     }
     
-    // إعادة تحميل الصفحة للبدء من جديد
-    setTimeout(() => {
-        window.location.reload();
-    }, 500);
-}
-
-// تشغيل صوت النجاح المطور
-function playSuccessSound() {
-    try {
-        // نغمة نجاح قصيرة
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
-        oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1); // E5
-        oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.2); // G5
-        
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.5);
-        
-    } catch (e) {
-        console.log('Sound not supported');
-    }
-}
-
-
-// إضافة بريد إلكتروني جديد
-function addNewEmail() {
-    const emailInput = document.getElementById('newEmailInput');
-    const email = emailInput.value.trim();
-    
-    if (!email) {
-        showNotification('يرجى إدخال البريد الإلكتروني', 'error');
-        emailInput.focus();
-        return;
-    }
-    
-    if (!isValidEmail(email)) {
-        showNotification('البريد الإلكتروني غير صحيح', 'error');
-        emailInput.focus();
-        return;
-    }
-    
-    if (emailAddresses.includes(email.toLowerCase())) {
-        showNotification('هذا البريد مضاف بالفعل', 'error');
-        emailInput.focus();
-        return;
-    }
-    
-    if (emailAddresses.length >= maxEmails) {
-        showNotification(`لا يمكن إضافة أكثر من ${maxEmails} عناوين بريد`, 'error');
-        return;
-    }
-    
-    // إضافة الإيميل للقائمة
-    emailAddresses.push(email.toLowerCase());
-    
-    // إنشاء عنصر الإيميل الجديد
-    createEmailElement(email, emailAddresses.length);
-    
-    // تنظيف الحقل
-    emailInput.value = '';
-    emailInput.focus();
-    
-    // تحديث الحقل المخفي
-    updateEmailsInput();
-    
-    // تحديث حالة الزر
-    updateAddEmailButton();
-    
-    // رسالة نجاح
-    showNotification(`تم إضافة البريد رقم ${emailAddresses.length}`, 'success');
-    
-    // اهتزاز للهواتف
-    if (navigator.vibrate) {
-        navigator.vibrate([50, 50, 100]);
-    }
-}
-
-// إنشاء عنصر البريد الإلكتروني
-function createEmailElement(email, number) {
-    const container = document.getElementById('emailsContainer');
-    
-    // إزالة رسالة "فارغ" إن وجدت
-    const emptyMsg = container.querySelector('.emails-empty');
-    if (emptyMsg) {
-        emptyMsg.remove();
-    }
-    
-    const emailDiv = document.createElement('div');
-    emailDiv.className = `email-item email-${number}`;
-    emailDiv.setAttribute('data-email', email);
-    
-    emailDiv.innerHTML = `
-        <div class="email-number">${number}</div>
-        <div class="email-text">${email}</div>
-        <button type="button" class="delete-email-btn" onclick="removeEmail('${email}')" title="حذف البريد">
-            <i class="fas fa-times"></i>
-        </button>
-    `;
-    
-    container.appendChild(emailDiv);
-}
-
-// حذف بريد إلكتروني
-function removeEmail(email) {
-    const emailElement = document.querySelector(`[data-email="${email}"]`);
-    if (!emailElement) return;
-    
-    // تأثير الحذف
-    emailElement.classList.add('removing');
-    
-    setTimeout(() => {
-        // إزالة من القائمة
-        const index = emailAddresses.indexOf(email);
-        if (index > -1) {
-            emailAddresses.splice(index, 1);
-        }
-        
-        // إزالة العنصر
-        emailElement.remove();
-        
-        // إعادة ترقيم الإيميلات
-        renumberEmails();
-        
-        // تحديث الحقل المخفي
-        updateEmailsInput();
-        
-        // تحديث حالة الزر
-        updateAddEmailButton();
-        
-        // إضافة رسالة فارغة إذا لم تعد هناك إيميلات
-        if (emailAddresses.length === 0) {
-            addEmptyMessage();
-        }
-        
-        showNotification('تم حذف البريد الإلكتروني', 'success');
-        
-    }, 400);
-}
-
-// إعادة ترقيم الإيميلات بعد الحذف
-function renumberEmails() {
-    const emailItems = document.querySelectorAll('.email-item:not(.removing)');
-    
-    emailItems.forEach((item, index) => {
-        const newNumber = index + 1;
-        const numberElement = item.querySelector('.email-number');
-        
-        // تحديث الرقم
-        numberElement.textContent = newNumber;
-        
-        // تحديث الكلاس
-        item.className = `email-item email-${newNumber}`;
-    });
-}
-
-// إضافة رسالة فارغة
-function addEmptyMessage() {
-    const container = document.getElementById('emailsContainer');
-    const emptyDiv = document.createElement('div');
-    emptyDiv.className = 'emails-empty';
-    emptyDiv.innerHTML = '<i class="fas fa-envelope-open"></i> لم تتم إضافة أي عناوين بريد إلكتروني';
-    container.appendChild(emptyDiv);
-}
-
-// تحديث الحقل المخفي
-function updateEmailsInput() {
-    const input = document.getElementById('emailAddressesInput');
-    input.value = JSON.stringify(emailAddresses);
-}
-
-// تحديث حالة زر الإضافة
-function updateAddEmailButton() {
-    const button = document.querySelector('.add-email-btn');
-    
-    if (emailAddresses.length >= maxEmails) {
-        button.disabled = true;
-        button.innerHTML = '<i class="fas fa-check"></i> تم الوصول للحد الأقصى';
-    } else {
-        button.disabled = false;
-        button.innerHTML = '<i class="fas fa-plus"></i> إضافة بريد إلكتروني';
-    }
-}
-
-// التحقق من صحة البريد الإلكتروني
-function isValidEmail(email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-}
-
-// إضافة مستمع للمفتاح Enter في حقل الإيميل
-document.addEventListener('DOMContentLoaded', function() {
-    const emailInput = document.getElementById('newEmailInput');
-    if (emailInput) {
-        emailInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                addNewEmail();
-            }
-        });
-        
-        // التحقق أثناء الكتابة
-        emailInput.addEventListener('input', function() {
-            const email = this.value.trim();
-            if (email && !isValidEmail(email)) {
-                this.style.borderColor = '#EF4444';
+    // مراقبة تغيير حجم الشاشة
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            if (window.innerWidth <= 768) {
+                document.body.classList.add('mobile-optimized');
             } else {
-                this.style.borderColor = '';
+                document.body.classList.remove('mobile-optimized');
             }
-        });
-    }
+        }, 250);
+    });
     
-    // إضافة رسالة فارغة في البداية
-    if (emailAddresses.length === 0) {
-        addEmptyMessage();
-    }
-});
-
-console.log('🔗 Telegram system updated - Auto-link with single button');
-
-// ═══════════════════════════════════════════════════════════════
-// 🔗 نظام استخلاص روابط InstaPay الذكي - إضافة جديدة
-// ═══════════════════════════════════════════════════════════════
-
-// التحقق والاستخلاص الفوري لروابط InstaPay
-function validateInstapayInput(input) {
-    const text = input.value.trim();
-    const container = input.closest('.form-group');
-    
-    // إزالة المعاينة السابقة
-    const existingPreview = container.querySelector('.instapay-preview');
-    if (existingPreview) {
-        existingPreview.remove();
-    }
-    
-    if (!text) {
-        updateValidationUI(input, true, '');
-        return true;
-    }
-    
-    // محاولة استخلاص الرابط
-    const extractedLink = extractInstapayLink(text);
-    
-    if (extractedLink) {
-        // إنشاء معاينة الرابط
-        createInstapayPreview(container, extractedLink, text);
-        updateValidationUI(input, true, '✓ تم استخلاص رابط InstaPay');
-        return true;
-    } else {
-        updateValidationUI(input, false, 'لم يتم العثور على رابط InstaPay صحيح');
-        return false;
-    }
-}
-
-// استخلاص رابط InstaPay من النص (JavaScript)
-function extractInstapayLink(text) {
-    const patterns = [
-        /https?:\/\/(?:www\.)?ipn\.eg\/S\/[^\/\s]+\/instapay\/[A-Za-z0-9]+/gi,
-        /https?:\/\/(?:www\.)?instapay\.com\.eg\/[^\s<>"{}|\\^`\[\]]+/gi,
-        /https?:\/\/(?:www\.)?app\.instapay\.com\.eg\/[^\s<>"{}|\\^`\[\]]+/gi,
-        /https?:\/\/(?:www\.)?instapay\.app\/[^\s<>"{}|\\^`\[\]]+/gi,
-        /https?:\/\/(?:www\.)?ipn\.eg\/[^\s<>"{}|\\^`\[\]]+/gi,
-    ];
-    
-    for (const pattern of patterns) {
-        const matches = text.match(pattern);
-        if (matches && matches.length > 0) {
-            // تنظيف الرابط من العلامات في النهاية
-            let link = matches[0].replace(/[.,;!?]+$/, '');
-            if (isValidInstapayUrl(link)) {
-                return link;
-            }
-        }
-    }
-    
-    return null;
-}
-
-// التحقق من صحة رابط InstaPay (JavaScript)
-function isValidInstapayUrl(url) {
-    if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
-        return false;
-    }
-    
-    const validDomains = ['ipn.eg', 'instapay.com.eg', 'app.instapay.com.eg', 'instapay.app'];
-    const lowerUrl = url.toLowerCase();
-    
-    return validDomains.some(domain => lowerUrl.includes(domain)) && url.length >= 20;
-}
-
-// إنشاء معاينة الرابط المستخلص
-function createInstapayPreview(container, extractedLink, originalText) {
-    const previewDiv = document.createElement('div');
-    previewDiv.className = 'instapay-preview';
-    
-    previewDiv.innerHTML = `
-        <div class="preview-header">
-            <i class="fas fa-link"></i>
-            <span>تم استخلاص رابط InstaPay</span>
-        </div>
-        <div class="extracted-link">
-            <div class="link-label">الرابط المستخلص:</div>
-            <div class="link-url">${extractedLink}</div>
-        </div>
-        <div class="preview-actions">
-            <button type="button" class="test-link-btn" onclick="testInstapayLink('${extractedLink}')">
-                <i class="fas fa-external-link-alt"></i>
-                اختبار الرابط
-            </button>
-            <button type="button" class="copy-link-btn" onclick="copyInstapayLink('${extractedLink}')">
-                <i class="fas fa-copy"></i>
-                نسخ الرابط
-            </button>
-        </div>
-    `;
-    
-    container.appendChild(previewDiv);
-    
-    // انيميشن الظهور
-    setTimeout(() => {
-        previewDiv.classList.add('show');
-    }, 100);
-}
-
-// اختبار رابط InstaPay
-function testInstapayLink(url) {
-    window.open(url, '_blank');
-    showNotification('تم فتح الرابط في تبويب جديد', 'info');
-}
-
-// نسخ رابط InstaPay
-async function copyInstapayLink(url) {
-    try {
-        if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(url);
+    // تحسين التمرير للهواتف
+    let ticking = false;
+    function updateScrollPosition() {
+        const scrollY = window.scrollY;
+        const windowHeight = window.innerHeight;
+        const docHeight = document.documentElement.scrollHeight;
+        
+        // إضافة كلاس للتحكم في العناصر الثابتة
+        if (scrollY > 50) {
+            document.body.classList.add('scrolled');
         } else {
-            // طريقة احتياطية
-            const textArea = document.createElement('textarea');
-            textArea.value = url;
-            textArea.style.position = 'fixed';
-            textArea.style.left = '-999999px';
-            textArea.style.top = '-999999px';
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
+            document.body.classList.remove('scrolled');
         }
         
-        showNotification('تم نسخ الرابط بنجاح!', 'success');
-        
-        if (navigator.vibrate) {
-            navigator.vibrate([50, 50, 50]);
-        }
-        
-    } catch (error) {
-        showNotification('فشل في نسخ الرابط', 'error');
+        ticking = false;
     }
+    
+    window.addEventListener('scroll', function() {
+        if (!ticking) {
+            requestAnimationFrame(updateScrollPosition);
+            ticking = true;
+        }
+    });
 }
 
-// تحديث نظام الاستماع لحقل InstaPay
-function initializeInstapayListener() {
-    const instapayInput = document.getElementById('payment-link');
-    if (instapayInput) {
-        // إزالة المستمعين القدامى
-        instapayInput.removeEventListener('input', validateInstapayInput);
-        instapayInput.removeEventListener('paste', validateInstapayInput);
-        
-        // إضافة المستمعين الجدد
-        instapayInput.addEventListener('input', function() {
-            validateInstapayInput(this);
-        });
-        
-        instapayInput.addEventListener('paste', function() {
-            // تأخير قصير للسماح بلصق النص
-            setTimeout(() => {
-                validateInstapayInput(this);
-            }, 100);
-        });
-        
-        console.log('🔗 InstaPay input listener initialized');
-    }
-}
-
-// تحديث دالة setupDynamicInputs لتشمل InstaPay
-const originalSetupDynamicInputs = setupDynamicInputs;
-setupDynamicInputs = function() {
-    // استدعاء الدالة الأصلية
-    originalSetupDynamicInputs();
-    
-    // إضافة مستمع InstaPay
-    initializeInstapayListener();
-};
-
-// إضافة تحديث validatePaymentInput لدعم استخلاص InstaPay
-const originalValidatePaymentInput = validatePaymentInput;
-validatePaymentInput = function(input) {
-    const value = input.value.trim();
-    const inputId = input.id;
-    let isValid = false;
-    let errorMessage = '';
-    
-    if (!value) {
-        updateValidationUI(input, true, '');
-        return true;
-    }
-    
-    // التحقق من المحافظ الإلكترونية (11 رقم)
-    if (['vodafone_cash', 'etisalat_cash', 'orange_cash', 'we_pay', 
-         'fawry', 'aman', 'masary', 'bee', 'mobile-number'].includes(inputId)) {
-        isValid = /^01[0125][0-9]{8}$/.test(value) && value.length === 11;
-        errorMessage = isValid ? '' : 'رقم المحفظة يجب أن يكون 11 رقم ويبدأ بـ 010، 011، 012، أو 015';
-    }
-    // التحقق من كارت تيلدا (16 رقم)
-    else if (['telda_card', 'card-number'].includes(inputId)) {
-        const numbersOnly = value.replace(/\s/g, '');
-        isValid = /^\d{16}$/.test(numbersOnly);
-        errorMessage = isValid ? '' : 'رقم كارت تيلدا يجب أن يكون 16 رقم';
-    }
-    // التحقق من رابط إنستا باي - النسخة المحدثة
-    else if (['instapay_link', 'payment-link'].includes(inputId)) {
-        const extractedLink = extractInstapayLink(value);
-        isValid = !!extractedLink;
-        errorMessage = isValid ? '' : 'لم يتم العثور على رابط InstaPay صحيح';
-        
-        // تحديث قيمة الحقل للرابط المستخلص
-        if (isValid && extractedLink !== value) {
-            input.value = extractedLink;
-        }
-    }
-    
-    updateValidationUI(input, isValid, errorMessage);
-    return isValid;
-};
-
-// تحديث دالة isValidInstaPayLink لاستخدام النظام الجديد
-isValidInstaPayLink = function(link) {
-    return !!extractInstapayLink(link);
-};
-
-console.log('🚀 InstaPay Smart Link Extraction System - Initialized');
-
-console.log('🚀 InstaPay Smart Link Extraction System - Initialized');
-
-// ✅ نظام ربط التليجرام المبسط - زر واحد فقط
+// ✅ نظام ربط التليجرام المبسط الجديد - زر واحد فقط
 function initializeTelegramButton() {
     const telegramButton = document.getElementById('telegram-link-btn');
     if (!telegramButton) return;
@@ -1783,6 +1209,9 @@ function initializeTelegramButton() {
                 // تحديث النص
                 this.innerHTML = '✅ تم فتح التليجرام - أدخل للبوت';
                 
+                // إشعار للمستخدم
+                showNotification('📱 تم فتح التليجرام! أدخل للبوت الآن', 'success');
+                
                 // مراقبة الربط كل 3 ثوان
                 const checkInterval = setInterval(async () => {
                     try {
@@ -1792,6 +1221,12 @@ function initializeTelegramButton() {
                         if (checkResult.success && checkResult.is_linked) {
                             clearInterval(checkInterval);
                             showNotification('✅ تم ربط التليجرام بنجاح!', 'success');
+                            
+                            // اهتزاز نجاح
+                            if (navigator.vibrate) {
+                                navigator.vibrate([200, 100, 200]);
+                            }
+                            
                             // الانتقال التلقائي فوراً
                             setTimeout(() => {
                                 window.location.href = '/coins-order';
@@ -1803,7 +1238,14 @@ function initializeTelegramButton() {
                 }, 3000);
                 
                 // إيقاف المراقبة بعد دقيقة
-                setTimeout(() => clearInterval(checkInterval), 60000);
+                setTimeout(() => {
+                    clearInterval(checkInterval);
+                    if (this.innerHTML.includes('✅')) {
+                        this.innerHTML = 'ربط مع التليجرام احصل على كود فوري وادخل للبوت';
+                        this.disabled = false;
+                        showNotification('⏰ انتهت مهلة الربط - اضغط للمحاولة مرة أخرى', 'info');
+                    }
+                }, 60000);
                 
             } else {
                 throw new Error(result.message || 'فشل في الحصول على الكود');
@@ -1813,6 +1255,7 @@ function initializeTelegramButton() {
             console.error('خطأ:', error);
             this.innerHTML = '❌ خطأ - اضغط للمحاولة مرة أخرى';
             this.disabled = false;
+            showNotification('خطأ في الاتصال، جرب مرة أخرى', 'error');
         }
     });
 }
@@ -1822,6 +1265,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeTelegramButton();
 });
 
-console.log('✅ linkTelegram function added successfully');
+console.log('✅ FC 26 Profile System - JavaScript loaded successfully');
 
 // ═══ النهاية - لا تضع أي شيء بعد هذا ═══

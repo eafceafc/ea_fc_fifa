@@ -281,91 +281,209 @@ function initializeEventListeners() {
     setupEnterKeyHandling();
 }
 
-// إعداد اختيار المنصة
+// إعداد اختيار المنصة - الإصدار المُحسن والمُجرب
 function setupPlatformSelection(platformCards) {
-    platformCards.forEach(card => {
-        card.addEventListener('click', function() {
-            // إزالة التحديد من الكل
-            platformCards.forEach(c => c.classList.remove('selected'));
-            
-            // تحديد البطاقة المضغوطة
-            this.classList.add('selected');
-            const platformInput = document.getElementById('platform');
-            if (platformInput) {
-                platformInput.value = this.dataset.platform;
+    console.log('🎮 تهيئة أزرار المنصات - عدد الأزرار:', platformCards.length);
+    
+    platformCards.forEach((card, index) => {
+        console.log(`📱 تهيئة زر المنصة ${index + 1}:`, card.dataset.platform);
+        
+        // إزالة المستمعين القدامى لمنع التداخل
+        card.removeEventListener('click', handlePlatformClick);
+        card.removeEventListener('touchstart', handlePlatformTouch);
+        card.removeEventListener('touchend', handlePlatformTouchEnd);
+        
+        // إضافة مستمع النقر الجديد
+        card.addEventListener('click', handlePlatformClick, { passive: false });
+        
+        // دعم اللمس للهواتف
+        card.addEventListener('touchstart', handlePlatformTouch, { passive: false });
+        card.addEventListener('touchend', handlePlatformTouchEnd, { passive: false });
+        
+        // تحسين إمكانية الوصول
+        card.setAttribute('tabindex', '0');
+        card.setAttribute('role', 'button');
+        card.setAttribute('aria-label', `اختر منصة ${card.dataset.platform}`);
+        
+        // دعم مفاتيح الكيبورد
+        card.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handlePlatformClick.call(this, e);
             }
-            
-            // تحديث حالة التحقق
-            validationStates.platform = true;
-            
-            // إضافة تأثير اهتزاز خفيف (للهواتف)
-            if (navigator.vibrate) {
-                navigator.vibrate(50);
-            }
-            
-            checkFormValidity();
         });
     });
 }
 
-// إعداد اختيار طريقة الدفع
-function setupPaymentSelection(paymentButtons) {
-    paymentButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            paymentButtons.forEach(b => b.classList.remove('selected'));
-            this.classList.add('selected');
-            
-            const paymentType = this.dataset.type;
-            const paymentValue = this.dataset.value;
-            
-            const paymentMethodInput = document.getElementById('payment_method');
-            if (paymentMethodInput) {
-                paymentMethodInput.value = paymentValue;
-            }
-            
-            // إخفاء جميع الحقول الديناميكية
-            document.querySelectorAll('.dynamic-input').forEach(input => {
-                input.classList.remove('show');
-                const inputField = input.querySelector('input');
-                if (inputField) {
-                    inputField.required = false;
-                    inputField.value = '';
-                }
-            });
-            
-            // إخفاء رسائل الخطأ
-            document.querySelectorAll('.error-message-field').forEach(error => {
-                error.classList.remove('show');
-            });
-            
-            // إظهار الحقل المناسب
-            const targetInput = document.getElementById(paymentType + '-input');
-            if (targetInput) {
-                setTimeout(() => {
-                    targetInput.classList.add('show');
-                    const inputField = targetInput.querySelector('input');
-                    if (inputField) {
-                        inputField.required = true;
-                        
-                        // تركيز تلقائي للهواتف
-                        if (window.innerWidth <= 768) {
-                            setTimeout(() => {
-                                inputField.focus();
-                            }, 300);
-                        }
-                    }
-                }, 150);
-            }
-            
-            // اهتزاز للهواتف
-            if (navigator.vibrate) {
-                navigator.vibrate(30);
-            }
-            
-            // إعادة التحقق من طرق الدفع
-            setTimeout(validatePaymentMethod, 200);
-        });
+// معالج النقر الرئيسي - مبسط وفعال
+function handlePlatformClick(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const clickedCard = this;
+    const platform = clickedCard.dataset.platform;
+    
+    console.log('🎯 تم النقر على المنصة:', platform);
+    
+    // إزالة التحديد من جميع البطاقات
+    document.querySelectorAll('.platform-card').forEach(card => {
+        card.classList.remove('selected');
+        card.style.transform = '';
+        card.style.boxShadow = '';
     });
+    
+    // تحديد البطاقة المُختارة
+    clickedCard.classList.add('selected');
+    clickedCard.style.transform = 'scale(1.05)';
+    clickedCard.style.boxShadow = '0 8px 25px rgba(255, 144, 0, 0.4)';
+    
+    // تحديث الحقل المخفي
+    const platformInput = document.getElementById('platform');
+    if (platformInput) {
+        platformInput.value = platform;
+        console.log('✅ تم حفظ المنصة:', platform);
+    }
+    
+    // تحديث حالة التحقق
+    validationStates.platform = true;
+    
+    // تأثير بصري للنجاح
+    clickedCard.style.background = 'linear-gradient(145deg, rgba(255, 144, 0, 0.2), rgba(255, 165, 0, 0.3))';
+    
+    setTimeout(() => {
+        if (clickedCard.classList.contains('selected')) {
+            clickedCard.style.background = '';
+        }
+    }, 1000);
+    
+    // اهتزاز للهواتف
+    if (navigator.vibrate) {
+        navigator.vibrate([50, 30, 50]);
+    }
+    
+    // تحديث حالة النموذج
+    checkFormValidity();
+    
+    console.log('🎮 تم اختيار المنصة بنجاح:', platform);
+}
+
+// معالج اللمس للهواتف
+function handlePlatformTouch(event) {
+    console.log('👆 لمس بداية المنصة');
+    this.style.opacity = '0.8';
+    this.style.transform = 'scale(0.98)';
+}
+
+function handlePlatformTouchEnd(event) {
+    console.log('👆 لمس نهاية المنصة');
+    setTimeout(() => {
+        if (!this.classList.contains('selected')) {
+            this.style.opacity = '';
+            this.style.transform = '';
+        }
+    }, 150);
+}
+
+// إعداد اختيار طريقة الدفع - الإصدار المُحسن
+function setupPaymentSelection(paymentButtons) {
+    console.log('💳 تهيئة أزرار الدفع - عدد الأزرار:', paymentButtons.length);
+    
+    paymentButtons.forEach((btn, index) => {
+        console.log(`💰 تهيئة زر الدفع ${index + 1}:`, btn.dataset.value);
+        
+        // إزالة المستمعين القدامى
+        btn.removeEventListener('click', handlePaymentClick);
+        btn.removeEventListener('touchstart', handlePaymentTouch);
+        
+        // إضافة مستمعين جدد
+        btn.addEventListener('click', handlePaymentClick, { passive: false });
+        btn.addEventListener('touchstart', handlePaymentTouch, { passive: false });
+        
+        // تحسين إمكانية الوصول
+        btn.setAttribute('tabindex', '0');
+        btn.setAttribute('role', 'button');
+        btn.setAttribute('aria-label', `اختر طريقة دفع ${btn.dataset.value}`);
+    });
+}
+
+// معالج النقر على أزرار الدفع
+function handlePaymentClick(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const clickedBtn = this;
+    const paymentType = clickedBtn.dataset.type;
+    const paymentValue = clickedBtn.dataset.value;
+    
+    console.log('💳 تم النقر على طريقة الدفع:', paymentValue);
+    
+    // إزالة التحديد من جميع الأزرار
+    document.querySelectorAll('.payment-btn').forEach(btn => {
+        btn.classList.remove('selected');
+        btn.style.transform = '';
+        btn.style.background = '';
+    });
+    
+    // تحديد الزر المُختار
+    clickedBtn.classList.add('selected');
+    clickedBtn.style.transform = 'scale(1.03)';
+    clickedBtn.style.background = 'linear-gradient(145deg, var(--accent-orange), var(--hover-orange))';
+    
+    // تحديث الحقل المخفي
+    const paymentMethodInput = document.getElementById('payment_method');
+    if (paymentMethodInput) {
+        paymentMethodInput.value = paymentValue;
+        console.log('✅ تم حفظ طريقة الدفع:', paymentValue);
+    }
+    
+    // إخفاء جميع الحقول الديناميكية
+    document.querySelectorAll('.dynamic-input').forEach(input => {
+        input.classList.remove('show');
+        input.style.display = 'none';
+        const inputField = input.querySelector('input');
+        if (inputField) {
+            inputField.required = false;
+            inputField.value = '';
+        }
+    });
+    
+    // إظهار الحقل المناسب
+    const targetInput = document.getElementById(paymentType + '-input');
+    if (targetInput) {
+        setTimeout(() => {
+            targetInput.style.display = 'block';
+            targetInput.classList.add('show');
+            const inputField = targetInput.querySelector('input');
+            if (inputField) {
+                inputField.required = true;
+            }
+        }, 200);
+    }
+    
+    // اهتزاز للهواتف
+    if (navigator.vibrate) {
+        navigator.vibrate([30, 20, 30]);
+    }
+    
+    // تحديث حالة التحقق
+    validationStates.paymentMethod = true;
+    checkFormValidity();
+    
+    console.log('💰 تم اختيار طريقة الدفع بنجاح:', paymentValue);
+}
+
+// معالج اللمس لأزرار الدفع
+function handlePaymentTouch(event) {
+    console.log('👆 لمس زر الدفع');
+    this.style.opacity = '0.9';
+    this.style.transform = 'scale(0.97)';
+    
+    setTimeout(() => {
+        if (!this.classList.contains('selected')) {
+            this.style.opacity = '';
+            this.style.transform = '';
+        }
+    }, 200);
 }
 
 // إعداد حقل رقم الواتساب

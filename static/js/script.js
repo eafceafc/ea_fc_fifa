@@ -250,36 +250,66 @@ function clearPhoneInfo() {
     });
 }
 
-// تهيئة جميع مستمعي الأحداث
+// تهيئة جميع مستمعي الأحداث - الإصدار المُحسن
 function initializeEventListeners() {
-    // عناصر النموذج الأساسية
-    const platformCards = document.querySelectorAll('.platform-card');
-    const paymentButtons = document.querySelectorAll('.payment-btn');
-    const whatsappInput = document.getElementById('whatsapp');
-    const form = document.getElementById('profileForm');
-
-    // معالجة اختيار المنصة
-    setupPlatformSelection(platformCards);
+    console.log('🔧 بدء تهيئة مستمعي الأحداث...');
     
-    // معالجة اختيار طريقة الدفع
-    setupPaymentSelection(paymentButtons);
-    
-    // معالجة رقم الواتساب
-    setupWhatsAppInput(whatsappInput);
-    
-    // معالجة الحقول الديناميكية
-    setupDynamicInputs();
-    
-    // معالجة إرسال النموذج
-    setupFormSubmission(form);
-    
-    // تهيئة الميزات المتقدمة
-    initializeTooltips();
-    initializeAnimations();
-    
-    // منع إرسال النموذج بالضغط على Enter
-    setupEnterKeyHandling();
+    // انتظار تحميل DOM كاملاً
+    setTimeout(() => {
+        // عناصر النموذج الأساسية
+        const platformCards = document.querySelectorAll('.platform-card');
+        const paymentButtons = document.querySelectorAll('.payment-btn');
+        const whatsappInput = document.getElementById('whatsapp');
+        const form = document.getElementById('profileForm');
+        
+        console.log('📊 عناصر الصفحة:');
+        console.log('   🎮 أزرار المنصات:', platformCards.length);
+        console.log('   💳 أزرار الدفع:', paymentButtons.length);
+        console.log('   📱 حقل الواتساب:', whatsappInput ? 'موجود' : 'غير موجود');
+        console.log('   📝 النموذج:', form ? 'موجود' : 'غير موجود');
+        
+        // معالجة اختيار المنصة
+        if (platformCards.length > 0) {
+            setupPlatformSelection(platformCards);
+            console.log('✅ تم تهيئة أزرار المنصات');
+        }
+        
+        // معالجة اختيار طريقة الدفع
+        if (paymentButtons.length > 0) {
+            setupPaymentSelection(paymentButtons);
+            console.log('✅ تم تهيئة أزرار الدفع');
+        }
+        
+        // معالجة رقم الواتساب
+        if (whatsappInput) {
+            setupWhatsAppInput(whatsappInput);
+            console.log('✅ تم تهيئة حقل الواتساب');
+        }
+        
+        // معالجة الحقول الديناميكية
+        setupDynamicInputs();
+        console.log('✅ تم تهيئة الحقول الديناميكية');
+        
+        // معالجة إرسال النموذج
+        if (form) {
+            setupFormSubmission(form);
+            console.log('✅ تم تهيئة النموذج');
+        }
+        
+        // تهيئة الميزات المتقدمة
+        initializeTooltips();
+        initializeAnimations();
+        console.log('✅ تم تهيئة الميزات المتقدمة');
+        
+        // منع إرسال النموذج بالضغط على Enter
+        setupEnterKeyHandling();
+        console.log('✅ تم تهيئة معالجة المفاتيح');
+        
+        console.log('🎉 تم إنهاء تهيئة جميع المستمعين بنجاح!');
+        
+    }, 100); // تأخير قصير لضمان تحميل العناصر
 }
+
 
 // إعداد اختيار المنصة - الإصدار المُحسن والمُجرب
 function setupPlatformSelection(platformCards) {

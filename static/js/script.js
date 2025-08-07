@@ -264,21 +264,20 @@ function initializeEventListeners() {
 function initializeAllHandlers() {
     console.log('🚀 تهيئة جميع المعالجات...');
     
-    // 🔥 الحل الجديد - استخدام Event Delegation للأزرار
+    // استخدام Event Delegation للأزرار
     const container = document.querySelector('.container');
     if (!container) {
         console.error('❌ الحاوي الرئيسي غير موجود!');
         return;
     }
     
-    // 🎯 المعالج الموحد الجديد لجميع النقرات
+    // معالج موحد لجميع النقرات
     container.addEventListener('click', function(e) {
         // معالجة أزرار المنصات
         const platformCard = e.target.closest('.platform-card');
         if (platformCard) {
             e.preventDefault();
             e.stopPropagation();
-            console.log('🎮 Platform card clicked:', platformCard.dataset.platform);
             handlePlatformSelection(platformCard);
             return;
         }
@@ -288,7 +287,6 @@ function initializeAllHandlers() {
         if (paymentBtn) {
             e.preventDefault();
             e.stopPropagation();
-            console.log('💳 Payment button clicked:', paymentBtn.dataset.value);
             handlePaymentSelection(paymentBtn);
             return;
         }
@@ -298,17 +296,15 @@ function initializeAllHandlers() {
         if (telegramBtn) {
             e.preventDefault();
             e.stopPropagation();
-            console.log('📱 Telegram button clicked');
             handleTelegramLink();
             return;
         }
     });
     
-    // 🔥 معالج اللمس المحسن للهواتف
+    // معالج اللمس للهواتف
     container.addEventListener('touchstart', function(e) {
         const clickableElement = e.target.closest('.platform-card, .payment-btn, #telegram-link-btn');
         if (clickableElement) {
-            console.log('👆 Touch started on:', clickableElement.className);
             clickableElement.style.opacity = '0.8';
             clickableElement.style.transform = 'scale(0.98)';
         }
@@ -317,7 +313,6 @@ function initializeAllHandlers() {
     container.addEventListener('touchend', function(e) {
         const clickableElement = e.target.closest('.platform-card, .payment-btn, #telegram-link-btn');
         if (clickableElement) {
-            console.log('👆 Touch ended on:', clickableElement.className);
             setTimeout(() => {
                 clickableElement.style.opacity = '';
                 clickableElement.style.transform = '';
@@ -325,7 +320,6 @@ function initializeAllHandlers() {
         }
     }, { passive: true });
     
-    // باقي التهيئات (الكود الأصلي)
     // تهيئة حقل الواتساب
     const whatsappInput = document.getElementById('whatsapp');
     if (whatsappInput) {
@@ -351,27 +345,24 @@ function initializeAllHandlers() {
     console.log('🎉 تم تهيئة جميع المعالجات بنجاح!');
 }
 
-
-// معالج اختيار المنصة المُبسط والمحسن
+// معالج اختيار المنصة المُبسط
 function handlePlatformSelection(card) {
     const platform = card.dataset.platform;
     console.log('🎮 تم اختيار المنصة:', platform);
     
-    // إزالة التحديد من جميع البطاقات مع تأثيرات سلسة
+    // إزالة التحديد من جميع البطاقات
     document.querySelectorAll('.platform-card').forEach(c => {
         c.classList.remove('selected');
         c.style.transform = '';
         c.style.boxShadow = '';
-        c.style.transition = 'all 0.3s ease';
     });
     
-    // تحديد البطاقة المختارة مع تأثيرات بصرية
+    // تحديد البطاقة المختارة
     card.classList.add('selected');
     card.style.transform = 'scale(1.05)';
     card.style.boxShadow = '0 8px 25px rgba(255, 144, 0, 0.4)';
-    card.style.transition = 'all 0.3s ease';
     
-    // حفظ القيمة في الحقل المخفي
+    // حفظ القيمة
     const platformInput = document.getElementById('platform');
     if (platformInput) {
         platformInput.value = platform;
@@ -382,122 +373,64 @@ function handlePlatformSelection(card) {
     validationStates.platform = true;
     checkFormValidity();
     
-    // تأثيرات إضافية
     // اهتزاز للهواتف
     if (navigator.vibrate) {
         navigator.vibrate([50, 30, 50]);
     }
-    
-    // إشعار بصري مؤقت
-    showNotification(`تم اختيار منصة ${getPlatformDisplayName(platform)}`, 'success');
 }
 
-// دالة مساعدة لعرض أسماء المنصات
-function getPlatformDisplayName(platform) {
-    const names = {
-        'playstation': 'PlayStation',
-        'xbox': 'Xbox',
-        'pc': 'PC'
-    };
-    return names[platform] || platform;
-}
-
-
-// معالج اختيار طريقة الدفع المُبسط والمحسن
+// معالج اختيار طريقة الدفع المُبسط
 function handlePaymentSelection(btn) {
     const paymentType = btn.dataset.type;
     const paymentValue = btn.dataset.value;
     console.log('💳 تم اختيار طريقة الدفع:', paymentValue);
     
-    // إزالة التحديد من جميع الأزرار مع تأثيرات سلسة
+    // إزالة التحديد من جميع الأزرار
     document.querySelectorAll('.payment-btn').forEach(b => {
         b.classList.remove('selected');
         b.style.transform = '';
         b.style.background = '';
-        b.style.transition = 'all 0.3s ease';
     });
     
-    // تحديد الزر المختار مع تأثيرات بصرية
+    // تحديد الزر المختار
     btn.classList.add('selected');
     btn.style.transform = 'scale(1.03)';
-    btn.style.transition = 'all 0.3s ease';
     
-    // حفظ القيمة في الحقل المخفي
+    // حفظ القيمة
     const paymentMethodInput = document.getElementById('payment_method');
     if (paymentMethodInput) {
         paymentMethodInput.value = paymentValue;
         console.log('✅ تم حفظ طريقة الدفع:', paymentValue);
     }
     
-    // إخفاء جميع الحقول الديناميكية بسلاسة
+    // إخفاء جميع الحقول الديناميكية
     document.querySelectorAll('.dynamic-input').forEach(input => {
         input.classList.remove('show');
         input.style.display = 'none';
-        input.style.opacity = '0';
-        input.style.transform = 'translateY(-10px)';
-        input.style.transition = 'all 0.3s ease';
     });
     
-    // إظهار الحقل المناسب مع انيميشن
-    showPaymentInputField(paymentType);
+    // إظهار الحقل المناسب
+    const targetInput = document.getElementById(paymentType + '-input');
+    if (targetInput) {
+        setTimeout(() => {
+            targetInput.style.display = 'block';
+            targetInput.classList.add('show');
+            const inputField = targetInput.querySelector('input');
+            if (inputField) {
+                inputField.required = true;
+            }
+        }, 200);
+    }
     
     // تحديث حالة التحقق
     validationStates.paymentMethod = true;
     checkFormValidity();
     
-    // تأثيرات إضافية
     // اهتزاز للهواتف
     if (navigator.vibrate) {
         navigator.vibrate([30, 20, 30]);
     }
-    
-    // إشعار بصري مؤقت
-    showNotification(`تم اختيار ${paymentValue}`, 'success');
 }
-
-// دالة مساعدة لإظهار حقل الدفع المناسب
-function showPaymentInputField(paymentType) {
-    let targetInputId;
-    
-    switch(paymentType) {
-        case 'mobile':
-            targetInputId = 'mobile-input';
-            break;
-        case 'card':
-            targetInputId = 'card-input';
-            break;
-        case 'link':
-            targetInputId = 'link-input';
-            break;
-        default:
-            console.warn('⚠️ نوع دفع غير معروف:', paymentType);
-            return;
-    }
-    
-    const targetInput = document.getElementById(targetInputId);
-    if (targetInput) {
-        setTimeout(() => {
-            targetInput.style.display = 'block';
-            targetInput.style.opacity = '1';
-            targetInput.style.transform = 'translateY(0)';
-            targetInput.classList.add('show');
-            
-            const inputField = targetInput.querySelector('input');
-            if (inputField) {
-                inputField.required = true;
-                // تركيز تلقائي على الحقل
-                setTimeout(() => {
-                    inputField.focus();
-                }, 300);
-            }
-        }, 200);
-        
-        console.log('✅ تم إظهار حقل الدفع:', targetInputId);
-    } else {
-        console.warn('⚠️ لم يتم العثور على حقل الدفع:', targetInputId);
-    }
-}
-
 
 // معالج زر التليجرام
 async function handleTelegramLink() {

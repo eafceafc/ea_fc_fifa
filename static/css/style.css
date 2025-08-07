@@ -117,7 +117,6 @@ body {
     margin-bottom: 20px;
 }
 
-/* إصلاح تفاعل الأزرار - الكود الجديد */
 .platform-card {
     background: var(--button-bg);
     border: 2px solid rgba(255, 255, 255, 0.2);
@@ -127,41 +126,93 @@ body {
     cursor: pointer;
     transition: all 0.3s ease;
     backdrop-filter: blur(10px);
-    
-    /* إصلاحات مهمة للتفاعل */
-    user-select: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    
-    /* تحسين اللمس */
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-    
-    /* منع التداخل */
-    position: relative;
-    z-index: 1;
 }
 
 .platform-card:hover {
-    transform: translateY(-3px) !important;
-    box-shadow: 0 10px 20px rgba(255, 144, 0, 0.2) !important;
-    border-color: rgba(255, 144, 0, 0.5) !important;
-}
-
-.platform-card:active {
-    transform: scale(0.98) !important;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(255, 144, 0, 0.2);
+    border-color: rgba(255, 144, 0, 0.5);
 }
 
 .platform-card.selected {
-    background: var(--selected-bg) !important;
-    border-color: var(--accent-orange) !important;
-    color: #1F2937 !important;
-    transform: translateY(-2px) scale(1.02) !important;
-    box-shadow: 0 8px 20px rgba(255, 144, 0, 0.4) !important;
+    background: var(--selected-bg);
+    border-color: var(--accent-orange);
+    color: #1F2937;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255, 144, 0, 0.4);
 }
 
-/* إصلاح أزرار الدفع */
+.platform-icon {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.platform-icon.playstation { color: #00D4FF; }
+.platform-icon.xbox { color: #107C10; }
+.platform-icon.pc { color: #ff9000; }
+
+.platform-card h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.platform-card:not(.selected) h3 {
+    color: var(--text-white);
+}
+
+/* نموذج الإدخال */
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-group label {
+    display: block;
+    color: var(--text-white);
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-input {
+    width: 100%;
+    padding: 15px 20px;
+    border: none;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-white);
+    font-size: 1rem;
+    font-weight: 600;
+    backdrop-filter: blur(5px);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    font-family: 'Cairo', sans-serif;
+}
+
+.form-input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--accent-orange);
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 20px rgba(255, 144, 0, 0.3);
+}
+
+/* طرق الدفع مع الشعارات الأصلية */
+.payment-methods {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
 .payment-btn {
     padding: 18px;
     border: none;
@@ -179,34 +230,22 @@ body {
     gap: 15px;
     font-family: 'Cairo', sans-serif;
     backdrop-filter: blur(10px);
-    
-    /* إصلاحات التفاعل */
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-    position: relative;
-    z-index: 1;
 }
 
 .payment-btn:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 8px 15px rgba(255, 144, 0, 0.2) !important;
-    border-color: rgba(255, 144, 0, 0.5) !important;
-}
-
-.payment-btn:active {
-    transform: scale(0.98) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(255, 144, 0, 0.2);
+    border-color: rgba(255, 144, 0, 0.5);
 }
 
 .payment-btn.selected {
-    background: var(--selected-bg) !important;
-    border-color: var(--accent-orange) !important;
-    color: #1F2937 !important;
-    font-weight: 800 !important;
-    transform: translateY(-2px) scale(1.01) !important;
-    box-shadow: 0 8px 20px rgba(255, 144, 0, 0.4) !important;
+    background: var(--selected-bg);
+    border-color: var(--accent-orange);
+    color: #1F2937;
+    font-weight: 800;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255, 144, 0, 0.4);
 }
-
 
 /* الشعارات الأصلية */
 .payment-logo {

@@ -79,47 +79,48 @@ function initializeEventListeners() {
     console.log('✅ All event listeners set up successfully with button fixes!');
 }
 
-// 🎮 حل مشكلة أزرار المنصات - مأخوذ من كود صحبك
-function setupPlatformButtons() {
-    console.log('🎮 Setting up platform buttons with fix...');
+// 💳 حل مشكلة أزرار الدفع - مأخوذ من كود صحبك (مع إصلاح التمرير)
+function setupPaymentButtons() {
+    console.log('💳 Setting up payment buttons with SCROLL fix...');
     
-    const platformCards = document.querySelectorAll('.platform-card');
+    const paymentButtons = document.querySelectorAll('.payment-btn');
     
-    if (platformCards.length === 0) {
-        console.warn('⚠️ No platform cards found!');
+    if (paymentButtons.length === 0) {
+        console.warn('⚠️ No payment buttons found!');
         return;
     }
     
-    platformCards.forEach((card, index) => {
-        console.log(`Setting up platform card ${index + 1}:`, card.dataset.platform);
+    paymentButtons.forEach((btn, index) => {
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
         
-        // إزالة مستمعين قدامى - الحل الرئيسي
-        const newCard = card.cloneNode(true);
-        card.parentNode.replaceChild(newCard, card);
-        
-        // إضافة مستمع جديد
-        newCard.addEventListener('click', function(e) {
+        // مستمع النقر العادي
+        newBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            handlePlatformSelection(this);
+            handlePaymentSelection(this);
         });
         
-        // مستمع اللمس للهواتف
-        newCard.addEventListener('touchstart', function(e) {
-            e.preventDefault();
-            this.style.transform = 'scale(0.95)';
+        // ✅ الحل: مستمع لمس محسن لا يمنع التمرير
+        newBtn.addEventListener('touchstart', function(e) {
+            // لا نستخدم e.preventDefault() هنا للسماح بالتمرير
+            this.style.transition = 'transform 0.1s ease, opacity 0.1s ease';
+            this.style.transform = 'scale(0.97)';
             this.style.opacity = '0.8';
-        }, { passive: false });
-        
-        newCard.addEventListener('touchend', function(e) {
-            e.preventDefault();
+        }, { passive: true }); // استخدام passive: true مهم جداً
+
+        newBtn.addEventListener('touchend', function(e) {
             this.style.transform = '';
             this.style.opacity = '';
-            handlePlatformSelection(this);
-        }, { passive: false });
+        });
+
+        newBtn.addEventListener('touchcancel', function(e) {
+            this.style.transform = '';
+            this.style.opacity = '';
+        });
     });
     
-    console.log(`✅ ${platformCards.length} platform buttons fixed and initialized`);
+    console.log(`✅ ${paymentButtons.length} payment buttons fixed for scrolling`);
 }
 
 // 💳 حل مشكلة أزرار الدفع - مأخوذ من كود صحبك

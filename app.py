@@ -228,63 +228,21 @@ def validate_egyptian_mobile_instant(phone_input):
     }
 
 def normalize_phone_number(phone):
-    """تطبيع رقم الهاتف - نظام المحافظ (11 رقم فقط)"""
+    """تطبيع رقم الهاتف للصيغة المطلوبة"""
     if not phone:
-        return ""
+        return phone
     
-    # 🔥 استخدام التحقق الفوري الجديد
-    validation_result = validate_egyptian_mobile_instant(phone)
+    # إزالة المسافات والرموز الخاصة
+    phone = re.sub(r'[^\d+]', '', phone)
     
-    # إرجاع الرقم المنسق أو فارغ في حالة الخطأ
-    if validation_result['is_valid']:
-        return validation_result['formatted_number']
-    else:
-        return ""  # رفض تام للأرقام غير الصحيحة
-
-def normalize_phone_number(phone):
-    """تطبيع رقم الهاتف - محسن للأرقام المصرية 11 رقم فقط"""
-    if not phone:
-        return ""
-    
-    # إزالة كل شيء عدا الأرقام وعلامة +
-    clean_phone = re.sub(r'[^\d+]', '', phone)
-    
-    # 🔥 التحقق من الأرقام المصرية (11 رقم) - التحسين الجديد
-    if clean_phone.startswith('01') and len(clean_phone) == 11:
-        # التحقق من أن الرقم يبدأ بكود شركة صحيح
-        if clean_phone.startswith(('010', '011', '012', '015')):
-            return '+2' + clean_phone  # +2 + 11 رقم = 13 رقم نهائي
+    # إضافة رمز الدولة إذا لم يكن موجوداً
+    if not phone.startswith('+'):
+        if phone.startswith('0'):
+            phone = '+2' + phone[1:]  # مصر
         else:
-            return ""  # رقم مصري غير صحيح
+            phone = '+2' + phone
     
-    # للأرقام التي تبدأ بـ 00
-    elif clean_phone.startswith('002') and len(clean_phone) == 14:
-        # التحقق من الكود المصري
-        egyptian_part = clean_phone[3:]  # إزالة 002
-        if len(egyptian_part) == 11 and egyptian_part.startswith(('010', '011', '012', '015')):
-            return '+2' + egyptian_part
-        else:
-            return ""
-    
-    # للأرقام التي تبدأ بـ +2
-    elif clean_phone.startswith('+2') and len(clean_phone) == 13:
-        egyptian_part = clean_phone[2:]  # إزالة +2
-        if len(egyptian_part) == 11 and egyptian_part.startswith(('010', '011', '012', '015')):
-            return clean_phone
-        else:
-            return ""
-    
-    # للأرقام التي تبدأ بـ 2 مباشرة
-    elif clean_phone.startswith('2') and len(clean_phone) == 12:
-        egyptian_part = clean_phone[1:]  # إزالة 2
-        if len(egyptian_part) == 11 and egyptian_part.startswith(('010', '011', '012', '015')):
-            return '+' + clean_phone
-        else:
-            return ""
-    
-    # رفض أي شيء آخر
-    else:
-        return ""
+    return phone
 
 def check_whatsapp_ultimate_method(phone_number):
     """

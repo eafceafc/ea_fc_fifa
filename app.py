@@ -766,6 +766,8 @@ def update_profile():
         
         # اسم البوت
         bot_username = os.environ.get('TELEGRAM_BOT_USERNAME', 'ea_fc_fifa_bot')
+        telegram_web_url = f"https://t.me/{bot_username}?start={telegram_code}"
+
         
         # الاستجابة المبسطة
         return jsonify({
@@ -775,6 +777,7 @@ def update_profile():
             'telegram_integration': True,
             'telegram_code': telegram_code,
             'bot_username': bot_username,
+            'telegram_web_url': telegram_web_url,  # 🔥 السطر الجديد المضاف
             'auto_redirect_after_link': True,
             'next_step': '/coins-order'
         })

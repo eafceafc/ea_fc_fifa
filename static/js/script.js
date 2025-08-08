@@ -1585,67 +1585,70 @@ function setupTelegramButton() {
     }
 }
 
-// معالجة زر التليجرام - FINAL FIX (التحقق المباشر من DOM)
-async function handleTelegramLink() {
-    const btn = document.getElementById('telegram-link-btn');
-    if (!btn || btn.disabled) return;
-
-    console.log('🔗 Telegram button clicked. Performing direct validation...');
-
-    // ✅ الحل: التحقق المباشر من العناصر في الصفحة
-    const selectedPlatformCard = document.querySelector('.platform-card.selected');
-    const platformValue = selectedPlatformCard ? selectedPlatformCard.dataset.platform : null;
+// معالجة زر التليجرام - العودة للنسخة الشغالة مع تحسينات
+function handleTelegramLink() {
+    // استخدام نفس منطق التحقق القديم اللي كان شغال
+    const telegramBtn = document.getElementById('telegram-btn');
     
-    const whatsappInput = document.getElementById('whatsapp');
-    const whatsappValue = whatsappInput ? whatsappInput.value : null;
-    
-    // نبحث عن علامة التحقق الخضراء للواتساب
-    const isWhatsappVerified = document.querySelector('.phone-info.success-info') !== null;
-
-    console.log(`Direct check - Platform: ${platformValue}, WhatsApp Verified: ${isWhatsappVerified}`);
-
-    // ✅ الخطوة 1: التحقق من أن البيانات الأساسية موجودة ومكتملة
-    if (!platformValue || !isWhatsappVerified) {
-        showNotification('❌ يرجى اختيار المنصة والتحقق من رقم الواتساب أولاً', 'error');
+    // التحقق من البيانات بنفس الطريقة القديمة
+    if (!validationStates.platform || !validationStates.phone) {
+        telegramBtn.innerHTML = '❌ يرجى اختيار المنصة والتحقق من الواتساب أولاً';
+        telegramBtn.classList.add('error');
+        
+        setTimeout(() => {
+            telegramBtn.innerHTML = '📱 التواصل عبر التليجرام';
+            telegramBtn.classList.remove('error');
+        }, 3000);
+        
         return;
     }
-
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري توليد الكود...';
-
-    try {
-        // ✅ الخطوة 2: استدعاء الـ endpoint الصحيح لتوليد الكود
-        const response = await fetch('/generate-telegram-code', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCSRFToken()
-            },
-            body: JSON.stringify({
-                platform: platformValue,
-                whatsapp_number: whatsappValue
-            })
-        });
-
-        const result = await response.json();
-
-        if (result.success && result.telegram_code) {
-            // ✅ الخطوة 3: فتح رابط التليجرام مع الكود
-            const telegramUrl = result.telegram_web_url || `https://t.me/${result.bot_username}?start=${result.telegram_code}`;
-            window.open(telegramUrl, '_blank' );
+    
+    // باقي الكود زي ما هو
+    telegramBtn.innerHTML = '⏳ جاري التحضير...';
+    telegramBtn.disabled = true;
+    
+    const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+    
+    fetch('/generate_telegram_code', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+            platform: currentPlatform,
+            phone: currentPhone
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const telegramUrl = `https://t.me/FC26_fifa_bot?start=${data.code}`;
+            window.open(telegramUrl, '_blank');
             
-            btn.innerHTML = '✅ تم فتح التليجرام - أدخل للبوت';
+            telegramBtn.innerHTML = '✅ تم فتح التليجرام';
+            telegramBtn.classList.add('success');
             
-            // مراقبة الربط في الخلفية
-            monitorTelegramLinking(result.telegram_code);
+            setTimeout(() => {
+                telegramBtn.innerHTML = '📱 التواصل عبر التليجرام';
+                telegramBtn.classList.remove('success');
+                telegramBtn.disabled = false;
+            }, 3000);
         } else {
-            throw new Error(result.message || 'فشل في الحصول على الكود من الخادم');
+            throw new Error(data.message || 'خطأ في الخادم');
         }
-    } catch (error) {
-        console.error('خطأ في ربط التليجرام:', error);
-        btn.innerHTML = '❌ خطأ - اضغط للمحاولة مرة أخرى';
-        btn.disabled = false; // السماح للمستخدم بالمحاولة مرة أخرى
-    }
+    })
+    .catch(error => {
+        console.error('خطأ في التليجرام:', error);
+        telegramBtn.innerHTML = '❌ خطأ - اضغط للمحاولة مرة أخرى';
+        telegramBtn.classList.add('error');
+        
+        setTimeout(() => {
+            telegramBtn.innerHTML = '📱 التواصل عبر التليجرام';
+            telegramBtn.classList.remove('error');
+            telegramBtn.disabled = false;
+        }, 3000);
+    });
 }
 
 

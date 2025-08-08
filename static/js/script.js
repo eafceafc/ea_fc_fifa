@@ -892,55 +892,6 @@ function updateTeldaProgressBar(input, length) {
     }
 }
 
-// التحقق من صحة حقول الدفع - ENHANCED
-function validatePaymentInput(input) {
-    const value = input.value.trim();
-    const inputId = input.id;
-    let isValid = false;
-    let errorMessage = '';
-    
-    console.log(`🔍 Validating ${inputId} with value:`, value);
-    
-    if (!value) {
-        updateValidationUI(input, true, ''); // فارغ = صحيح للحقول الاختيارية
-        return true;
-    }
-    
-    // ✅ التحقق المحسن من المحافظ الإلكترونية (11 رقم)
-    if (inputId === 'mobile-number') {
-        isValid = /^01[0125][0-9]{8}$/.test(value) && value.length === 11;
-        errorMessage = isValid ? '' : 'رقم المحفظة يجب أن يكون 11 رقم ويبدأ بـ 010، 011، 012، أو 015';
-        console.log('Mobile validation:', isValid);
-    }
-    // ✅ التحقق المحسن من كارت تيلدا (16 رقم)
-    else if (inputId === 'card-number') {
-        // إزالة الشرطات والمسافات
-        const numbersOnly = value.replace(/[-\s]/g, '');
-        isValid = /^\d{16}$/.test(numbersOnly);
-        errorMessage = isValid ? '' : 'رقم كارت تيلدا يجب أن يكون 16 رقم';
-        console.log('Telda card validation:', isValid, 'Numbers only:', numbersOnly);
-    }
-    // ✅ التحقق المحسن من رابط إنستا باي
-    else if (inputId === 'payment-link') {
-        // استخدام النظام الذكي لاستخلاص الروابط
-        const extractedLink = extractInstapayLink(value);
-        isValid = !!extractedLink || isValidInstaPayLink(value);
-        errorMessage = isValid ? '' : 'لم يتم العثور على رابط InstaPay صحيح';
-        console.log('InstaPay validation:', isValid, 'Extracted:', extractedLink);
-        
-        // تحديث قيمة الحقل للرابط المستخلص
-        if (isValid && extractedLink && extractedLink !== value) {
-            input.value = extractedLink;
-            console.log('Updated input value to extracted link');
-        }
-    }
-    
-    updateValidationUI(input, isValid, errorMessage);
-    console.log(`✅ ${inputId} validation result:`, isValid);
-    return isValid;
-}
-
-
 // التحقق الشامل من طرق الدفع - FIXED للتيلدا وإنستا باي
 function validatePaymentMethod() {
     console.log('🔍 Checking payment method validation...');
@@ -1866,65 +1817,350 @@ function getPlatformDisplayName(platform) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// 🔗 نظام استخلاص روابط InstaPay الذكي - إضافة جديدة
+// 🔗 نظام استخلاص روابط InstaPay الذكي - من الكود الأصلي المحسن
 // ═══════════════════════════════════════════════════════════════
 
-// دالة مساعدة لإظهار حقل الدفع المناسب (مع تفعيل InstaPay)
-function showPaymentInputField(paymentType) {
-    let targetInputId;
-    
-    switch(paymentType) {
-        case 'mobile':
-            targetInputId = 'mobile-input';
-            break;
-        case 'card':
-            targetInputId = 'card-input';
-            break;
-        case 'link':
-            targetInputId = 'link-input';
-            break;
-        default:
-            console.warn('⚠️ نوع دفع غير معروف:', paymentType);
-            return;
+/**
+ * 🎯 الدالة الرئيسية: استخلاص روابط InstaPay الذكي من النصوص المركبة
+ */
+function extractInstapayLink(inputText) {
+    if (!inputText) {
+        return null;
     }
     
-    // إخفاء كل الحقول أولاً
-    document.querySelectorAll('.dynamic-input').forEach(div => {
-        div.classList.remove('show');
-        div.style.display = 'none';
-    });
-
-    const targetInputDiv = document.getElementById(targetInputId);
-    if (targetInputDiv) {
-        targetInputDiv.style.display = 'block';
-        setTimeout(() => {
-            targetInputDiv.classList.add('show');
-            const inputField = targetInputDiv.querySelector('input');
-            if (inputField) {
-                inputField.required = true;
-                
-                // ✅ الحل: تفعيل نظام InstaPay فقط عندما يظهر حقله
-                if (paymentType === 'link') {
-                    console.log('🔗 Initializing InstaPay listener for the visible input...');
-                    // إزالة أي مستمعين قدامى لضمان عدم التكرار
-                    const newField = inputField.cloneNode(true);
-                    inputField.parentNode.replaceChild(newField, inputField);
-                    
-                    // إضافة المستمعين الجدد
-                    newField.addEventListener('input', () => validateInstapayInput(newField));
-                    newField.addEventListener('paste', () => setTimeout(() => validateInstapayInput(newField), 50));
-                }
-                
-                inputField.focus();
-            }
-        }, 100);
+    console.log('🔍 Extracting InstaPay link from text:', inputText);
+    
+    // تنظيف النص من الأسطر الجديدة والمسافات الزائدة
+    const cleanText = inputText.trim().replace(/\n/g, ' ').replace(/\r/g, ' ').replace(/\s+/g, ' ');
+    
+    // 🔥 أنماط البحث المتقدمة لروابط InstaPay (من الكود الأصلي)
+    const instapayPatterns = [
+        // الأنماط الأساسية الأكثر استخداماً
+        /https?:\/\/(?:www\.)?ipn\.eg\/S\/[^\/\s]+\/instapay\/[A-Za-z0-9]+/gi,
+        /https?:\/\/(?:www\.)?instapay\.com\.eg\/[^\s<>"{}|\\^`\[\]]+/gi,
+        /https?:\/\/(?:www\.)?app\.instapay\.com\.eg\/[^\s<>"{}|\\^`\[\]]+/gi,
+        /https?:\/\/(?:www\.)?instapay\.app\/[^\s<>"{}|\\^`\[\]]+/gi,
         
-        console.log('✅ تم إظهار حقل الدفع:', targetInputId);
-    } else {
-        console.warn('⚠️ لم يتم العثور على حقل الدفع:', targetInputId);
+        // أنماط متقدمة للروابط المختصرة
+        /https?:\/\/(?:www\.)?ipn\.eg\/[^\s<>"{}|\\^`\[\]]+/gi,
+        /https?:\/\/(?:www\.)?pay\.instapay\.com\.eg\/[^\s<>"{}|\\^`\[\]]+/gi,
+        
+        // أنماط للروابط مع معاملات
+        /https?:\/\/[^\s<>"{}|\\^`\[\]]*instapay[^\s<>"{}|\\^`\[\]]*(?:\?[^\s<>"{}|\\^`\[\]]+)?/gi
+    ];
+    
+    let extractedLinks = [];
+    
+    // البحث باستخدام كل نمط
+    for (const pattern of instapayPatterns) {
+        const matches = cleanText.match(pattern) || [];
+        extractedLinks = extractedLinks.concat(matches);
+    }
+    
+    // إزالة المكررات والاحتفاظ بالترتيب
+    const uniqueLinks = [...new Set(extractedLinks)];
+    
+    // فلترة الروابط وتنظيفها
+    const validLinks = [];
+    for (const link of uniqueLinks) {
+        // تنظيف الرابط من العلامات في النهاية
+        const cleanedLink = link.replace(/[.,;!?]+$/, '').trim();
+        
+        // التحقق من صحة الرابط
+        if (isValidInstapayUrl(cleanedLink)) {
+            validLinks.push(cleanedLink);
+        }
+    }
+    
+    // إرجاع أفضل رابط موجود
+    if (validLinks.length > 0) {
+        const bestLink = selectBestInstapayLink(validLinks);
+        console.log('✅ Found InstaPay link:', bestLink);
+        return bestLink;
+    }
+    
+    console.log('❌ No valid InstaPay link found');
+    return null;
+}
+
+/**
+ * 🔍 التحقق من صحة رابط InstaPay (من الكود الأصلي)
+ */
+function isValidInstapayUrl(url) {
+    if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
+        return false;
+    }
+    
+    // قائمة النطاقات الصحيحة
+    const validDomains = [
+        'ipn.eg',
+        'instapay.com.eg',
+        'app.instapay.com.eg',
+        'instapay.app',
+        'pay.instapay.com.eg'
+    ];
+    
+    try {
+        const urlObj = new URL(url.toLowerCase());
+        const domain = urlObj.hostname.replace('www.', '');
+        
+        // التحقق من النطاق
+        const domainValid = validDomains.some(validDomain => domain.includes(validDomain));
+        
+        // التحقق من طول الرابط (ليس قصير جداً)
+        const lengthValid = url.length >= 20;
+        
+        // التحقق من وجود معرف في الرابط
+        const hasIdentifier = urlObj.pathname.length > 3;
+        
+        return domainValid && lengthValid && hasIdentifier;
+        
+    } catch (error) {
+        console.warn('Error validating URL:', error);
+        return false;
     }
 }
-console.log('🚀 InstaPay Smart Link Extraction System - Initialized');
+
+/**
+ * 🏆 اختيار أفضل رابط من القائمة (من الكود الأصلي)
+ */
+function selectBestInstapayLink(links) {
+    if (!links || links.length === 0) {
+        return "";
+    }
+    
+    // ترتيب الأولويات (من الأفضل للأسوأ)
+    const priorityDomains = [
+        'ipn.eg/S/',  // الأولوية العليا - الروابط القياسية
+        'instapay.com.eg',
+        'app.instapay.com.eg', 
+        'instapay.app'
+    ];
+    
+    // البحث عن رابط بأولوية عالية
+    for (const priority of priorityDomains) {
+        for (const link of links) {
+            if (link.toLowerCase().includes(priority)) {
+                return link;
+            }
+        }
+    }
+    
+    // إذا لم يوجد، إرجاع الأول
+    return links[0];
+}
+
+/**
+ * 📊 استخلاص معلومات إضافية من رابط InstaPay (من الكود الأصلي)
+ */
+function extractInstapayInfo(url) {
+    const info = {
+        url: url,
+        domain: '',
+        username: '',
+        code: '',
+        type: 'unknown'
+    };
+    
+    try {
+        const urlObj = new URL(url);
+        info.domain = urlObj.hostname.replace('www.', '');
+        
+        // استخلاص اسم المستخدم والكود من رابط ipn.eg
+        if (info.domain.includes('ipn.eg')) {
+            const pathParts = urlObj.pathname.split('/').filter(part => part);
+            if (pathParts.length >= 4 && pathParts[0] === 'S') {
+                info.username = pathParts[1];
+                info.code = pathParts[3] || '';
+                info.type = 'standard';
+            }
+        }
+        
+    } catch (error) {
+        console.warn('Error extracting InstaPay info:', error);
+    }
+    
+    return info;
+}
+
+/**
+ * ✅ دالة التحقق المحسنة لحقل InstaPay مع الاستخلاص الذكي
+ */
+function validateInstapayInput(inputElement) {
+    const inputValue = inputElement.value.trim();
+    console.log('🔍 Validating InstaPay input:', inputValue);
+    
+    if (!inputValue) {
+        updateInstapayUI(inputElement, true, ''); // فارغ = صحيح
+        return true;
+    }
+    
+    // محاولة استخلاص رابط من النص
+    const extractedLink = extractInstapayLink(inputValue);
+    
+    if (extractedLink) {
+        // تم العثور على رابط صحيح
+        if (extractedLink !== inputValue) {
+            // تحديث قيمة الحقل للرابط المستخلص
+            inputElement.value = extractedLink;
+            showInstapayExtractionNotice(inputElement, inputValue, extractedLink);
+        }
+        
+        // استخلاص معلومات إضافية
+        const linkInfo = extractInstapayInfo(extractedLink);
+        updateInstapayUI(inputElement, true, '✅ رابط InstaPay صحيح');
+        showInstapayLinkInfo(inputElement, linkInfo);
+        return true;
+        
+    } else {
+        // لم يتم العثور على رابط صحيح
+        updateInstapayUI(inputElement, false, 'لم يتم العثور على رابط InstaPay صحيح في النص');
+        return false;
+    }
+}
+
+/**
+ * 💡 إشعار بصري عند استخلاص رابط من نص مركب
+ */
+function showInstapayExtractionNotice(inputElement, originalText, extractedLink) {
+    const container = inputElement.closest('.form-group') || inputElement.parentNode;
+    
+    // إزالة إشعارات سابقة
+    const existingNotice = container.querySelector('.instapay-extraction-notice');
+    if (existingNotice) {
+        existingNotice.remove();
+    }
+    
+    const noticeDiv = document.createElement('div');
+    noticeDiv.className = 'instapay-extraction-notice success-notice';
+    noticeDiv.innerHTML = `
+        <div class="extraction-content">
+            <i class="fas fa-magic"></i>
+            <span>تم استخلاص رابط InstaPay من النص بنجاح!</span>
+            <div class="extraction-details">
+                <small>النص الأصلي: "${originalText.substring(0, 50)}${originalText.length > 50 ? '...' : ''}"</small>
+                <br>
+                <small>الرابط المستخلص: "${extractedLink}"</small>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(noticeDiv);
+    
+    setTimeout(() => {
+        noticeDiv.classList.add('show');
+    }, 100);
+    
+    // اهتزاز للنجاح (للهواتف)
+    if (navigator.vibrate) {
+        navigator.vibrate([100, 50, 100]);
+    }
+    
+    // إزالة الإشعار بعد 5 ثواني
+    setTimeout(() => {
+        noticeDiv.classList.remove('show');
+        setTimeout(() => {
+            if (noticeDiv.parentNode) {
+                noticeDiv.remove();
+            }
+        }, 300);
+    }, 5000);
+}
+
+/**
+ * 📋 عرض معلومات الرابط المستخلص
+ */
+function showInstapayLinkInfo(inputElement, linkInfo) {
+    const container = inputElement.closest('.form-group') || inputElement.parentNode;
+    
+    // إزالة معلومات سابقة
+    const existingInfo = container.querySelector('.instapay-link-info');
+    if (existingInfo) {
+        existingInfo.remove();
+    }
+    
+    const infoDiv = document.createElement('div');
+    infoDiv.className = 'instapay-link-info';
+    infoDiv.innerHTML = `
+        <div class="link-info-content">
+            <div class="info-header">
+                <i class="fas fa-link"></i>
+                <span>معلومات رابط InstaPay</span>
+            </div>
+            <div class="link-details">
+                <div class="detail-item">
+                    <span class="label">النطاق:</span>
+                    <span class="value">${linkInfo.domain}</span>
+                </div>
+                ${linkInfo.username ? `
+                <div class="detail-item">
+                    <span class="label">اسم المستخدم:</span>
+                    <span class="value">${linkInfo.username}</span>
+                </div>
+                ` : ''}
+                ${linkInfo.code ? `
+                <div class="detail-item">
+                    <span class="label">كود الدفع:</span>
+                    <span class="value">${linkInfo.code}</span>
+                </div>
+                ` : ''}
+                <div class="detail-item">
+                    <span class="label">نوع الرابط:</span>
+                    <span class="value">${linkInfo.type === 'standard' ? 'رابط قياسي' : 'رابط مخصص'}</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(infoDiv);
+    
+    setTimeout(() => {
+        infoDiv.classList.add('show');
+    }, 200);
+}
+
+/**
+ * 🎨 تحديث واجهة المستخدم لحقل InstaPay
+ */
+function updateInstapayUI(inputElement, isValid, message) {
+    const container = inputElement.closest('.form-group');
+    if (!container) return;
+    
+    // إزالة الكلاسات الموجودة
+    container.classList.remove('valid', 'invalid');
+    inputElement.classList.remove('valid', 'invalid');
+    
+    // إزالة رسائل الخطأ الموجودة
+    const existingError = container.querySelector('.error-message');
+    const existingSuccess = container.querySelector('.success-message');
+    if (existingError) existingError.remove();
+    if (existingSuccess) existingSuccess.remove();
+    
+    if (message) {
+        if (isValid) {
+            container.classList.add('valid');
+            inputElement.classList.add('valid');
+            if (message.includes('✅')) {
+                const successMsg = document.createElement('div');
+                successMsg.className = 'success-message';
+                successMsg.textContent = message;
+                container.appendChild(successMsg);
+            }
+        } else {
+            container.classList.add('invalid');
+            inputElement.classList.add('invalid');
+            const errorMsg = document.createElement('div');
+            errorMsg.className = 'error-message';
+            errorMsg.textContent = message;
+            container.appendChild(errorMsg);
+        }
+    } else if (isValid) {
+        container.classList.add('valid');
+        inputElement.classList.add('valid');
+    }
+}
+
+console.log('🚀 InstaPay Smart Link Extraction System - Enhanced Version Loaded!');
 
 // ✅ نظام ربط التليجرام المبسط - زر واحد فقط
 function initializeTelegramButton() {

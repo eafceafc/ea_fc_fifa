@@ -766,8 +766,12 @@ def update_profile():
         
         # اسم البوت
         bot_username = os.environ.get('TELEGRAM_BOT_USERNAME', 'ea_fc_fifa_bot')
-        telegram_web_url = f"https://t.me/{bot_username}?start={telegram_code}"
-
+        # 🔥 روابط متعددة لضمان عمل /start تلقائياً
+        telegram_app_url = f"tg://resolve?domain={bot_username}&start={telegram_code}"  # للتطبيق مباشرة
+        telegram_web_url = f"https://t.me/{bot_username}?start={telegram_code}"          # للمتصفح
+        telegram_universal_url = f"https://telegram.me/{bot_username}?start={telegram_code}"  # رابط
+        
+        
         
         # الاستجابة المبسطة
         return jsonify({
@@ -777,7 +781,10 @@ def update_profile():
             'telegram_integration': True,
             'telegram_code': telegram_code,
             'bot_username': bot_username,
-            'telegram_web_url': telegram_web_url,  # 🔥 السطر الجديد المضاف
+            'telegram_app_url': telegram_app_url,        # رابط التطبيق المباشر  
+            'telegram_web_url': telegram_web_url,        # رابط المتصفح
+            'telegram_universal_url': telegram_universal_url,  # رابط بديل
+            'telegram_code': telegram_code,              # الكود للعرض
             'auto_redirect_after_link': True,
             'next_step': '/coins-order'
         })

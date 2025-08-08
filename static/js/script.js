@@ -1677,9 +1677,9 @@ async function handleTelegramLink() {
         const data = await response.json();
         console.log('📥 استجابة الخادم:', data);
         
-        if (data.success && data.code) {
+        if (data.success && data.telegram_web_url) {
             // فتح التليجرام مع الكود
-            const telegramUrl = `https://t.me/${data.bot_username || 'ea_fc_fifa_bot'}?start=${data.code}`;
+            const telegramUrl = data.telegram_web_url;
             console.log('🔗 فتح التليجرام:', telegramUrl);
             window.open(telegramUrl, '_blank');
             

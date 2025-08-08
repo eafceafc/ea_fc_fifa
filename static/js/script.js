@@ -1799,142 +1799,61 @@ function getPlatformDisplayName(platform) {
 // 🔗 نظام استخلاص روابط InstaPay الذكي - إضافة جديدة
 // ═══════════════════════════════════════════════════════════════
 
-// التحقق والاستخلاص الفوري لروابط InstaPay
-function validateInstapayInput(input) {
-    const text = input.value.trim();
-    const container = input.closest('.form-group');
+// دالة مساعدة لإظهار حقل الدفع المناسب (مع تفعيل InstaPay)
+function showPaymentInputField(paymentType) {
+    let targetInputId;
     
-    // إزالة المعاينة السابقة
-    const existingPreview = container.querySelector('.instapay-preview');
-    if (existingPreview) {
-        existingPreview.remove();
+    switch(paymentType) {
+        case 'mobile':
+            targetInputId = 'mobile-input';
+            break;
+        case 'card':
+            targetInputId = 'card-input';
+            break;
+        case 'link':
+            targetInputId = 'link-input';
+            break;
+        default:
+            console.warn('⚠️ نوع دفع غير معروف:', paymentType);
+            return;
     }
     
-    if (!text) {
-        updateValidationUI(input, true, '');
-        return true;
-    }
-    
-    // محاولة استخلاص الرابط
-    const extractedLink = extractInstapayLink(text);
-    
-    if (extractedLink) {
-        // إنشاء معاينة الرابط
-        createInstapayPreview(container, extractedLink, text);
-        updateValidationUI(input, true, '✓ تم استخلاص رابط InstaPay');
-        return true;
-    } else {
-        updateValidationUI(input, false, 'لم يتم العثور على رابط InstaPay صحيح');
-        return false;
-    }
-}
+    // إخفاء كل الحقول أولاً
+    document.querySelectorAll('.dynamic-input').forEach(div => {
+        div.classList.remove('show');
+        div.style.display = 'none';
+    });
 
-// استخلاص رابط InstaPay من النص (JavaScript)
-function extractInstapayLink(text) {
-    const patterns = [
-        /https?:\/\/(?:www\.)?ipn\.eg\/S\/[^\/\s]+\/instapay\/[A-Za-z0-9]+/gi,
-        /https?:\/\/(?:www\.)?instapay\.com\.eg\/[^\s<>"{}|\\^`\[\]]+/gi,
-        /https?:\/\/(?:www\.)?app\.instapay\.com\.eg\/[^\s<>"{}|\\^`\[\]]+/gi,
-        /https?:\/\/(?:www\.)?instapay\.app\/[^\s<>"{}|\\^`\[\]]+/gi,
-        /https?:\/\/(?:www\.)?ipn\.eg\/[^\s<>"{}|\\^`\[\]]+/gi,
-    ];
-    
-    for (const pattern of patterns) {
-        const matches = text.match(pattern);
-        if (matches && matches.length > 0) {
-            // تنظيف الرابط من العلامات في النهاية
-            let link = matches[0].replace(/[.,;!?]+$/, '');
-            if (isValidInstapayUrl(link)) {
-                return link;
+    const targetInputDiv = document.getElementById(targetInputId);
+    if (targetInputDiv) {
+        targetInputDiv.style.display = 'block';
+        setTimeout(() => {
+            targetInputDiv.classList.add('show');
+            const inputField = targetInputDiv.querySelector('input');
+            if (inputField) {
+                inputField.required = true;
+                
+                // ✅ الحل: تفعيل نظام InstaPay فقط عندما يظهر حقله
+                if (paymentType === 'link') {
+                    console.log('🔗 Initializing InstaPay listener for the visible input...');
+                    // إزالة أي مستمعين قدامى لضمان عدم التكرار
+                    const newField = inputField.cloneNode(true);
+                    inputField.parentNode.replaceChild(newField, inputField);
+                    
+                    // إضافة المستمعين الجدد
+                    newField.addEventListener('input', () => validateInstapayInput(newField));
+                    newField.addEventListener('paste', () => setTimeout(() => validateInstapayInput(newField), 50));
+                }
+                
+                inputField.focus();
             }
-        }
-    }
-    
-    return null;
-}
-
-// التحقق من صحة رابط InstaPay (JavaScript)
-function isValidInstapayUrl(url) {
-    if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
-        return false;
-    }
-    
-    const validDomains = ['ipn.eg', 'instapay.com.eg', 'app.instapay.com.eg', 'instapay.app'];
-    const lowerUrl = url.toLowerCase();
-    
-    return validDomains.some(domain => lowerUrl.includes(domain)) && url.length >= 20;
-}
-
-// إنشاء معاينة الرابط المستخلص
-function createInstapayPreview(container, extractedLink, originalText) {
-    const previewDiv = document.createElement('div');
-    previewDiv.className = 'instapay-preview';
-    
-    previewDiv.innerHTML = `
-        <div class="preview-header">
-            <i class="fas fa-link"></i>
-            <span>تم استخلاص رابط InstaPay</span>
-        </div>
-        <div class="extracted-link">
-            <div class="link-label">الرابط المستخلص:</div>
-            <div class="link-url">${extractedLink}</div>
-        </div>
-        <div class="preview-actions">
-            <button type="button" class="test-link-btn" onclick="testInstapayLink('${extractedLink}')">
-                <i class="fas fa-external-link-alt"></i>
-                اختبار الرابط
-            </button>
-            <button type="button" class="copy-link-btn" onclick="copyInstapayLink('${extractedLink}')">
-                <i class="fas fa-copy"></i>
-                نسخ الرابط
-            </button>
-        </div>
-    `;
-    
-    container.appendChild(previewDiv);
-    
-    // انيميشن الظهور
-    setTimeout(() => {
-        previewDiv.classList.add('show');
-    }, 100);
-}
-
-// اختبار رابط InstaPay
-function testInstapayLink(url) {
-    window.open(url, '_blank');
-    showNotification('تم فتح الرابط في تبويب جديد', 'info');
-}
-
-// نسخ رابط InstaPay
-async function copyInstapayLink(url) {
-    try {
-        if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(url);
-        } else {
-            // طريقة احتياطية
-            const textArea = document.createElement('textarea');
-            textArea.value = url;
-            textArea.style.position = 'fixed';
-            textArea.style.left = '-999999px';
-            textArea.style.top = '-999999px';
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-        }
+        }, 100);
         
-        showNotification('تم نسخ الرابط بنجاح!', 'success');
-        
-        if (navigator.vibrate) {
-            navigator.vibrate([50, 50, 50]);
-        }
-        
-    } catch (error) {
-        showNotification('فشل في نسخ الرابط', 'error');
+        console.log('✅ تم إظهار حقل الدفع:', targetInputId);
+    } else {
+        console.warn('⚠️ لم يتم العثور على حقل الدفع:', targetInputId);
     }
 }
-
 console.log('🚀 InstaPay Smart Link Extraction System - Initialized');
 
 // ✅ نظام ربط التليجرام المبسط - زر واحد فقط

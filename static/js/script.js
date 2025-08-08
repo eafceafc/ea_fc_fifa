@@ -1585,70 +1585,171 @@ function setupTelegramButton() {
     }
 }
 
-// معالجة زر التليجرام - العودة للنسخة الشغالة مع تحسينات
-function handleTelegramLink() {
-    // استخدام نفس منطق التحقق القديم اللي كان شغال
-    const telegramBtn = document.getElementById('telegram-btn');
+// معالجة زر التليجرام - النسخة المصححة النهائية
+async function handleTelegramLink() {
+    console.log('🔍 بدء معالجة زر التليجرام...');
     
-    // التحقق من البيانات بنفس الطريقة القديمة
-    if (!validationStates.platform || !validationStates.phone) {
-        telegramBtn.innerHTML = '❌ يرجى اختيار المنصة والتحقق من الواتساب أولاً';
+    const telegramBtn = document.getElementById('telegram-link-btn');
+    if (!telegramBtn) {
+        console.error('❌ زر التليجرام غير موجود');
+        return;
+    }
+    
+    // طباعة حالة التحقق الحالية للتشخيص
+    console.log('📊 حالة التحقق الحالية:');
+    console.log('  - المنصة:', validationStates.platform);
+    console.log('  - الواتساب:', validationStates.whatsapp);
+    console.log('  - طريقة الدفع:', validationStates.paymentMethod);
+    
+    // ✅ التحقق الصحيح - استخدام whatsapp بدلاً من phone
+    if (!validationStates.platform || !validationStates.whatsapp) {
+        console.log('❌ البيانات غير مكتملة');
+        
+        // تغيير نص الزر للخطأ
+        const originalContent = telegramBtn.innerHTML;
+        telegramBtn.innerHTML = `
+            <div class="telegram-btn-content">
+                <i class="fas fa-exclamation-circle telegram-icon" style="color: #ff4444;"></i>
+                <div class="telegram-text">
+                    <span class="telegram-title">❌ خطأ - اضغط للمحاولة مرة أخرى</span>
+                    <span class="telegram-subtitle">يرجى اختيار المنصة والتحقق من رقم الواتساب أولاً</span>
+                </div>
+            </div>
+        `;
         telegramBtn.classList.add('error');
         
+        // إظهار رسالة خطأ
+        showNotification('يرجى اختيار المنصة والتحقق من رقم الواتساب أولاً', 'error');
+        
+        // إعادة النص الأصلي بعد 3 ثوان
         setTimeout(() => {
-            telegramBtn.innerHTML = '📱 التواصل عبر التليجرام';
+            telegramBtn.innerHTML = originalContent;
             telegramBtn.classList.remove('error');
         }, 3000);
         
         return;
     }
     
-    // باقي الكود زي ما هو
-    telegramBtn.innerHTML = '⏳ جاري التحضير...';
+    console.log('✅ البيانات مكتملة، بدء عملية الربط...');
+    
+    // تعطيل الزر وإظهار التحميل
     telegramBtn.disabled = true;
+    const originalContent = telegramBtn.innerHTML;
+    telegramBtn.innerHTML = `
+        <div class="telegram-btn-content">
+            <i class="fas fa-spinner fa-spin telegram-icon"></i>
+            <div class="telegram-text">
+                <span class="telegram-title">⏳ جاري التحضير...</span>
+                <span class="telegram-subtitle">يرجى الانتظار...</span>
+            </div>
+        </div>
+    `;
+    telegramBtn.classList.add('generating');
     
-    const csrfToken = document.querySelector('input[name="csrf_token"]').value;
-    
-    fetch('/generate_telegram_code', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken
-        },
-        body: JSON.stringify({
-            platform: currentPlatform,
-            phone: currentPhone
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            const telegramUrl = `https://t.me/FC26_fifa_bot?start=${data.code}`;
+    try {
+        // جمع البيانات للإرسال
+        const platform = document.getElementById('platform').value;
+        const whatsapp = document.getElementById('whatsapp').value;
+        const paymentMethod = document.getElementById('payment_method').value;
+        const paymentDetails = getActivePaymentDetails();
+        
+        console.log('📤 إرسال البيانات:', {
+            platform,
+            whatsapp: whatsapp.substring(0, 5) + '***',
+            paymentMethod
+        });
+        
+        // إرسال الطلب للخادم
+        const response = await fetch('/generate-telegram-code', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({
+                platform: platform,
+                whatsapp_number: whatsapp,
+                payment_method: paymentMethod,
+                payment_details: paymentDetails
+            })
+        });
+        
+        const data = await response.json();
+        console.log('📥 استجابة الخادم:', data);
+        
+        if (data.success && data.code) {
+            // فتح التليجرام مع الكود
+            const telegramUrl = `https://t.me/${data.bot_username || 'ea_fc_fifa_bot'}?start=${data.code}`;
+            console.log('🔗 فتح التليجرام:', telegramUrl);
             window.open(telegramUrl, '_blank');
             
-            telegramBtn.innerHTML = '✅ تم فتح التليجرام';
+            // تحديث الزر للنجاح
+            telegramBtn.innerHTML = `
+                <div class="telegram-btn-content">
+                    <i class="fas fa-check-circle telegram-icon" style="color: #00d084;"></i>
+                    <div class="telegram-text">
+                        <span class="telegram-title">✅ تم فتح التليجرام</span>
+                        <span class="telegram-subtitle">أدخل للبوت واضغط /start</span>
+                    </div>
+                </div>
+            `;
+            telegramBtn.classList.remove('generating');
             telegramBtn.classList.add('success');
             
+            // مراقبة الربط
+            monitorTelegramLinking(data.code);
+            
+            // إعادة الزر للوضع الطبيعي بعد 5 ثوان
             setTimeout(() => {
-                telegramBtn.innerHTML = '📱 التواصل عبر التليجرام';
+                telegramBtn.innerHTML = originalContent;
                 telegramBtn.classList.remove('success');
                 telegramBtn.disabled = false;
-            }, 3000);
+            }, 5000);
+            
         } else {
             throw new Error(data.message || 'خطأ في الخادم');
         }
-    })
-    .catch(error => {
-        console.error('خطأ في التليجرام:', error);
-        telegramBtn.innerHTML = '❌ خطأ - اضغط للمحاولة مرة أخرى';
+        
+    } catch (error) {
+        console.error('❌ خطأ في التليجرام:', error);
+        
+        // عرض رسالة الخطأ
+        telegramBtn.innerHTML = `
+            <div class="telegram-btn-content">
+                <i class="fas fa-exclamation-triangle telegram-icon" style="color: #ff9000;"></i>
+                <div class="telegram-text">
+                    <span class="telegram-title">❌ خطأ - اضغط للمحاولة مرة أخرى</span>
+                    <span class="telegram-subtitle">${error.message}</span>
+                </div>
+            </div>
+        `;
+        telegramBtn.classList.remove('generating');
         telegramBtn.classList.add('error');
         
+        showNotification('خطأ في الاتصال، يرجى المحاولة مرة أخرى', 'error');
+        
+        // إعادة الزر للوضع الطبيعي بعد 3 ثوان
         setTimeout(() => {
-            telegramBtn.innerHTML = '📱 التواصل عبر التليجرام';
+            telegramBtn.innerHTML = originalContent;
             telegramBtn.classList.remove('error');
             telegramBtn.disabled = false;
         }, 3000);
-    });
+    }
+}
+
+// دالة مساعدة للحصول على تفاصيل الدفع النشطة
+function getActivePaymentDetails() {
+    const paymentMethod = document.getElementById('payment_method').value;
+    
+    if (paymentMethod.includes('cash') || paymentMethod === 'bank_wallet') {
+        return document.getElementById('mobile-number')?.value || '';
+    } else if (paymentMethod === 'tilda') {
+        return document.getElementById('card-number')?.value || '';
+    } else if (paymentMethod === 'instapay') {
+        return document.getElementById('payment-link')?.value || '';
+    }
+    
+    return '';
 }
 
 

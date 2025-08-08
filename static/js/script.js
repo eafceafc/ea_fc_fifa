@@ -1585,43 +1585,58 @@ function setupTelegramButton() {
     }
 }
 
-// معالجة زر التليجرام - محسن
+// معالجة زر التليجرام - FIXED
 async function handleTelegramLink() {
     const btn = document.getElementById('telegram-link-btn');
     if (!btn || btn.disabled) return;
-    
+
+    // ✅ الخطوة 1: التحقق من أن البيانات الأساسية موجودة
+    const platform = document.getElementById('platform')?.value;
+    const whatsapp = document.getElementById('whatsapp')?.value;
+
+    if (!validationStates.platform || !validationStates.whatsapp) {
+        showNotification('❌ يرجى اختيار المنصة والتحقق من رقم الواتساب أولاً', 'error');
+        return;
+    }
+
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحصول على الكود...';
-    
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري توليد الكود...';
+
     try {
-        const response = await fetch('/api/link_telegram', {
+        // ✅ الخطوة 2: استدعاء الـ endpoint الصحيح لتوليد الكود
+        const response = await fetch('/generate-telegram-code', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCSRFToken()
-            }
+            },
+            body: JSON.stringify({
+                platform: platform,
+                whatsapp_number: whatsapp
+            })
         });
-        
+
         const result = await response.json();
-        
+
         if (result.success && result.telegram_code) {
-            const botUsername = result.bot_username || 'ea_fc_fifa_bot';
-            const telegramUrl = `https://t.me/${botUsername}?start=${result.telegram_code}`;
-            window.open(telegramUrl, '_blank');
+            // ✅ الخطوة 3: فتح رابط التليجرام مع الكود
+            const telegramUrl = result.telegram_web_url || `https://t.me/${result.bot_username}?start=${result.telegram_code}`;
+            window.open(telegramUrl, '_blank' );
             
-            btn.innerHTML = '✅ تم فتح التليجرام - ادخل للبوت';
+            btn.innerHTML = '✅ تم فتح التليجرام - أدخل للبوت';
             
-            // مراقبة الربط
+            // مراقبة الربط في الخلفية
             monitorTelegramLinking(result.telegram_code);
         } else {
-            throw new Error(result.message || 'فشل في الحصول على الكود');
+            throw new Error(result.message || 'فشل في الحصول على الكود من الخادم');
         }
     } catch (error) {
-        console.error('خطأ:', error);
+        console.error('خطأ في ربط التليجرام:', error);
         btn.innerHTML = '❌ خطأ - اضغط للمحاولة مرة أخرى';
-        btn.disabled = false;
+        btn.disabled = false; // السماح للمستخدم بالمحاولة مرة أخرى
     }
 }
+
 
 function monitorTelegramLinking(telegramCode) {
     const checkInterval = setInterval(async () => {

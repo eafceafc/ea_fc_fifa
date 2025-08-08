@@ -957,6 +957,59 @@ function validatePaymentMethod() {
     return hasValidPayment;
 }
 
+// ✅ أضف الدالة دي في أي مكان في الكود (بعد الدوال الموجودة)
+function validatePaymentInput(input) {
+    const value = input.value.trim();
+    const inputId = input.id;
+    let isValid = false;
+    let errorMessage = '';
+    
+    console.log(`🔍 Validating ${inputId} with value:`, value);
+    
+    if (!value) {
+        updateValidationUI(input, true, ''); // فارغ = صحيح للحقول الاختيارية
+        return true;
+    }
+    
+    // ✅ التحقق المحسن من المحافظ الإلكترونية (11 رقم)
+    if (inputId === 'mobile-number') {
+        isValid = /^01[0125][0-9]{8}$/.test(value) && value.length === 11;
+        errorMessage = isValid ? '' : 'رقم المحفظة يجب أن يكون 11 رقم ويبدأ بـ 010، 011، 012، أو 015';
+        console.log('Mobile validation:', isValid);
+    }
+    // ✅ التحقق المحسن من كارت تيلدا (16 رقم)
+    else if (inputId === 'card-number') {
+        // إزالة الشرطات والمسافات
+        const numbersOnly = value.replace(/[-\s]/g, '');
+        isValid = /^\d{16}$/.test(numbersOnly);
+        errorMessage = isValid ? '' : 'رقم كارت تيلدا يجب أن يكون 16 رقم';
+        console.log('Telda card validation:', isValid, 'Numbers only:', numbersOnly);
+    }
+    // ✅ التحقق الذكي من رابط إنستا باي (مع الاستخلاص)
+    else if (inputId === 'payment-link') {
+        const extractedLink = extractInstapayLink(value);
+        isValid = !!extractedLink;
+        errorMessage = isValid ? '' : 'لم يتم العثور على رابط InstaPay صحيح في النص';
+        console.log('InstaPay validation:', isValid, 'Extracted:', extractedLink);
+        
+        // تحديث قيمة الحقل للرابط المستخلص إذا كان مختلف
+        if (isValid && extractedLink && extractedLink !== value) {
+            input.value = extractedLink;
+            showInstapayExtractionNotice(input, value, extractedLink);
+            console.log('Updated input value to extracted link');
+        }
+        
+        // عرض معلومات الرابط
+        if (isValid && extractedLink) {
+            const linkInfo = extractInstapayInfo(extractedLink);
+            showInstapayLinkInfo(input, linkInfo);
+        }
+    }
+    
+    updateValidationUI(input, isValid, errorMessage);
+    console.log(`✅ ${inputId} validation result:`, isValid);
+    return isValid;
+}
 
 // التحقق من صحة رابط إنستا باي
 function isValidInstaPayLink(link) {
@@ -1817,7 +1870,7 @@ function getPlatformDisplayName(platform) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// 🔗 نظام استخلاص روابط InstaPay الذكي - من الكود الأصلي المحسن
+// 🔗 نظام استخلاص روابط InstaPay الذكي المحسن
 // ═══════════════════════════════════════════════════════════════
 
 /**
@@ -1833,20 +1886,17 @@ function extractInstapayLink(inputText) {
     // تنظيف النص من الأسطر الجديدة والمسافات الزائدة
     const cleanText = inputText.trim().replace(/\n/g, ' ').replace(/\r/g, ' ').replace(/\s+/g, ' ');
     
-    // 🔥 أنماط البحث المتقدمة لروابط InstaPay (من الكود الأصلي)
+    // 🔥 أنماط البحث المتقدمة لروابط InstaPay
     const instapayPatterns = [
-        // الأنماط الأساسية الأكثر استخداماً
+        // النمط الأساسي لـ ipn.eg (الأكثر شيوعاً)
         /https?:\/\/(?:www\.)?ipn\.eg\/S\/[^\/\s]+\/instapay\/[A-Za-z0-9]+/gi,
+        
+        // أنماط أخرى
         /https?:\/\/(?:www\.)?instapay\.com\.eg\/[^\s<>"{}|\\^`\[\]]+/gi,
         /https?:\/\/(?:www\.)?app\.instapay\.com\.eg\/[^\s<>"{}|\\^`\[\]]+/gi,
         /https?:\/\/(?:www\.)?instapay\.app\/[^\s<>"{}|\\^`\[\]]+/gi,
-        
-        // أنماط متقدمة للروابط المختصرة
         /https?:\/\/(?:www\.)?ipn\.eg\/[^\s<>"{}|\\^`\[\]]+/gi,
         /https?:\/\/(?:www\.)?pay\.instapay\.com\.eg\/[^\s<>"{}|\\^`\[\]]+/gi,
-        
-        // أنماط للروابط مع معاملات
-        /https?:\/\/[^\s<>"{}|\\^`\[\]]*instapay[^\s<>"{}|\\^`\[\]]*(?:\?[^\s<>"{}|\\^`\[\]]+)?/gi
     ];
     
     let extractedLinks = [];
@@ -1857,22 +1907,21 @@ function extractInstapayLink(inputText) {
         extractedLinks = extractedLinks.concat(matches);
     }
     
-    // إزالة المكررات والاحتفاظ بالترتيب
+    // إزالة المكررات
     const uniqueLinks = [...new Set(extractedLinks)];
     
-    // فلترة الروابط وتنظيفها
+    // تنظيف وفلترة الروابط
     const validLinks = [];
     for (const link of uniqueLinks) {
-        // تنظيف الرابط من العلامات في النهاية
+        // تنظيف العلامات من النهاية
         const cleanedLink = link.replace(/[.,;!?]+$/, '').trim();
         
-        // التحقق من صحة الرابط
         if (isValidInstapayUrl(cleanedLink)) {
             validLinks.push(cleanedLink);
         }
     }
     
-    // إرجاع أفضل رابط موجود
+    // إرجاع أفضل رابط
     if (validLinks.length > 0) {
         const bestLink = selectBestInstapayLink(validLinks);
         console.log('✅ Found InstaPay link:', bestLink);
@@ -1884,14 +1933,13 @@ function extractInstapayLink(inputText) {
 }
 
 /**
- * 🔍 التحقق من صحة رابط InstaPay (من الكود الأصلي)
+ * 🔍 التحقق من صحة رابط InstaPay
  */
 function isValidInstapayUrl(url) {
     if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
         return false;
     }
     
-    // قائمة النطاقات الصحيحة
     const validDomains = [
         'ipn.eg',
         'instapay.com.eg',
@@ -1904,13 +1952,9 @@ function isValidInstapayUrl(url) {
         const urlObj = new URL(url.toLowerCase());
         const domain = urlObj.hostname.replace('www.', '');
         
-        // التحقق من النطاق
+        // التحقق من النطاق والطول والمعرف
         const domainValid = validDomains.some(validDomain => domain.includes(validDomain));
-        
-        // التحقق من طول الرابط (ليس قصير جداً)
         const lengthValid = url.length >= 20;
-        
-        // التحقق من وجود معرف في الرابط
         const hasIdentifier = urlObj.pathname.length > 3;
         
         return domainValid && lengthValid && hasIdentifier;
@@ -1922,22 +1966,21 @@ function isValidInstapayUrl(url) {
 }
 
 /**
- * 🏆 اختيار أفضل رابط من القائمة (من الكود الأصلي)
+ * 🏆 اختيار أفضل رابط
  */
 function selectBestInstapayLink(links) {
     if (!links || links.length === 0) {
         return "";
     }
     
-    // ترتيب الأولويات (من الأفضل للأسوأ)
     const priorityDomains = [
-        'ipn.eg/S/',  // الأولوية العليا - الروابط القياسية
+        'ipn.eg/S/',  // أولوية عليا
         'instapay.com.eg',
         'app.instapay.com.eg', 
         'instapay.app'
     ];
     
-    // البحث عن رابط بأولوية عالية
+    // بحث حسب الأولوية
     for (const priority of priorityDomains) {
         for (const link of links) {
             if (link.toLowerCase().includes(priority)) {
@@ -1946,12 +1989,11 @@ function selectBestInstapayLink(links) {
         }
     }
     
-    // إذا لم يوجد، إرجاع الأول
     return links[0];
 }
 
 /**
- * 📊 استخلاص معلومات إضافية من رابط InstaPay (من الكود الأصلي)
+ * 📊 استخلاص معلومات الرابط
  */
 function extractInstapayInfo(url) {
     const info = {
@@ -1966,7 +2008,7 @@ function extractInstapayInfo(url) {
         const urlObj = new URL(url);
         info.domain = urlObj.hostname.replace('www.', '');
         
-        // استخلاص اسم المستخدم والكود من رابط ipn.eg
+        // استخلاص معلومات ipn.eg
         if (info.domain.includes('ipn.eg')) {
             const pathParts = urlObj.pathname.split('/').filter(part => part);
             if (pathParts.length >= 4 && pathParts[0] === 'S') {
@@ -1984,52 +2026,49 @@ function extractInstapayInfo(url) {
 }
 
 /**
- * ✅ دالة التحقق المحسنة لحقل InstaPay مع الاستخلاص الذكي
+ * ✅ التحقق من حقل InstaPay مع الاستخلاص الذكي
  */
 function validateInstapayInput(inputElement) {
     const inputValue = inputElement.value.trim();
     console.log('🔍 Validating InstaPay input:', inputValue);
     
     if (!inputValue) {
-        updateInstapayUI(inputElement, true, ''); // فارغ = صحيح
+        updateInstapayUI(inputElement, true, '');
         return true;
     }
     
-    // محاولة استخلاص رابط من النص
+    // محاولة استخلاص الرابط
     const extractedLink = extractInstapayLink(inputValue);
     
     if (extractedLink) {
-        // تم العثور على رابط صحيح
+        // رابط صحيح موجود
         if (extractedLink !== inputValue) {
-            // تحديث قيمة الحقل للرابط المستخلص
+            // تحديث الحقل وإظهار الإشعار
             inputElement.value = extractedLink;
             showInstapayExtractionNotice(inputElement, inputValue, extractedLink);
         }
         
-        // استخلاص معلومات إضافية
         const linkInfo = extractInstapayInfo(extractedLink);
         updateInstapayUI(inputElement, true, '✅ رابط InstaPay صحيح');
         showInstapayLinkInfo(inputElement, linkInfo);
         return true;
         
     } else {
-        // لم يتم العثور على رابط صحيح
+        // لا يوجد رابط صحيح
         updateInstapayUI(inputElement, false, 'لم يتم العثور على رابط InstaPay صحيح في النص');
         return false;
     }
 }
 
 /**
- * 💡 إشعار بصري عند استخلاص رابط من نص مركب
+ * 💡 إشعار الاستخلاص الذكي
  */
 function showInstapayExtractionNotice(inputElement, originalText, extractedLink) {
     const container = inputElement.closest('.form-group') || inputElement.parentNode;
     
     // إزالة إشعارات سابقة
     const existingNotice = container.querySelector('.instapay-extraction-notice');
-    if (existingNotice) {
-        existingNotice.remove();
-    }
+    if (existingNotice) existingNotice.remove();
     
     const noticeDiv = document.createElement('div');
     noticeDiv.className = 'instapay-extraction-notice success-notice';
@@ -2045,20 +2084,36 @@ function showInstapayExtractionNotice(inputElement, originalText, extractedLink)
         </div>
     `;
     
+    // إضافة CSS للإشعار
+    noticeDiv.style.cssText = `
+        background: linear-gradient(135deg, #10B981, #059669);
+        color: white;
+        padding: 12px 16px;
+        margin: 8px 0;
+        border-radius: 8px;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: all 0.3s ease;
+    `;
+    
     container.appendChild(noticeDiv);
     
     setTimeout(() => {
-        noticeDiv.classList.add('show');
+        noticeDiv.style.opacity = '1';
+        noticeDiv.style.transform = 'translateY(0)';
     }, 100);
     
-    // اهتزاز للنجاح (للهواتف)
+    // اهتزاز للهواتف
     if (navigator.vibrate) {
         navigator.vibrate([100, 50, 100]);
     }
     
-    // إزالة الإشعار بعد 5 ثواني
+    // إزالة تلقائية
     setTimeout(() => {
-        noticeDiv.classList.remove('show');
+        noticeDiv.style.opacity = '0';
+        noticeDiv.style.transform = 'translateY(-10px)';
         setTimeout(() => {
             if (noticeDiv.parentNode) {
                 noticeDiv.remove();
@@ -2068,16 +2123,14 @@ function showInstapayExtractionNotice(inputElement, originalText, extractedLink)
 }
 
 /**
- * 📋 عرض معلومات الرابط المستخلص
+ * 📋 عرض معلومات الرابط
  */
 function showInstapayLinkInfo(inputElement, linkInfo) {
     const container = inputElement.closest('.form-group') || inputElement.parentNode;
     
     // إزالة معلومات سابقة
     const existingInfo = container.querySelector('.instapay-link-info');
-    if (existingInfo) {
-        existingInfo.remove();
-    }
+    if (existingInfo) existingInfo.remove();
     
     const infoDiv = document.createElement('div');
     infoDiv.className = 'instapay-link-info';
@@ -2088,49 +2141,45 @@ function showInstapayLinkInfo(inputElement, linkInfo) {
                 <span>معلومات رابط InstaPay</span>
             </div>
             <div class="link-details">
-                <div class="detail-item">
-                    <span class="label">النطاق:</span>
-                    <span class="value">${linkInfo.domain}</span>
-                </div>
-                ${linkInfo.username ? `
-                <div class="detail-item">
-                    <span class="label">اسم المستخدم:</span>
-                    <span class="value">${linkInfo.username}</span>
-                </div>
-                ` : ''}
-                ${linkInfo.code ? `
-                <div class="detail-item">
-                    <span class="label">كود الدفع:</span>
-                    <span class="value">${linkInfo.code}</span>
-                </div>
-                ` : ''}
-                <div class="detail-item">
-                    <span class="label">نوع الرابط:</span>
-                    <span class="value">${linkInfo.type === 'standard' ? 'رابط قياسي' : 'رابط مخصص'}</span>
-                </div>
+                <div><strong>النطاق:</strong> ${linkInfo.domain}</div>
+                ${linkInfo.username ? `<div><strong>اسم المستخدم:</strong> ${linkInfo.username}</div>` : ''}
+                ${linkInfo.code ? `<div><strong>كود الدفع:</strong> ${linkInfo.code}</div>` : ''}
+                <div><strong>نوع الرابط:</strong> ${linkInfo.type === 'standard' ? 'رابط قياسي' : 'رابط مخصص'}</div>
             </div>
         </div>
+    `;
+    
+    // إضافة CSS للمعلومات
+    infoDiv.style.cssText = `
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 10px;
+        margin: 8px 0;
+        font-size: 13px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
     `;
     
     container.appendChild(infoDiv);
     
     setTimeout(() => {
-        infoDiv.classList.add('show');
+        infoDiv.style.opacity = '1';
     }, 200);
 }
 
 /**
- * 🎨 تحديث واجهة المستخدم لحقل InstaPay
+ * 🎨 تحديث UI للحقل
  */
 function updateInstapayUI(inputElement, isValid, message) {
     const container = inputElement.closest('.form-group');
     if (!container) return;
     
-    // إزالة الكلاسات الموجودة
+    // إزالة حالات سابقة
     container.classList.remove('valid', 'invalid');
     inputElement.classList.remove('valid', 'invalid');
     
-    // إزالة رسائل الخطأ الموجودة
+    // إزالة رسائل سابقة
     const existingError = container.querySelector('.error-message');
     const existingSuccess = container.querySelector('.success-message');
     if (existingError) existingError.remove();
@@ -2144,6 +2193,7 @@ function updateInstapayUI(inputElement, isValid, message) {
                 const successMsg = document.createElement('div');
                 successMsg.className = 'success-message';
                 successMsg.textContent = message;
+                successMsg.style.cssText = 'color: #10B981; font-size: 12px; margin-top: 4px;';
                 container.appendChild(successMsg);
             }
         } else {
@@ -2152,6 +2202,7 @@ function updateInstapayUI(inputElement, isValid, message) {
             const errorMsg = document.createElement('div');
             errorMsg.className = 'error-message';
             errorMsg.textContent = message;
+            errorMsg.style.cssText = 'color: #DC2626; font-size: 12px; margin-top: 4px;';
             container.appendChild(errorMsg);
         }
     } else if (isValid) {

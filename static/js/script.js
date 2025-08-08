@@ -892,57 +892,120 @@ function updateTeldaProgressBar(input, length) {
     }
 }
 
-// التحقق من صحة حقول الدفع
+// التحقق من صحة حقول الدفع - ENHANCED
 function validatePaymentInput(input) {
     const value = input.value.trim();
     const inputId = input.id;
     let isValid = false;
     let errorMessage = '';
     
+    console.log(`🔍 Validating ${inputId} with value:`, value);
+    
     if (!value) {
         updateValidationUI(input, true, ''); // فارغ = صحيح للحقول الاختيارية
         return true;
     }
     
-    // التحقق من المحافظ الإلكترونية (11 رقم)
-    if (['vodafone_cash', 'etisalat_cash', 'orange_cash', 'we_pay', 
-         'fawry', 'aman', 'masary', 'bee', 'mobile-number'].includes(inputId)) {
+    // ✅ التحقق المحسن من المحافظ الإلكترونية (11 رقم)
+    if (inputId === 'mobile-number') {
         isValid = /^01[0125][0-9]{8}$/.test(value) && value.length === 11;
         errorMessage = isValid ? '' : 'رقم المحفظة يجب أن يكون 11 رقم ويبدأ بـ 010، 011، 012، أو 015';
+        console.log('Mobile validation:', isValid);
     }
-    // التحقق من كارت تيلدا (16 رقم)
-    else if (['telda_card', 'card-number'].includes(inputId)) {
-        const numbersOnly = value.replace(/\s/g, '');
+    // ✅ التحقق المحسن من كارت تيلدا (16 رقم)
+    else if (inputId === 'card-number') {
+        // إزالة الشرطات والمسافات
+        const numbersOnly = value.replace(/[-\s]/g, '');
         isValid = /^\d{16}$/.test(numbersOnly);
         errorMessage = isValid ? '' : 'رقم كارت تيلدا يجب أن يكون 16 رقم';
+        console.log('Telda card validation:', isValid, 'Numbers only:', numbersOnly);
     }
-    // التحقق من رابط إنستا باي
-    else if (['instapay_link', 'payment-link'].includes(inputId)) {
-        isValid = isValidInstaPayLink(value);
-        errorMessage = isValid ? '' : 'رابط إنستا باي غير صحيح';
+    // ✅ التحقق المحسن من رابط إنستا باي
+    else if (inputId === 'payment-link') {
+        // استخدام النظام الذكي لاستخلاص الروابط
+        const extractedLink = extractInstapayLink(value);
+        isValid = !!extractedLink || isValidInstaPayLink(value);
+        errorMessage = isValid ? '' : 'لم يتم العثور على رابط InstaPay صحيح';
+        console.log('InstaPay validation:', isValid, 'Extracted:', extractedLink);
+        
+        // تحديث قيمة الحقل للرابط المستخلص
+        if (isValid && extractedLink && extractedLink !== value) {
+            input.value = extractedLink;
+            console.log('Updated input value to extracted link');
+        }
     }
     
     updateValidationUI(input, isValid, errorMessage);
+    console.log(`✅ ${inputId} validation result:`, isValid);
     return isValid;
 }
 
-// التحقق الشامل من طرق الدفع
+
+// التحقق الشامل من طرق الدفع - FIXED للتيلدا وإنستا باي
 function validatePaymentMethod() {
-    const paymentInputs = document.querySelectorAll('input[name$="_cash"], input[name="telda_card"], input[name="instapay_link"], .dynamic-input.show input');
+    console.log('🔍 Checking payment method validation...');
+    
+    // الحصول على طريقة الدفع المختارة
+    const selectedPaymentMethod = document.getElementById('payment_method')?.value;
+    console.log('Selected payment method:', selectedPaymentMethod);
+    
+    if (!selectedPaymentMethod) {
+        console.log('❌ No payment method selected');
+        validationStates.paymentMethod = false;
+        return false;
+    }
+    
+    // ✅ التحقق الذكي حسب نوع الدفع المختار
     let hasValidPayment = false;
+    let activeInput = null;
     
-    paymentInputs.forEach(input => {
-        if (validatePaymentInput(input)) {
-            const value = input.value.trim();
-            if (value) {
+    // البحث عن الحقل النشط بناءً على طريقة الدفع
+    if (['vodafone_cash', 'etisalat_cash', 'orange_cash', 'we_cash', 'bank_wallet'].includes(selectedPaymentMethod)) {
+        // محافظ إلكترونية - البحث في mobile-number
+        activeInput = document.getElementById('mobile-number');
+        console.log('Checking mobile wallet input:', activeInput?.value);
+        
+    } else if (selectedPaymentMethod === 'tilda') {
+        // كارت تيلدا - البحث في card-number  
+        activeInput = document.getElementById('card-number');
+        console.log('Checking Telda card input:', activeInput?.value);
+        
+    } else if (selectedPaymentMethod === 'instapay') {
+        // إنستا باي - البحث في payment-link
+        activeInput = document.getElementById('payment-link');
+        console.log('Checking InstaPay link input:', activeInput?.value);
+    }
+    
+    // ✅ التحقق من الحقل النشط فقط
+    if (activeInput && activeInput.closest('.dynamic-input').classList.contains('show')) {
+        const inputValue = activeInput.value.trim();
+        console.log('Active input value:', inputValue);
+        
+        if (inputValue) {
+            // التحقق من صحة القيمة المدخلة
+            const isInputValid = validatePaymentInput(activeInput);
+            console.log('Input validation result:', isInputValid);
+            
+            if (isInputValid) {
                 hasValidPayment = true;
+                console.log('✅ Valid payment data found!');
+            } else {
+                console.log('❌ Invalid payment data');
             }
+        } else {
+            console.log('⚠️ Input is empty');
         }
-    });
+    } else {
+        console.log('❌ No active input found or input not visible');
+    }
     
+    // ✅ تحديث حالة التحقق
     validationStates.paymentMethod = hasValidPayment;
+    console.log('Final payment validation state:', hasValidPayment);
+    
     return hasValidPayment;
 }
+
 
 // التحقق من صحة رابط إنستا باي
 function isValidInstaPayLink(link) {
@@ -997,6 +1060,8 @@ function updateValidationUI(input, isValid, message) {
 
 // التحقق الشامل من صحة النموذج
 function checkFormValidity() {
+    console.log('🔍 Checking complete form validity...');
+    
     // التحقق من جميع المتطلبات
     const platform = document.getElementById('platform')?.value;
     const whatsapp = document.getElementById('whatsapp')?.value;
@@ -1004,20 +1069,25 @@ function checkFormValidity() {
     
     // تحديث حالات التحقق
     validationStates.platform = !!platform;
+    console.log('Platform valid:', validationStates.platform);
     
     // التحقق من صحة الواتساب من المعلومات المعروضة
     const phoneInfo = document.querySelector('.phone-info.success-info');
     validationStates.whatsapp = !!(whatsapp && phoneInfo);
+    console.log('WhatsApp valid:', validationStates.whatsapp);
     
-    // التحقق من طرق الدفع
+    // ✅ التحقق المحسن من طرق الدفع
     validatePaymentMethod();
+    console.log('Payment method valid:', validationStates.paymentMethod);
     
     // التحقق النهائي
     const isValid = validationStates.platform && validationStates.whatsapp && validationStates.paymentMethod;
+    console.log('🎯 Final form validity:', isValid);
     
     updateSubmitButton(isValid);
     return isValid;
 }
+
 
 // تحديث زر الإرسال
 function updateSubmitButton(isValid = null) {

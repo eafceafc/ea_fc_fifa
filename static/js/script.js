@@ -1585,16 +1585,27 @@ function setupTelegramButton() {
     }
 }
 
-// معالجة زر التليجرام - FIXED
+// معالجة زر التليجرام - FINAL FIX (التحقق المباشر من DOM)
 async function handleTelegramLink() {
     const btn = document.getElementById('telegram-link-btn');
     if (!btn || btn.disabled) return;
 
-    // ✅ الخطوة 1: التحقق من أن البيانات الأساسية موجودة
-    const platform = document.getElementById('platform')?.value;
-    const whatsapp = document.getElementById('whatsapp')?.value;
+    console.log('🔗 Telegram button clicked. Performing direct validation...');
 
-    if (!validationStates.platform || !validationStates.whatsapp) {
+    // ✅ الحل: التحقق المباشر من العناصر في الصفحة
+    const selectedPlatformCard = document.querySelector('.platform-card.selected');
+    const platformValue = selectedPlatformCard ? selectedPlatformCard.dataset.platform : null;
+    
+    const whatsappInput = document.getElementById('whatsapp');
+    const whatsappValue = whatsappInput ? whatsappInput.value : null;
+    
+    // نبحث عن علامة التحقق الخضراء للواتساب
+    const isWhatsappVerified = document.querySelector('.phone-info.success-info') !== null;
+
+    console.log(`Direct check - Platform: ${platformValue}, WhatsApp Verified: ${isWhatsappVerified}`);
+
+    // ✅ الخطوة 1: التحقق من أن البيانات الأساسية موجودة ومكتملة
+    if (!platformValue || !isWhatsappVerified) {
         showNotification('❌ يرجى اختيار المنصة والتحقق من رقم الواتساب أولاً', 'error');
         return;
     }
@@ -1611,8 +1622,8 @@ async function handleTelegramLink() {
                 'X-CSRFToken': getCSRFToken()
             },
             body: JSON.stringify({
-                platform: platform,
-                whatsapp_number: whatsapp
+                platform: platformValue,
+                whatsapp_number: whatsappValue
             })
         });
 

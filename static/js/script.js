@@ -1678,11 +1678,18 @@ async function handleTelegramLink() {
         console.log('📥 استجابة الخادم:', data);
         
         if (data.success && data.telegram_web_url) {
-            // فتح التليجرام مع الكود
-            const telegramUrl = data.telegram_web_url;
-            console.log('🔗 فتح التليجرام:', telegramUrl);
-            window.open(telegramUrl, '_blank');
-            
+            // فتح التليجرام بالطريقة الذكية
+            console.log('🔗 فتح التليجرام بالطريقة المتدرجة:', data);
+            openTelegramSmartly(data); // ✅ هذا هو السطر الجديد والصحيح    
+
+            // إرشادات إضافية للمستخدم
+            const instructionText = `
+               📱 إذا لم يظهر الكود تلقائياً:
+               1️⃣ اكتب: /start
+               2️⃣ ثم اكتب: ${data.telegram_code}
+               3️⃣ أو انسخ هذا الكود: ${data.telegram_code}
+    `;
+            console.log(instructionText);
             // تحديث الزر للنجاح
             telegramBtn.innerHTML = `
                 <div class="telegram-btn-content">
@@ -2343,14 +2350,17 @@ function updateInstapayUI(inputElement, isValid, message) {
 
 console.log('🚀 InstaPay Smart Link Extraction System - Enhanced Version Loaded!');
 
-// ✅ نظام ربط التليجرام المبسط - زر واحد فقط
+// ✅ نظام ربط التليجرام المبسط - الكود الصحيح الكامل
 function initializeTelegramButton() {
     const telegramButton = document.getElementById('telegram-link-btn');
     if (!telegramButton) return;
     
     telegramButton.addEventListener('click', async function() {
-        this.disabled = true;
-        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحصول على الكود...';
+        const telegramBtn = this; // ✅ تعريف المتغير داخل النطاق الصحيح
+        const originalContent = this.innerHTML; // ✅ حفظ المحتوى الأصلي
+        
+        telegramBtn.disabled = true;
+        telegramBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحصول على الكود...';
         
         try {
             const response = await fetch('/api/link_telegram', {
@@ -2364,18 +2374,60 @@ function initializeTelegramButton() {
             const result = await response.json();
             
             if (result.success && result.telegram_code) {
-                // فتح التليجرام مع /start فوراً
-                const botUsername = result.bot_username || 'ea_fc_fifa_bot';
-                const telegramUrl = `https://t.me/${botUsername}?start=${result.telegram_code}`;
-                window.open(telegramUrl, '_blank');
+                // ✅ تعريف data في النطاق الصحيح
+                const data = result;
                 
-                // تحديث النص
-                this.innerHTML = '✅ تم فتح التليجرام - أدخل للبوت';
+                // فتح التليجرام بالطريقة الذكية
+                console.log('🔗 فتح التليجرام بالطريقة المتدرجة:', data);
+                openTelegramSmartly(data);
+                
+                // تحديث النص للمساعدة - ✅ داخل النطاق الصحيح
+                telegramBtn.innerHTML = `
+                    <div class="telegram-btn-content">
+                        <i class="fas fa-paper-plane telegram-icon" style="color: #00d084;"></i>
+                        <div class="telegram-text">
+                            <span class="telegram-title">✅ تم فتح التليجرام</span>
+                            <span class="telegram-subtitle">الكود: ${data.telegram_code} | اكتب /start إذا لم يظهر</span>
+                        </div>
+                    </div>
+                `;
+                telegramBtn.classList.add('success');
+                
+                // إضافة الكود كنص قابل للنسخ - ✅ داخل النطاق الصحيح
+                let existingCodeDisplay = document.querySelector('.telegram-code-display');
+                if (existingCodeDisplay) {
+                    existingCodeDisplay.remove();
+                }
+                
+                const codeDisplay = document.createElement('div');
+                codeDisplay.className = 'telegram-code-display';
+                codeDisplay.innerHTML = `
+                    <div style="background: linear-gradient(135deg, rgba(0, 136, 204, 0.1), rgba(0, 85, 153, 0.15)); padding: 15px; margin: 15px 0; border-radius: 12px; text-align: center; border: 2px solid #0088cc; backdrop-filter: blur(10px);">
+                        <div style="color: #0088cc; font-weight: 700; margin-bottom: 10px;">
+                            <i class="fas fa-copy"></i> الكود للنسخ اليدوي:
+                        </div>
+                        <code style="background: white; padding: 8px 12px; border-radius: 6px; font-weight: bold; color: #0088cc; font-size: 1.1em; word-break: break-all; display: inline-block; margin-bottom: 10px;">/start ${data.telegram_code}</code>
+                        <div style="font-size: 0.9em; color: rgba(255, 255, 255, 0.8);">
+                            <small>انسخ هذا النص والصقه في التليجرام إذا لم يظهر تلقائياً</small>
+                        </div>
+                        <button onclick="copyToClipboard('/start ${data.telegram_code}')" style="background: #0088cc; color: white; border: none; padding: 8px 16px; border-radius: 6px; margin-top: 10px; cursor: pointer; font-weight: 600;">
+                            📋 نسخ الكود
+                        </button>
+                    </div>
+                `;
+                
+                // إدراج عنصر الكود بعد الزر مباشرة
+                telegramBtn.parentNode.insertBefore(codeDisplay, telegramBtn.nextSibling);
+                
+                // نسخ الكود للحافظة تلقائياً - ✅ داخل النطاق الصحيح
+                setTimeout(() => {
+                    copyTelegramCodeToClipboard(data.telegram_code);
+                }, 2000);
                 
                 // مراقبة الربط كل 3 ثوان
                 const checkInterval = setInterval(async () => {
                     try {
-                        const checkResponse = await fetch(`/check-telegram-status/${result.telegram_code}`);
+                        const checkResponse = await fetch(`/check-telegram-status/${data.telegram_code}`);
                         const checkResult = await checkResponse.json();
                         
                         if (checkResult.success && checkResult.is_linked) {
@@ -2394,16 +2446,121 @@ function initializeTelegramButton() {
                 // إيقاف المراقبة بعد دقيقة
                 setTimeout(() => clearInterval(checkInterval), 60000);
                 
+                // إعادة الزر للوضع الطبيعي بعد 10 ثوان
+                setTimeout(() => {
+                    telegramBtn.innerHTML = originalContent;
+                    telegramBtn.classList.remove('success');
+                    telegramBtn.disabled = false;
+                    // إزالة عرض الكود
+                    const codeDisplayElement = document.querySelector('.telegram-code-display');
+                    if (codeDisplayElement) {
+                        codeDisplayElement.style.opacity = '0';
+                        setTimeout(() => codeDisplayElement.remove(), 500);
+                    }
+                }, 10000);
+                
             } else {
                 throw new Error(result.message || 'فشل في الحصول على الكود');
             }
             
         } catch (error) {
             console.error('خطأ:', error);
-            this.innerHTML = '❌ خطأ - اضغط للمحاولة مرة أخرى';
-            this.disabled = false;
+            telegramBtn.innerHTML = '❌ خطأ - اضغط للمحاولة مرة أخرى';
+            telegramBtn.disabled = false;
         }
     });
+}
+
+// 🔥 الدوال المساعدة - ✅ في المكان الصحيح بعد الدالة الرئيسية
+
+// نظام فتح التليجرام المتدرج الذكي
+function openTelegramSmartly(data) {
+    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
+    
+    console.log('📱 Device Detection:', { isMobile, isIOS, isAndroid });
+    
+    if (isMobile) {
+        // للهواتف: جرب التطبيق أولاً، ثم المتصفح
+        console.log('🚀 محاولة فتح تطبيق التليجرام مباشرة...');
+        
+        // إنشاء رابط مخفي للتطبيق
+        if (data.telegram_app_url) {
+            const appLink = document.createElement('a');
+            appLink.href = data.telegram_app_url;
+            appLink.style.display = 'none';
+            document.body.appendChild(appLink);
+            
+            // محاولة فتح التطبيق
+            appLink.click();
+            
+            // إزالة الرابط
+            setTimeout(() => {
+                if (document.body.contains(appLink)) {
+                    document.body.removeChild(appLink);
+                }
+            }, 100);
+        }
+        
+        // خطة بديلة: فتح في المتصفح بعد ثانيتين
+        setTimeout(() => {
+            console.log('🌐 فتح رابط التليجرام في المتصفح كخطة بديلة...');
+            window.open(data.telegram_web_url, '_blank');
+        }, 2000);
+        
+    } else {
+        // للكمبيوتر: فتح في المتصفح مباشرة
+        console.log('💻 فتح التليجرام في المتصفح للكمبيوتر...');
+        window.open(data.telegram_web_url, '_blank');
+    }
+}
+
+// دالة الطوارئ: نسخ الكود للحافظة تلقائياً
+function copyTelegramCodeToClipboard(code) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(`/start ${code}`).then(() => {
+            console.log('📋 تم نسخ الكود للحافظة:', `/start ${code}`);
+            showNotification('تم نسخ الكود للحافظة! الصقه في التليجرام', 'success');
+        }).catch(err => {
+            console.warn('❌ فشل في نسخ الكود:', err);
+        });
+    }
+}
+
+// دالة نسخ عامة للاستخدام مع الأزرار
+function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+            showNotification('تم النسخ بنجاح!', 'success');
+        }).catch(() => {
+            // طريقة بديلة للنسخ
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showNotification('تم النسخ بنجاح!', 'success');
+            } catch (err) {
+                showNotification('فشل في النسخ', 'error');
+            }
+            document.body.removeChild(textArea);
+        });
+    } else {
+        // طريقة بديلة للمتصفحات القديمة
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            showNotification('تم النسخ بنجاح!', 'success');
+        } catch (err) {
+            showNotification('فشل في النسخ', 'error');
+        }
+        document.body.removeChild(textArea);
+    }
 }
 
 // تصدير الوظائف للاستخدام الخارجي أو الاختبار

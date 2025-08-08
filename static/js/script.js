@@ -79,7 +79,96 @@ function initializeEventListeners() {
     console.log('✅ All event listeners set up successfully with button fixes!');
 }
 
-// 💳 حل مشكلة أزرار الدفع - مأخوذ من كود صحبك (مع إصلاح التمرير)
+// 🎮 حل مشكلة أزرار المنصات - مع إصلاح التمرير الكامل
+function setupPlatformButtons() {
+    console.log('🎮 Setting up platform buttons with SCROLL fix...');
+    
+    const platformCards = document.querySelectorAll('.platform-card');
+    
+    if (platformCards.length === 0) {
+        console.warn('⚠️ No platform cards found!');
+        return;
+    }
+    
+    platformCards.forEach((card, index) => {
+        console.log(`Setting up platform card ${index + 1}:`, card.dataset.platform);
+        
+        // إزالة مستمعين قدامى
+        const newCard = card.cloneNode(true);
+        card.parentNode.replaceChild(newCard, card);
+        
+        // ✅ متغيرات لتتبع اللمس
+        let touchStartY = 0;
+        let touchStartTime = 0;
+        let hasMoved = false;
+        
+        // مستمع النقر العادي للكمبيوتر
+        newCard.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            handlePlatformSelection(this);
+        });
+        
+        // ✅ الحل الذكي: تتبع بداية اللمس
+        newCard.addEventListener('touchstart', function(e) {
+            // حفظ موضع اللمس والوقت
+            touchStartY = e.touches[0].clientY;
+            touchStartTime = Date.now();
+            hasMoved = false;
+            
+            // تأثير بصري خفيف
+            this.style.transition = 'transform 0.1s ease, opacity 0.1s ease';
+            this.style.transform = 'scale(0.98)';
+            this.style.opacity = '0.9';
+            
+        }, { passive: true }); // 🔥 passive: true = يسمح بالتمرير
+        
+        // ✅ تتبع حركة اللمس
+        newCard.addEventListener('touchmove', function(e) {
+            const currentY = e.touches[0].clientY;
+            const moveDistance = Math.abs(currentY - touchStartY);
+            
+            // إذا تحرك أكثر من 10 بكسل = تمرير
+            if (moveDistance > 10) {
+                hasMoved = true;
+                // إزالة التأثير البصري
+                this.style.transform = '';
+                this.style.opacity = '';
+            }
+        }, { passive: true });
+        
+        // ✅ معالجة نهاية اللمس
+        newCard.addEventListener('touchend', function(e) {
+            e.preventDefault(); // منع النقر المزدوج فقط
+            
+            const touchEndTime = Date.now();
+            const touchDuration = touchEndTime - touchStartTime;
+            
+            // إزالة التأثير البصري
+            this.style.transform = '';
+            this.style.opacity = '';
+            
+            // ✅ شروط الاختيار الذكية
+            if (!hasMoved && touchDuration < 300) {
+                // لمسة سريعة بدون حركة = اختيار
+                handlePlatformSelection(this);
+            }
+            // إذا تحرك = تمرير عادي ولا نفعل شيء
+            
+        }, { passive: false }); // نحتاج منع النقر المزدوج فقط
+        
+        // معالج الإلغاء (عند مغادرة المنطقة)
+        newCard.addEventListener('touchcancel', function(e) {
+            this.style.transform = '';
+            this.style.opacity = '';
+            hasMoved = false;
+        }, { passive: true });
+    });
+    
+    console.log(`✅ ${platformCards.length} platform buttons fixed for scrolling and clicking`);
+}
+
+// 💳 حل مشكلة أزرار الدفع - مع إصلاح التمرير الكامل
 function setupPaymentButtons() {
     console.log('💳 Setting up payment buttons with SCROLL fix...');
     
@@ -91,80 +180,83 @@ function setupPaymentButtons() {
     }
     
     paymentButtons.forEach((btn, index) => {
+        console.log(`Setting up payment button ${index + 1}:`, btn.dataset.value);
+        
+        // إزالة مستمعين قدامى
         const newBtn = btn.cloneNode(true);
         btn.parentNode.replaceChild(newBtn, btn);
         
-        // مستمع النقر العادي
+        // ✅ متغيرات لتتبع اللمس
+        let touchStartY = 0;
+        let touchStartTime = 0;
+        let hasMoved = false;
+        
+        // مستمع النقر العادي للكمبيوتر
         newBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             handlePaymentSelection(this);
         });
         
-        // ✅ الحل: مستمع لمس محسن لا يمنع التمرير
+        // ✅ الحل الذكي: تتبع بداية اللمس
         newBtn.addEventListener('touchstart', function(e) {
-            // لا نستخدم e.preventDefault() هنا للسماح بالتمرير
+            // حفظ موضع اللمس والوقت
+            touchStartY = e.touches[0].clientY;
+            touchStartTime = Date.now();
+            hasMoved = false;
+            
+            // تأثير بصري خفيف
             this.style.transition = 'transform 0.1s ease, opacity 0.1s ease';
-            this.style.transform = 'scale(0.97)';
-            this.style.opacity = '0.8';
-        }, { passive: true }); // استخدام passive: true مهم جداً
-
+            this.style.transform = 'scale(0.98)';
+            this.style.opacity = '0.9';
+            
+        }, { passive: true }); // 🔥 passive: true = يسمح بالتمرير
+        
+        // ✅ تتبع حركة اللمس  
+        newBtn.addEventListener('touchmove', function(e) {
+            const currentY = e.touches[0].clientY;
+            const moveDistance = Math.abs(currentY - touchStartY);
+            
+            // إذا تحرك أكثر من 10 بكسل = تمرير
+            if (moveDistance > 10) {
+                hasMoved = true;
+                // إزالة التأثير البصري
+                this.style.transform = '';
+                this.style.opacity = '';
+            }
+        }, { passive: true });
+        
+        // ✅ معالجة نهاية اللمس
         newBtn.addEventListener('touchend', function(e) {
+            e.preventDefault(); // منع النقر المزدوج فقط
+            
+            const touchEndTime = Date.now();
+            const touchDuration = touchEndTime - touchStartTime;
+            
+            // إزالة التأثير البصري
             this.style.transform = '';
             this.style.opacity = '';
-        });
-
+            
+            // ✅ شروط الاختيار الذكية
+            if (!hasMoved && touchDuration < 300) {
+                // لمسة سريعة بدون حركة = اختيار
+                handlePaymentSelection(this);
+            }
+            // إذا تحرك = تمرير عادي ولا نفعل شيء
+            
+        }, { passive: false }); // نحتاج منع النقر المزدوج فقط
+        
+        // معالج الإلغاء (عند مغادرة المنطقة)
         newBtn.addEventListener('touchcancel', function(e) {
             this.style.transform = '';
             this.style.opacity = '';
-        });
+            hasMoved = false;
+        }, { passive: true });
     });
     
-    console.log(`✅ ${paymentButtons.length} payment buttons fixed for scrolling`);
+    console.log(`✅ ${paymentButtons.length} payment buttons fixed for scrolling and clicking`);
 }
 
-// 💳 حل مشكلة أزرار الدفع - مأخوذ من كود صحبك
-function setupPaymentButtons() {
-    console.log('💳 Setting up payment buttons with fix...');
-    
-    const paymentButtons = document.querySelectorAll('.payment-btn');
-    
-    if (paymentButtons.length === 0) {
-        console.warn('⚠️ No payment buttons found!');
-        return;
-    }
-    
-    paymentButtons.forEach((btn, index) => {
-        console.log(`Setting up payment button ${index + 1}:`, btn.dataset.value);
-        
-        // إزالة مستمعين قدامى - الحل الرئيسي
-        const newBtn = btn.cloneNode(true);
-        btn.parentNode.replaceChild(newBtn, btn);
-        
-        // إضافة مستمع جديد
-        newBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            handlePaymentSelection(this);
-        });
-        
-        // مستمع اللمس للهواتف
-        newBtn.addEventListener('touchstart', function(e) {
-            e.preventDefault();
-            this.style.transform = 'scale(0.95)';
-            this.style.opacity = '0.8';
-        }, { passive: false });
-        
-        newBtn.addEventListener('touchend', function(e) {
-            e.preventDefault();
-            this.style.transform = '';
-            this.style.opacity = '';
-            handlePaymentSelection(this);
-        }, { passive: false });
-    });
-    
-    console.log(`✅ ${paymentButtons.length} payment buttons fixed and initialized`);
-}
 
 // 🎮 معالجة اختيار المنصة - محسن من كود صحبك
 function handlePlatformSelection(card) {

@@ -175,7 +175,7 @@ export async function handleTelegramLink() {
         const formData = await collectFormDataForTelegram();
         console.log('📤 إرسال البيانات:', {
             platform: formData.platform,
-            whatsapp: formData.whatsapp_number ? formData.whatsapp_number.substring(0, 5) + '***' : 'EMPTY',
+            whatsapp: formData.whatsapp ? formData.whatsapp.substring(0, 5) + '***' : 'EMPTY',
             paymentMethod: formData.payment_method
         });
         
@@ -279,7 +279,7 @@ async function collectFormDataForTelegram() {
     
     const formData = {
         platform: platform,
-        whatsapp_number: whatsapp,
+        whatsapp: whatsapp,
         payment_method: paymentMethod,
         payment_details: paymentDetails
     };

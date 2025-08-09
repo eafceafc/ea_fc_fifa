@@ -279,7 +279,7 @@ async function collectFormDataForTelegram() {
     
     const formData = {
         platform: platform,
-        whatsapp: whatsapp,
+        whatsapp_number: whatsapp,
         payment_method: paymentMethod,
         payment_details: paymentDetails
     };

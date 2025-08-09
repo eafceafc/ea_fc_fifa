@@ -237,9 +237,7 @@ export async function handleTelegramLink() {
     }
 }
 
-/**
- * 📋 جمع بيانات النموذج للتليجرام - ENHANCED VERSION للتطابق الكامل
- */
+// ✅✅✅ هذه هي النسخة الجديدة التي تجمع البيانات وتتحقق منها ✅✅✅
 async function collectFormDataForTelegram() {
     console.log('📋 🔥 ENHANCED: جمع بيانات النموذج مع التطابق الكامل...');
     
@@ -248,41 +246,27 @@ async function collectFormDataForTelegram() {
     const paymentMethod = document.getElementById('payment_method')?.value || '';
     const paymentDetails = getActivePaymentDetails();
     
-    // 🔥 التطابق الكامل مع ما يتوقعه الخادم في app.py
     const formData = {
         platform: platform,
-        whatsapp_number: whatsapp,        // ✅ يطابق data.get('whatsapp_number')
-        payment_method: paymentMethod,    // ✅ يطابق data.get('payment_method')  
-        payment_details: paymentDetails,  // ✅ يطابق data.get('payment_details')
-        telegram_username: ''             // ✅ إضافة إضافية للتوافق
+        whatsapp_number: whatsapp,
+        payment_method: paymentMethod,
+        payment_details: paymentDetails,
+        telegram_username: ''
     };
     
-    // 🔍 تشخيص مفصل للبيانات المرسلة
     console.log('📋 🔥 CRITICAL - البيانات المرسلة للخادم:', {
         platform: formData.platform || 'MISSING ❌',
         whatsapp_number: formData.whatsapp_number ? 
             formData.whatsapp_number.substring(0, 5) + '***' : 'MISSING ❌',
         payment_method: formData.payment_method || 'MISSING ❌',
-        payment_details: formData.payment_details || 'MISSING ❌',
-        telegram_username: formData.telegram_username || 'EMPTY (OK)',
-        dataIntegrity: 'CHECKING...'
+        payment_details: formData.payment_details || 'MISSING ❌'
     });
     
-    // 🚨 تحقق نهائي قبل الإرسال - منع إرسال بيانات ناقصة
     const validationErrors = [];
-    
-    if (!formData.platform) {
-        validationErrors.push('Platform is missing');
-    }
-    if (!formData.whatsapp_number) {
-        validationErrors.push('WhatsApp number is missing');
-    }
-    if (!formData.payment_method) {
-        validationErrors.push('Payment method is missing');
-    }
-    if (!formData.payment_details) {
-        validationErrors.push('Payment details are missing');
-    }
+    if (!formData.platform) validationErrors.push('Platform');
+    if (!formData.whatsapp_number) validationErrors.push('WhatsApp');
+    if (!formData.payment_method) validationErrors.push('Payment Method');
+    if (!formData.payment_details) validationErrors.push('Payment Details');
     
     if (validationErrors.length > 0) {
         console.error('🚨 CRITICAL VALIDATION ERRORS:', validationErrors);
@@ -344,8 +328,14 @@ function getActivePaymentDetails() {
 /**
  * 🌐 إرسال طلب ربط التليجرام للخادم - ULTRA ENHANCED VERSION
  */
+// ✅✅✅ هذه هي الدالة الكاملة التي يجب أن تستبدلها ✅✅✅
+
+/**
+ * 🌐 إرسال طلب ربط التليجرام للخادم - النسخة الهجينة النهائية
+ * تجمع بين التشخيص المتقدم من الكود الجديد وتوحيد اسم المتغير للكود القديم
+ */
 async function sendTelegramLinkRequest(formData) {
-    console.log('🌐 🔥 FINAL VERSION: إرسال طلب إلى /generate-telegram-code...');
+    console.log('🌐 🔥 HYBRID VERSION: إرسال طلب إلى /generate-telegram-code...');
     console.log('📤 🔥 EXACT DATA BEING SENT:', JSON.stringify(formData, null, 2));
     
     try {
@@ -354,90 +344,51 @@ async function sendTelegramLinkRequest(formData) {
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCSRFTokenFromMainSystem(),
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+                'Accept': 'application/json'
             },
             body: JSON.stringify(formData)
         };
         
-        console.log('🔗 Request details:', {
-            url: '/generate-telegram-code',
-            method: requestOptions.method,
-            headers: requestOptions.headers,
-            bodySize: requestOptions.body.length + ' chars'
-        });
-        
         const response = await fetch('/generate-telegram-code', requestOptions);
-        
-        console.log('📡 🔥 RAW HTTP RESPONSE:', {
-            status: response.status,
-            statusText: response.statusText,
-            ok: response.ok,
-            headers: Object.fromEntries(response.headers.entries()),
-            url: response.url,
-            redirected: response.redirected
-        });
-        
-        // 🔍 قراءة النص الخام أولاً للتشخيص الكامل
         const responseText = await response.text();
         console.log('📄 🔥 RAW RESPONSE TEXT:', responseText);
-        console.log('📄 Response length:', responseText.length + ' chars');
         
         if (!response.ok) {
             console.error('❌ 🔥 HTTP ERROR DETAILS:', {
                 status: response.status,
-                statusText: response.statusText,
-                responseText: responseText,
-                url: response.url
+                responseText: responseText
             });
             throw new Error(`خطأ HTTP ${response.status}: ${responseText || response.statusText}`);
         }
         
-        // 🔄 تحويل النص إلى JSON مع معالجة أخطاء متقدمة
         let result;
         try {
             result = JSON.parse(responseText);
         } catch (parseError) {
             console.error('❌ 🔥 JSON PARSE ERROR:', {
                 error: parseError.message,
-                responseText: responseText,
-                responseType: typeof responseText,
-                isEmptyResponse: responseText.length === 0
+                responseText: responseText
             });
             throw new Error('استجابة الخادم ليست JSON صالح: ' + parseError.message);
         }
         
-        // 🔍 تحليل شامل للاستجابة - FIXED: البحث عن code
-        console.log('📦 🔥 PARSED JSON RESPONSE:', {
-            success: result.success,
-            hasMessage: !!result.message,
-            message: result.message,
-            hasCode: !!result.code,  // ✅ تم تغيير من telegram_code إلى code
-            codeType: typeof result.code,  // ✅ تم تغيير
-            codeValue: result.code,  // ✅ تم تغيير
-            codeLength: result.code ? result.code.length : 0,  // ✅ تم تغيير
-            hasWebUrl: !!result.telegram_web_url,
-            webUrl: result.telegram_web_url,
-            hasAppUrl: !!result.telegram_app_url,
-            appUrl: result.telegram_app_url,
-            hasBotUsername: !!result.bot_username,
-            botUsername: result.bot_username,
-            allKeys: Object.keys(result),
-            fullResponse: result
-        });
-        
-        // 🚨 فحص حاسم للكود قبل الإرجاع - FIXED: البحث عن code
-        if (result.success && (!result.code || result.code === 'undefined' || result.code === null)) {
+        // 🔥🔥🔥 السحر الحقيقي هنا: توحيد اسم المتغير 🔥🔥🔥
+        // هذا الجزء يتأكد من أن باقي "الكود القديم" سيعمل بدون مشاكل.
+        // إذا كانت الاستجابة تحتوي على "code"، فإنه يقوم بإنشاء نسخة منها باسم "telegram_code".
+        if (result.code && !result.telegram_code) {
+            console.log('🔄 HYBRID FIX: تم العثور على "code", سيتم توحيده إلى "telegram_code".');
+            result.telegram_code = result.code;
+        }
+
+        // الآن، يمكننا التحقق من وجود "telegram_code" بأمان
+        if (result.success && (!result.telegram_code)) {
             console.error('🚨 🔥 CRITICAL SERVER BUG: Success=true but code is invalid!');
-            console.error('🚨 code value:', result.code);  // ✅ تم تغيير
-            console.error('🚨 code type:', typeof result.code);  // ✅ تم تغيير
             console.error('🚨 Full server response:', JSON.stringify(result, null, 2));
-            
-            throw new Error('خطأ في الخادم: لم يتم إنشاء كود التليجرام صحيح (received: ' + result.code + ')');  // ✅ تم تغيير
+            throw new Error('خطأ في الخادم: لم يتم إنشاء كود التليجرام صحيح');
         }
         
-        if (result.success && result.code) {  // ✅ تم تغيير
-            console.log('✅ 🔥 SUCCESS: Valid code received:', result.code.substring(0, 15) + '...');  // ✅ تم تغيير
+        if (result.success && result.telegram_code) {
+            console.log('✅ 🔥 SUCCESS: Valid telegram_code received:', result.telegram_code.substring(0, 15) + '...');
         }
         
         return result;
@@ -445,9 +396,7 @@ async function sendTelegramLinkRequest(formData) {
     } catch (networkError) {
         console.error('🌐 🔥 NETWORK/FETCH ERROR:', {
             name: networkError.name,
-            message: networkError.message,
-            stack: networkError.stack,
-            cause: networkError.cause
+            message: networkError.message
         });
         throw new Error('خطأ في الاتصال بالخادم: ' + networkError.message);
     }

@@ -454,69 +454,83 @@ async function sendTelegramLinkRequest(formData) {
 }
 
 /**
- * 📱 فتح التليجرام بالطريقة الذكية - مع حماية من undefined
+// ✅✅✅ هذه هي النسخة السحرية التي تعيد التشغيل التلقائي ✅✅✅
+
+/**
+ * 📱 فتح التليجرام بالطريقة الذكية - RESTORED & FIXED for auto-start
  */
 async function openTelegramSmartly(data) {
-    // 🚨 فحص حاسم للكود قبل الفتح - FIXED: البحث عن code
+    // 🚨 فحص حاسم للكود قبل الفتح
     if (!data.code || data.code === 'undefined' || data.code === null) {
         console.error('🚨 🔥 CRITICAL: Cannot open Telegram - invalid code!', {
-            code: data.code,  // ✅ تم تغيير
-            codeType: typeof data.code,  // ✅ تم تغيير
-            dataKeys: Object.keys(data)
+            code: data.code,
+            codeType: typeof data.code
         });
-        throw new Error('لا يمكن فتح التليجرام - كود غير صالح: ' + data.code);  // ✅ تم تغيير
+        throw new Error('لا يمكن فتح التليجرام - كود غير صالح من الخادم');
     }
     
-    console.log('📱 🔥 Opening Telegram with VALID code:', data.code.substring(0, 10) + '...');  // ✅ تم تغيير
+    console.log('📱 🔥 Opening Telegram with VALID code:', data.code.substring(0, 10) + '...');
     
     const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
     
-    // الحصول على bot username من الاستجابة أو استخدام القيمة الافتراضية
     const botUsername = data.bot_username || 'ea_fc_fifa_bot';
+    const telegramCode = data.code; // نستخدم .code الصحيح
+
+    // روابط محسّنة مع deep linking صحيح
+    const enhancedWebUrl = `https://t.me/${botUsername}?start=${telegramCode}`;
+    const enhancedAppUrl = `tg://resolve?domain=${botUsername}&start=${telegramCode}`;
     
-    // إنشاء الروابط مع الكود المؤكد - FIXED: استخدام code
-    const telegramAppUrl = `tg://resolve?domain=${botUsername}&start=${data.code}`;  // ✅ تم تغيير
-    const telegramWebUrl = `https://t.me/${botUsername}?start=${data.code}`;  // ✅ تم تغيير
-    
-    console.log('🔗 🔥 FINAL TELEGRAM URLS:', {
-        appUrl: telegramAppUrl,
-        webUrl: telegramWebUrl,
-        botUsername: botUsername,
-        code: data.code.substring(0, 15) + '...'  // ✅ تم تغيير
-    });
+    console.log('🔗 الروابط المحسّنة:', {
+        web: enhancedWebUrl,
+        app: enhancedAppUrl
+    } );
     
     if (isMobile) {
-        console.log('📱 Mobile detected - trying app first...');
+        // 🚀 للهواتف: استراتيجية محسّنة للتفعيل التلقائي
+        console.log('📱 تطبيق استراتيجية محسّنة للهواتف...');
         
-        // محاولة التطبيق أولاً
-        const appLink = document.createElement('a');
-        appLink.href = telegramAppUrl;
-        appLink.style.display = 'none';
-        document.body.appendChild(appLink);
-        appLink.click();
+        let targetUrl = enhancedAppUrl; // الرابط الأساسي للتطبيق
+
+        if (isAndroid) {
+            // Android - استخدام Intent URL هو الأفضل للتفعيل الصامت
+            targetUrl = `intent://resolve?domain=${botUsername}&start=${telegramCode}#Intent;package=org.telegram.messenger;scheme=tg;end`;
+            console.log('🤖 Android: استخدام Intent URL المحسن');
+        } else if (isIOS) {
+            console.log('🍎 iOS: استخدام الرابط المباشر للتطبيق');
+        }
         
+        // محاولة فتح الرابط الأساسي
+        window.location.href = targetUrl;
+        
+        // خطة بديلة: فتح في المتصفح بعد فترة قصيرة إذا لم يفتح التطبيق
         setTimeout(() => {
-            if (document.body.contains(appLink)) {
-                document.body.removeChild(appLink);
-            }
-        }, 100);
-        
-        // فتح الويب كبديل
-        setTimeout(() => {
-            console.log('🌐 Opening web as fallback...');
-            window.open(telegramWebUrl, '_blank');
-        }, 2000);
+            console.log('🌐 فتح المتصفح كخطة بديلة...');
+            window.open(enhancedWebUrl, '_blank');
+        }, 2500);
         
     } else {
-        console.log('💻 Desktop detected - opening web directly...');
-        // الكمبيوتر - ويب مباشرة
-        window.open(telegramWebUrl, '_blank');
+        // 💻 للكمبيوتر: فتح التطبيق أولاً ثم الويب كبديل
+        console.log('💻 تطبيق استراتيجية للكمبيوتر...');
+        
+        // محاولة فتح التطبيق
+        window.location.href = enhancedAppUrl;
+        
+        // فتح الويب كبديل بعد ثانية
+        setTimeout(() => {
+            console.log('🌐 فتح Web Telegram للكمبيوتر كخطة بديلة');
+            window.open(enhancedWebUrl, '_blank');
+        }, 1000);
     }
     
-    // نسخ تلقائي للكود
+    // نسخ الكود تلقائياً كخطة طوارئ
     setTimeout(() => {
-        copyTelegramCodeToClipboard(data.code);  // ✅ تم تغيير
-    }, 1500);
+        copyTelegramCodeToClipboard(telegramCode);
+    }, 2000);
+    
+    // 🔔 إشعار للمستخدم
+    showTelegramNotification('تم فتح التليجرام - سيتم التفعيل تلقائياً!', 'info');
 }
 
 /**

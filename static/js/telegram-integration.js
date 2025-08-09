@@ -13,7 +13,7 @@ let telegramProcessTimeout = null;
 let telegramMonitoringInterval = null;
 
 /**
- * 🔗 الحصول على حالات التحقق من النظام الرئيسي - محسّنة
+ * 🔗 الحصول على  حالات التحقق من النظام الرئيسي - محسّنة
  */
 async function getValidationStatesFromMainSystem() {
     console.log('🔍 Starting enhanced validation check...');

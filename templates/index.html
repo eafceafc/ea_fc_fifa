@@ -226,7 +226,9 @@
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+<!-- 💡 استيراد وحدة التليجرام أولاً -->
+<script type="module" src="{{ url_for('static', filename='js/telegram-integration.js') }}"></script>
+<script type="module" src="{{ url_for('static', filename='js/script.js') }}"></script>
     
     <!-- ✅ دالة الانتقال التلقائي -->
     <script>

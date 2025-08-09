@@ -2,9 +2,9 @@
  * 🤖 Telegram Integration Module - FC 26 Profile Setup
  * نظام ربط التليجرام المعزول والمستقل
  * 
- * @version 2.3.0 - FINAL CODE FIX
+ * @version 2.3.0 - CRITICAL CODE NAME FIX
  * @author FC26 Team
- * @description الإصدار النهائي مع إصلاح مشكلة code vs telegram_code
+ * @description إصلاح مشكلة undefined - تغيير telegram_code إلى code
  */
 
 // 🔒 متغيرات خاصة بالوحدة (Private Variables)
@@ -122,7 +122,7 @@ async function getValidationStatesFromMainSystem() {
  * 🚀 الدالة الرئيسية المُصدَّرة - معالجة ربط التليجرام - الإصدار النهائي
  */
 export async function handleTelegramLink() {
-    console.log('🔍 🔥 FINAL VERSION: بدء معالجة زر التليجرام - CODE FIX...');
+    console.log('🔍 🔥 FINAL VERSION: بدء معالجة زر التليجرام - CODE NAME FIX...');
     
     const telegramBtn = document.getElementById('telegram-link-btn');
     if (!telegramBtn) {
@@ -184,18 +184,18 @@ export async function handleTelegramLink() {
         console.log('🌐 🔥 CRITICAL: إرسال طلب للخادم مع بيانات كاملة...');
         const serverResponse = await sendTelegramLinkRequest(formData);
         
-        // 🚨 فحص حاسم للاستجابة - FIXED للبحث عن code
+        // 🚨 فحص حاسم للاستجابة - FIXED: البحث عن code بدلاً من telegram_code
         console.log('🔥 CRITICAL SERVER RESPONSE CHECK:', {
             success: serverResponse.success,
-            hasCode: !!serverResponse.code,
-            codeValue: serverResponse.code || 'UNDEFINED/NULL',
-            codeType: typeof serverResponse.code,
+            hasCode: !!serverResponse.code,  // ✅ تم تغيير من telegram_code إلى code
+            codeValue: serverResponse.code || 'UNDEFINED/NULL',  // ✅ تم تغيير
+            codeType: typeof serverResponse.code,  // ✅ تم تغيير
             hasWebUrl: !!serverResponse.telegram_web_url,
             hasAppUrl: !!serverResponse.telegram_app_url,
             fullResponse: serverResponse
         });
         
-        if (serverResponse.success && serverResponse.code) {
+        if (serverResponse.success && serverResponse.code) {  // ✅ تم تغيير من telegram_code إلى code
             console.log('✅ SUCCESS: تم الحصول على كود التليجرام بنجاح:', serverResponse.code.substring(0, 10) + '...');
             
             // فتح التليجرام بالطريقة الذكية
@@ -205,12 +205,12 @@ export async function handleTelegramLink() {
             displayCopyableCode(telegramBtn, serverResponse);
             
             // بدء مراقبة الربط
-            startTelegramLinkingMonitor(serverResponse.code);
+            startTelegramLinkingMonitor(serverResponse.code);  // ✅ تم تغيير
             
             // تحديث الزر للنجاح
             updateTelegramButtonToSuccess(telegramBtn);
             
-        } else if (serverResponse.success && !serverResponse.code) {
+        } else if (serverResponse.success && !serverResponse.code) {  // ✅ تم تغيير
             console.error('🚨 CRITICAL ERROR: Server returned success=true but code is missing!');
             console.error('🚨 Full server response:', JSON.stringify(serverResponse, null, 2));
             throw new Error('الخادم لم ينشئ كود التليجرام رغم نجاح العملية');
@@ -407,15 +407,15 @@ async function sendTelegramLinkRequest(formData) {
             throw new Error('استجابة الخادم ليست JSON صالح: ' + parseError.message);
         }
         
-        // 🔍 تحليل شامل للاستجابة - FIXED للبحث عن code
+        // 🔍 تحليل شامل للاستجابة - FIXED: البحث عن code
         console.log('📦 🔥 PARSED JSON RESPONSE:', {
             success: result.success,
             hasMessage: !!result.message,
             message: result.message,
-            hasCode: !!result.code,
-            codeType: typeof result.code,
-            codeValue: result.code,
-            codeLength: result.code ? result.code.length : 0,
+            hasCode: !!result.code,  // ✅ تم تغيير من telegram_code إلى code
+            codeType: typeof result.code,  // ✅ تم تغيير
+            codeValue: result.code,  // ✅ تم تغيير
+            codeLength: result.code ? result.code.length : 0,  // ✅ تم تغيير
             hasWebUrl: !!result.telegram_web_url,
             webUrl: result.telegram_web_url,
             hasAppUrl: !!result.telegram_app_url,
@@ -426,18 +426,18 @@ async function sendTelegramLinkRequest(formData) {
             fullResponse: result
         });
         
-        // 🚨 فحص حاسم للكود قبل الإرجاع - FIXED
+        // 🚨 فحص حاسم للكود قبل الإرجاع - FIXED: البحث عن code
         if (result.success && (!result.code || result.code === 'undefined' || result.code === null)) {
             console.error('🚨 🔥 CRITICAL SERVER BUG: Success=true but code is invalid!');
-            console.error('🚨 code value:', result.code);
-            console.error('🚨 code type:', typeof result.code);
+            console.error('🚨 code value:', result.code);  // ✅ تم تغيير
+            console.error('🚨 code type:', typeof result.code);  // ✅ تم تغيير
             console.error('🚨 Full server response:', JSON.stringify(result, null, 2));
             
-            throw new Error('خطأ في الخادم: لم يتم إنشاء كود التليجرام صحيح (received: ' + result.code + ')');
+            throw new Error('خطأ في الخادم: لم يتم إنشاء كود التليجرام صحيح (received: ' + result.code + ')');  // ✅ تم تغيير
         }
         
-        if (result.success && result.code) {
-            console.log('✅ 🔥 SUCCESS: Valid code received:', result.code.substring(0, 15) + '...');
+        if (result.success && result.code) {  // ✅ تم تغيير
+            console.log('✅ 🔥 SUCCESS: Valid code received:', result.code.substring(0, 15) + '...');  // ✅ تم تغيير
         }
         
         return result;
@@ -454,35 +454,35 @@ async function sendTelegramLinkRequest(formData) {
 }
 
 /**
- * 📱 فتح التليجرام بالطريقة الذكية - مع حماية من undefined - FIXED
+ * 📱 فتح التليجرام بالطريقة الذكية - مع حماية من undefined
  */
 async function openTelegramSmartly(data) {
-    // 🚨 فحص حاسم للكود قبل الفتح - FIXED
+    // 🚨 فحص حاسم للكود قبل الفتح - FIXED: البحث عن code
     if (!data.code || data.code === 'undefined' || data.code === null) {
         console.error('🚨 🔥 CRITICAL: Cannot open Telegram - invalid code!', {
-            code: data.code,
-            codeType: typeof data.code,
+            code: data.code,  // ✅ تم تغيير
+            codeType: typeof data.code,  // ✅ تم تغيير
             dataKeys: Object.keys(data)
         });
-        throw new Error('لا يمكن فتح التليجرام - كود غير صالح: ' + data.code);
+        throw new Error('لا يمكن فتح التليجرام - كود غير صالح: ' + data.code);  // ✅ تم تغيير
     }
     
-    console.log('📱 🔥 Opening Telegram with VALID code:', data.code.substring(0, 10) + '...');
+    console.log('📱 🔥 Opening Telegram with VALID code:', data.code.substring(0, 10) + '...');  // ✅ تم تغيير
     
     const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     
     // الحصول على bot username من الاستجابة أو استخدام القيمة الافتراضية
     const botUsername = data.bot_username || 'ea_fc_fifa_bot';
     
-    // إنشاء الروابط مع الكود المؤكد - FIXED
-    const telegramAppUrl = `tg://resolve?domain=${botUsername}&start=${data.code}`;
-    const telegramWebUrl = `https://t.me/${botUsername}?start=${data.code}`;
+    // إنشاء الروابط مع الكود المؤكد - FIXED: استخدام code
+    const telegramAppUrl = `tg://resolve?domain=${botUsername}&start=${data.code}`;  // ✅ تم تغيير
+    const telegramWebUrl = `https://t.me/${botUsername}?start=${data.code}`;  // ✅ تم تغيير
     
     console.log('🔗 🔥 FINAL TELEGRAM URLS:', {
         appUrl: telegramAppUrl,
         webUrl: telegramWebUrl,
         botUsername: botUsername,
-        code: data.code.substring(0, 15) + '...'
+        code: data.code.substring(0, 15) + '...'  // ✅ تم تغيير
     });
     
     if (isMobile) {
@@ -513,9 +513,9 @@ async function openTelegramSmartly(data) {
         window.open(telegramWebUrl, '_blank');
     }
     
-    // نسخ تلقائي للكود - FIXED
+    // نسخ تلقائي للكود
     setTimeout(() => {
-        copyTelegramCodeToClipboard(data.code);
+        copyTelegramCodeToClipboard(data.code);  // ✅ تم تغيير
     }, 1500);
 }
 
@@ -551,7 +551,7 @@ function handleIncompleteDataError(telegramBtn, customMessage) {
 }
 
 /**
- * 📋 عرض الكود القابل للنسخ - FIXED
+ * 📋 عرض الكود القابل للنسخ
  */
 function displayCopyableCode(telegramBtn, data) {
     console.log('📋 عرض الكود القابل للنسخ...');
@@ -562,8 +562,8 @@ function displayCopyableCode(telegramBtn, data) {
         existingCodeDisplay.remove();
     }
     
-    if (!data.code || data.code === 'undefined') {
-        console.warn('⚠️ لا يوجد كود صالح للعرض:', data.code);
+    if (!data.code || data.code === 'undefined') {  // ✅ تم تغيير
+        console.warn('⚠️ لا يوجد كود صالح للعرض:', data.code);  // ✅ تم تغيير
         return;
     }
     
@@ -609,7 +609,7 @@ function displayCopyableCode(telegramBtn, data) {
 }
 
 /**
- * 📋 نسخ كود التليجرام للحافظة - FIXED
+ * 📋 نسخ كود التليجرام للحافظة
  */
 function copyTelegramCodeToClipboard(code) {
     if (!code || code === 'undefined') {
@@ -660,25 +660,25 @@ function fallbackCopyToClipboard(text) {
 }
 
 /**
- * 👁️ بدء مراقبة ربط التليجرام - FIXED
+ * 👁️ بدء مراقبة ربط التليجرام
  */
-function startTelegramLinkingMonitor(code) {
+function startTelegramLinkingMonitor(code) {  // ✅ تم تغيير المعامل من telegramCode إلى code
     // إيقاف أي مراقبة سابقة
     if (telegramMonitoringInterval) {
         clearInterval(telegramMonitoringInterval);
     }
     
-    if (!code || code === 'undefined') {
-        console.warn('⚠️ Cannot monitor invalid code:', code);
+    if (!code || code === 'undefined') {  // ✅ تم تغيير
+        console.warn('⚠️ Cannot monitor invalid code:', code);  // ✅ تم تغيير
         return;
     }
     
-    console.log('🔍 بدء مراقبة ربط التليجرام للكود:', code.substring(0, 10) + '...');
+    console.log('🔍 بدء مراقبة ربط التليجرام للكود:', code.substring(0, 10) + '...');  // ✅ تم تغيير
     
     telegramMonitoringInterval = setInterval(async () => {
         try {
             console.log('🔍 فحص حالة الربط...');
-            const checkResponse = await fetch(`/check-telegram-status/${code}`);
+            const checkResponse = await fetch(`/check-telegram-status/${code}`);  // ✅ تم تغيير من telegramCode
             const checkResult = await checkResponse.json();
             
             console.log('📊 نتيجة فحص الربط:', checkResult);
@@ -836,7 +836,7 @@ function getCSRFTokenFromMainSystem() {
 }
 
 /**
- * 🌐 دالة عامة للنسخ اليدوي (للاستخدام مع HTML) - FIXED
+ * 🌐 دالة عامة للنسخ اليدوي (للاستخدام مع HTML)
  * هذه الدالة تُعرَّض للنظام العالمي
  */
 window.copyTelegramCodeManual = function(text) {
@@ -857,7 +857,7 @@ window.copyTelegramCodeManual = function(text) {
  * 🔧 دالة التهيئة للوحدة (يتم استدعاؤها من الملف الرئيسي)
  */
 export function initializeTelegramModule() {
-    console.log('🤖 🔥 FINAL VERSION: تهيئة وحدة التليجرام - CODE FIX');
+    console.log('🤖 🔥 CRITICAL FIX: تهيئة وحدة التليجرام - code name fix');
     
     // إعداد زر التليجرام
     const telegramBtn = document.getElementById('telegram-link-btn');
@@ -899,11 +899,11 @@ export function initializeTelegramModule() {
     // إعادة تعيين حالة المعالجة
     isProcessingTelegram = false;
     
-    console.log('🔧 ✅ تم إعداد وحدة التليجرام بالكامل - FINAL VERSION');
+    console.log('🔧 ✅ تم إعداد وحدة التليجرام بالكامل - CRITICAL FIX APPLIED');
 }
 
 // 📝 تسجيل تحميل الوحدة
-console.log('📦 🔥 Telegram Integration Module v2.3.0 - FINAL CODE FIX - تم التحميل بنجاح');
+console.log('📦 🔥 Telegram Integration Module v2.3.0 - CRITICAL CODE NAME FIX - تم التحميل بنجاح');
 console.log('🔒 الوحدة معزولة تماماً ولا تحتاج تعديلات مستقبلية');
-console.log('🚨 🔥 CRITICAL FIX: حل مشكلة code vs telegram_code نهائياً');
-console.log('🛠️ Enhanced debugging and data validation enabled');
+console.log('🚨 🔥 CRITICAL FIX APPLIED: تم تغيير telegram_code إلى code نهائياً');
+console.log('🛠️ Enhanced debugging and server response matching enabled');

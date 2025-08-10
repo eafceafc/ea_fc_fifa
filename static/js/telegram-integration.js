@@ -2,9 +2,9 @@
  * 🤖 Telegram Integration Module - FC 26 Profile Setup
  * نظام ربط التليجرام المعزول والمستقل
  * 
- * @version 3.0.0 - ULTIMATE AUTO-SAVE FIX
+ * @version 2.2.0 - FINAL FIXED VERSION
  * @author FC26 Team
- * @description الحل النهائي: دمج الحفظ التلقائي مع التفعيل التلقائي
+ * @description صندوق أسود لكل ما يخص ربط التليجرام - الإصدار النهائي المحسّن
  */
 
 // 🔒 متغيرات خاصة بالوحدة (Private Variables)
@@ -119,10 +119,10 @@ async function getValidationStatesFromMainSystem() {
 }
 
 /**
- * 🚀 الدالة الرئيسية المُصدَّرة - معالجة ربط التليجرام - ULTIMATE AUTO-SAVE
+ * 🚀 الدالة الرئيسية المُصدَّرة - معالجة ربط التليجرام - FINAL FIXED
  */
 export async function handleTelegramLink() {
-    console.log('🔍 🚀 ULTIMATE AUTO-SAVE: بدء معالجة زر التليجرام...');
+    console.log('🔍 بدء معالجة زر التليجرام - FINAL FIXED VERSION...');
     
     const telegramBtn = document.getElementById('telegram-link-btn');
     if (!telegramBtn) {
@@ -183,34 +183,23 @@ export async function handleTelegramLink() {
         console.log('🌐 إرسال طلب للخادم...');
         const serverResponse = await sendTelegramLinkRequest(formData);
         
-        // 🔥 الإصلاح الحاسم: التحقق من وجود الكود بالاسم الصحيح
-        const telegramCode = serverResponse.code || serverResponse.telegram_code;
-        
-        if (serverResponse.success && telegramCode) {
+        if (serverResponse.success && serverResponse.telegram_web_url) {
             console.log('🔗 نجح الحصول على بيانات التليجرام:', {
                 success: serverResponse.success,
-                hasCode: !!telegramCode,
-                codeValue: telegramCode.substring(0, 10) + '...',
                 hasWebUrl: !!serverResponse.telegram_web_url,
-                hasAppUrl: !!serverResponse.telegram_app_url
+                hasAppUrl: !!serverResponse.telegram_app_url,
+                hasCode: !!serverResponse.telegram_code
             });
             
-            // 🔥 تحضير البيانات المحسّنة للتوافق
-            const enhancedResponse = {
-                ...serverResponse,
-                code: telegramCode,  // التأكد من وجود code
-                telegram_code: telegramCode  // التوافق مع الكود القديم
-            };
+            // فتح التليجرام بالطريقة الذكية المحسّنة
+            await openTelegramSmartly(serverResponse);
             
-            // فتح التليجرام بالطريقة الذكية المحسّنة مع الحفظ التلقائي
-            await openTelegramSmartlyWithAutoSave(enhancedResponse, formData);
+            // عرض الكود للنسخ اليدوي
+            displayCopyableCode(telegramBtn, serverResponse);
             
-            // عرض الكود للنسخ اليدوي (احتياطي فقط)
-            displayCopyableCode(telegramBtn, enhancedResponse);
-            
-            // بدء مراقبة الربط مع الحفظ التلقائي
-            if (telegramCode) {
-                startTelegramLinkingMonitorWithAutoSave(telegramCode, formData);
+            // بدء مراقبة الربط
+            if (serverResponse.telegram_code) {
+                startTelegramLinkingMonitor(serverResponse.telegram_code);
             }
             
             // تحديث الزر للنجاح
@@ -238,6 +227,7 @@ export async function handleTelegramLink() {
                 console.log('🔓 تم إلغاء قفل المعالجة (عملية ناجحة)');
             }, 2000);
         }
+        // للأخطاء، سيتم تحرير القفل في handleIncompleteDataError أو handleTelegramError
     }
 }
 
@@ -331,10 +321,10 @@ function getActivePaymentDetails() {
 }
 
 /**
- * 🌐 إرسال طلب ربط التليجرام للخادم - مع معالجة الأسماء المختلفة
+ * 🌐 إرسال طلب ربط التليجرام للخادم
  */
 async function sendTelegramLinkRequest(formData) {
-    console.log('🌐 🚀 ULTIMATE: إرسال طلب إلى /generate-telegram-code...');
+    console.log('🌐 إرسال طلب إلى /generate-telegram-code...');
     
     try {
         const response = await fetch('/generate-telegram-code', {
@@ -358,25 +348,13 @@ async function sendTelegramLinkRequest(formData) {
         }
         
         const result = await response.json();
-        
-        // 🔥 معالجة الأسماء المختلفة للكود
-        const telegramCode = result.code || result.telegram_code;
-        
-        console.log('📦 🚀 محتوى الاستجابة المحسّن:', {
+        console.log('📦 محتوى الاستجابة:', {
             success: result.success,
-            hasCode: !!telegramCode,
-            codeValue: telegramCode || 'UNDEFINED',
-            codeField: result.code ? 'code' : result.telegram_code ? 'telegram_code' : 'NONE',
+            hasCode: !!result.telegram_code,
             hasWebUrl: !!result.telegram_web_url,
             hasAppUrl: !!result.telegram_app_url,
             message: result.message
         });
-        
-        // 🔥 توحيد الاستجابة
-        if (telegramCode) {
-            result.code = telegramCode;
-            result.telegram_code = telegramCode;
-        }
         
         return result;
         
@@ -387,91 +365,88 @@ async function sendTelegramLinkRequest(formData) {
 }
 
 /**
- * 📱 فتح التليجرام بالطريقة الذكية - مع الحفظ التلقائي المحسّن
+ * 📱 فتح التليجرام بالطريقة الذكية مع حفظ فوري - ENHANCED FOR AUTO-SAVE
  */
-async function openTelegramSmartlyWithAutoSave(data, formData) {
+async function openTelegramSmartly(data) {
     const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isAndroid = /Android/.test(navigator.userAgent);
     
     console.log('📱 كشف نوع الجهاز:', { isMobile, isIOS, isAndroid });
     
-    // 🔥 الحصول على الكود بالطريقة الآمنة
-    const telegramCode = data.code || data.telegram_code;
-    
-    if (!telegramCode || telegramCode === 'undefined') {
-        console.error('🚨 CRITICAL: لا يوجد كود صالح للتليجرام!');
-        throw new Error('كود التليجرام غير صالح');
-    }
-    
-    // 🔥 إنشاء روابط محسّنة للتفعيل التلقائي مع البيانات المدمجة
+    // 🔥 إنشاء روابط محسّنة للتفعيل والحفظ التلقائي
     const botUsername = data.bot_username || 'ea_fc_fifa_bot';
-    
-    // 🚀 تضمين البيانات في الكود نفسه (للحفظ التلقائي)
-    const enhancedCode = `${telegramCode}`;  // الكود يحتوي على كل البيانات من الخادم
+    const telegramCode = data.telegram_code;
     
     // روابط محسّنة مع deep linking صحيح
-    const enhancedWebUrl = `https://t.me/${botUsername}?start=${enhancedCode}`;
-    const enhancedAppUrl = `tg://resolve?domain=${botUsername}&start=${enhancedCode}`;
-    const universalUrl = `https://telegram.me/${botUsername}?start=${enhancedCode}`;
+    const enhancedWebUrl = `https://t.me/${botUsername}?start=${telegramCode}`;
+    const enhancedAppUrl = `tg://resolve?domain=${botUsername}&start=${telegramCode}`;
+    const universalUrl = `https://telegram.me/${botUsername}?start=${telegramCode}`;
     
-    console.log('🔗 🚀 AUTO-SAVE URLs:', {
-        web: enhancedWebUrl,
-        app: enhancedAppUrl,
-        universal: universalUrl,
-        code: enhancedCode.substring(0, 10) + '...',
-        willAutoSave: true
+    // 🔥 حفظ بيانات الجلسة فوراً عند فتح التليجرام
+    const sessionData = {
+        telegram_code: telegramCode,
+        platform: document.getElementById('platform')?.value || '',
+        whatsapp_number: document.getElementById('whatsapp')?.value || '',
+        payment_method: document.getElementById('payment_method')?.value || '',
+        payment_details: getActivePaymentDetails(),
+        telegram_opened_at: new Date().toISOString(),
+        device_type: isMobile ? 'mobile' : 'desktop',
+        user_agent: navigator.userAgent
+    };
+    
+    console.log('💾 حفظ بيانات الجلسة فوراً عند فتح التليجرام...');
+    await saveUserTelegramData({
+        ...sessionData,
+        status: 'telegram_opened'
     });
     
-    // 💾 حفظ البيانات محلياً للتأكد
-    sessionStorage.setItem('telegram_linking_code', enhancedCode);
-    sessionStorage.setItem('telegram_linking_data', JSON.stringify(formData));
-    console.log('💾 تم حفظ البيانات محلياً للتأكد');
+    console.log('🔗 الروابط المحسّنة:', {
+        web: enhancedWebUrl,
+        app: enhancedAppUrl,
+        universal: universalUrl
+    });
     
     if (isMobile) {
-        // 🚀 للهواتف: استراتيجية Triple-Try المحسّنة
-        console.log('📱 تطبيق استراتيجية Triple-Try للهواتف مع الحفظ التلقائي...');
+        // 🚀 للهواتف: استراتيجية Triple-Try المحسّنة مع حفظ تلقائي
+        console.log('📱 تطبيق استراتيجية Triple-Try للهواتف مع حفظ تلقائي...');
         
         // المحاولة الأولى: التطبيق المباشر
         if (isIOS) {
-            // iOS - استخدام الرابط المحسن مع fallback
-            console.log('🍎 iOS: محاولة فتح التطبيق مباشرة مع الحفظ التلقائي');
+            console.log('🍎 iOS: محاولة فتح التطبيق مباشرة');
             window.location.href = enhancedAppUrl;
         } else if (isAndroid) {
-            // Android - Intent URL محسن للتفعيل التلقائي
-            console.log('🤖 Android: محاولة Intent URL محسن مع الحفظ التلقائي');
-            const intentUrl = `intent://resolve?domain=${botUsername}&start=${enhancedCode}#Intent;package=org.telegram.messenger;scheme=tg;launchFlags=0x10000000;end`;
+            console.log('🤖 Android: محاولة Intent URL محسن');
+            const intentUrl = `intent://resolve?domain=${botUsername}&start=${telegramCode}#Intent;package=org.telegram.messenger;scheme=tg;launchFlags=0x10000000;end`;
             window.location.href = intentUrl;
         }
         
         // المحاولة الثانية: Universal Link بعد ثانية
         setTimeout(() => {
-            console.log('🌍 المحاولة الثانية: Universal Link مع الحفظ التلقائي');
+            console.log('🌍 المحاولة الثانية: Universal Link');
             const newWindow = window.open(universalUrl, '_blank');
             if (!newWindow) {
-                // إذا فشل popup، استخدام التوجيه المباشر
                 window.location.href = universalUrl;
             }
         }, 1000);
         
         // المحاولة الثالثة: Web Telegram بعد 3 ثوان
         setTimeout(() => {
-            console.log('🌐 المحاولة الثالثة: Web Telegram مع الحفظ التلقائي');
+            console.log('🌐 المحاولة الثالثة: Web Telegram');
             const webWindow = window.open(enhancedWebUrl, '_blank');
             if (!webWindow) {
-                // إذا فشل popup، استخدام التوجيه المباشر
                 window.location.href = enhancedWebUrl;
             }
         }, 3000);
         
     } else {
-        // 💻 للكمبيوتر: استراتيجية Dual-Try محسّنة
-        console.log('💻 تطبيق استراتيجية Dual-Try للكمبيوتر مع الحفظ التلقائي...');
+        // 💻 للكمبيوتر: استراتيجية Dual-Try محسّنة مع حفظ تلقائي
+        console.log('💻 تطبيق استراتيجية Dual-Try للكمبيوتر مع حفظ تلقائي...');
         
         // المحاولة الأولى: التطبيق
         try {
             window.location.href = enhancedAppUrl;
-            console.log('💻 محاولة فتح تطبيق التليجرام للكمبيوتر مع الحفظ التلقائي');
+            console.log('💻 محاولة فتح تطبيق التليجرام للكمبيوتر');
         } catch (e) {
             console.log('💻 فشل فتح التطبيق، التوجه للويب مباشرة');
             window.open(enhancedWebUrl, '_blank');
@@ -479,7 +454,7 @@ async function openTelegramSmartlyWithAutoSave(data, formData) {
         
         // المحاولة الثانية: الويب بعد ثانية كـ fallback
         setTimeout(() => {
-            console.log('🌐 فتح Web Telegram للكمبيوتر كـ fallback مع الحفظ التلقائي');
+            console.log('🌐 فتح Web Telegram للكمبيوتر كـ fallback');
             const webWindow = window.open(enhancedWebUrl, '_blank');
             if (!webWindow) {
                 console.log('🌐 فشل popup، استخدام التوجيه المباشر');
@@ -488,64 +463,37 @@ async function openTelegramSmartlyWithAutoSave(data, formData) {
         }, 1500);
     }
     
+    // 🔥 حفظ حالة "تم فتح التليجرام" بعد ثانيتين
+    setTimeout(async () => {
+        console.log('💾 تحديث حالة فتح التليجرام...');
+        await saveUserTelegramData({
+            ...sessionData,
+            status: 'telegram_launch_completed',
+            launch_completed_at: new Date().toISOString()
+        });
+    }, 2000);
+    
     // نسخ الكود تلقائياً كخطة طوارئ
     setTimeout(() => {
-        if (enhancedCode) {
-            copyTelegramCodeToClipboard(enhancedCode);
+        if (telegramCode) {
+            copyTelegramCodeToClipboard(telegramCode);
         }
     }, 2000);
     
     // 🔔 إشعار محسّن للمستخدم
     const userMessage = isMobile ? 
-        '✅ تم فتح التليجرام - سيتم تشغيل /start وحفظ البيانات تلقائياً!' : 
-        '✅ تم فتح التليجرام - سيتم الحفظ التلقائي عند تفعيل /start';
+        'تم فتح التليجرام مع حفظ تلقائي - سيتم تشغيل /start تلقائياً!' : 
+        'تم فتح التليجرام مع حفظ تلقائي - إذا لم يعمل تلقائياً، اضغط START في البوت';
         
     showTelegramNotification(userMessage, 'success');
-    
-    // 🚀 بدء عملية الحفظ التلقائي في الخلفية
-    setTimeout(() => {
-        autoSaveDataInBackground(enhancedCode, formData);
-    }, 5000);
 }
 
-/**
- * 💾 حفظ البيانات تلقائياً في الخلفية
- */
-async function autoSaveDataInBackground(code, formData) {
-    console.log('💾 بدء الحفظ التلقائي في الخلفية...');
-    
-    try {
-        // إرسال طلب للخادم لتأكيد الحفظ
-        const saveResponse = await fetch('/confirm-telegram-save', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCSRFTokenFromMainSystem()
-            },
-            body: JSON.stringify({
-                code: code,
-                ...formData,
-                auto_save: true,
-                timestamp: new Date().toISOString()
-            })
-        });
-        
-        if (saveResponse.ok) {
-            const saveResult = await saveResponse.json();
-            console.log('✅ تم الحفظ التلقائي بنجاح:', saveResult);
-        } else {
-            console.log('⚠️ فشل الحفظ التلقائي، سيتم المحاولة عند التحقق من الربط');
-        }
-    } catch (error) {
-        console.log('⚠️ خطأ في الحفظ التلقائي:', error);
-    }
-}
 
 /**
- * 📋 عرض الكود القابل للنسخ - محسّن للطوارئ فقط
+ * 📋 عرض الكود القابل للنسخ
  */
 function displayCopyableCode(telegramBtn, data) {
-    console.log('📋 عرض الكود القابل للنسخ (احتياطي)...');
+    console.log('📋 عرض الكود القابل للنسخ...');
     
     // إزالة عرض سابق
     const existingCodeDisplay = document.querySelector('.telegram-code-display');
@@ -553,9 +501,7 @@ function displayCopyableCode(telegramBtn, data) {
         existingCodeDisplay.remove();
     }
     
-    const telegramCode = data.code || data.telegram_code;
-    
-    if (!telegramCode || telegramCode === 'undefined') {
+    if (!data.telegram_code) {
         console.warn('⚠️ لا يوجد كود للعرض');
         return;
     }
@@ -567,36 +513,28 @@ function displayCopyableCode(telegramBtn, data) {
                     padding: 15px; margin: 15px 0; border-radius: 12px; text-align: center; 
                     border: 2px solid #0088cc; backdrop-filter: blur(10px);">
             <div style="color: #0088cc; font-weight: 700; margin-bottom: 10px;">
-                <i class="fas fa-info-circle"></i> معلومة: الكود سيعمل تلقائياً
+                <i class="fas fa-copy"></i> الكود للنسخ اليدوي:
             </div>
+            <code style="background: white; padding: 8px 12px; border-radius: 6px; 
+                         font-weight: bold; color: #0088cc; font-size: 1.1em; 
+                         word-break: break-all; display: inline-block; margin-bottom: 10px;">
+                /start ${data.telegram_code}
+            </code>
             <div style="font-size: 0.9em; color: rgba(255, 255, 255, 0.8); margin-bottom: 10px;">
-                <small>📱 لا حاجة للنسخ - سيتم التفعيل والحفظ تلقائياً</small>
+                <small>📱 الكود سيعمل تلقائياً عند فتح التليجرام</small>
             </div>
-            <details style="margin-top: 10px;">
-                <summary style="cursor: pointer; color: #0088cc;">
-                    للطوارئ فقط (اضغط هنا)
-                </summary>
-                <div style="margin-top: 10px;">
-                    <code style="background: white; padding: 8px 12px; border-radius: 6px; 
-                                 font-weight: bold; color: #0088cc; font-size: 1.1em; 
-                                 word-break: break-all; display: inline-block; margin: 10px 0;">
-                        /start ${telegramCode}
-                    </code>
-                    <br>
-                    <button onclick="window.copyTelegramCodeManual('/start ${telegramCode}')" 
-                            style="background: #0088cc; color: white; border: none; padding: 8px 16px; 
-                                   border-radius: 6px; margin-top: 5px; cursor: pointer; font-weight: 600;">
-                        📋 نسخ الكود (للطوارئ فقط)
-                    </button>
-                </div>
-            </details>
+            <button onclick="window.copyTelegramCodeManual('/start ${data.telegram_code}')" 
+                    style="background: #0088cc; color: white; border: none; padding: 8px 16px; 
+                           border-radius: 6px; margin-top: 5px; cursor: pointer; font-weight: 600;">
+                📋 نسخ الكود (للطوارئ)
+            </button>
         </div>
     `;
     
     // إدراج عنصر الكود بعد الزر مباشرة
     telegramBtn.parentNode.insertBefore(codeDisplay, telegramBtn.nextSibling);
     
-    // إزالة تلقائية بعد 20 ثانية
+    // إزالة تلقائية بعد 15 ثانية (زمن أطول للمحسّن)
     setTimeout(() => {
         if (codeDisplay && codeDisplay.parentNode) {
             codeDisplay.style.opacity = '0';
@@ -606,7 +544,7 @@ function displayCopyableCode(telegramBtn, data) {
                 }
             }, 500);
         }
-    }, 20000);
+    }, 15000);
 }
 
 /**
@@ -615,12 +553,12 @@ function displayCopyableCode(telegramBtn, data) {
 function copyTelegramCodeToClipboard(code) {
     const fullCode = `/start ${code}`;
     
-    console.log('📋 محاولة نسخ الكود احتياطياً:', fullCode.substring(0, 20) + '...');
+    console.log('📋 محاولة نسخ الكود:', fullCode.substring(0, 20) + '...');
     
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(fullCode).then(() => {
-            console.log('✅ تم نسخ الكود للحافظة احتياطياً');
-            // لا نظهر إشعار لأن الحفظ تلقائي
+            console.log('✅ تم نسخ الكود للحافظة بنجاح');
+            showTelegramNotification('✅ تم نسخ الكود للحافظة احتياطياً', 'success');
         }).catch(err => {
             console.warn('❌ فشل في نسخ الكود بالطريقة الحديثة:', err);
             fallbackCopyToClipboard(fullCode);
@@ -648,6 +586,7 @@ function fallbackCopyToClipboard(text) {
         const successful = document.execCommand('copy');
         if (successful) {
             console.log('✅ تم نسخ الكود بالطريقة البديلة');
+            showTelegramNotification('✅ تم نسخ الكود بالطريقة البديلة', 'info');
         } else {
             console.warn('❌ فشل النسخ بالطريقة البديلة');
         }
@@ -659,9 +598,9 @@ function fallbackCopyToClipboard(text) {
 }
 
 /**
- * 👁️ بدء مراقبة ربط التليجرام مع الحفظ التلقائي المحسّن
+ * 👁️ بدء مراقبة ربط التليجرام مع الحفظ التلقائي - ENHANCED VERSION
  */
-function startTelegramLinkingMonitorWithAutoSave(telegramCode, formData) {
+function startTelegramLinkingMonitor(telegramCode) {
     // إيقاف أي مراقبة سابقة
     if (telegramMonitoringInterval) {
         clearInterval(telegramMonitoringInterval);
@@ -669,29 +608,61 @@ function startTelegramLinkingMonitorWithAutoSave(telegramCode, formData) {
     
     console.log('🔍 بدء مراقبة ربط التليجرام مع الحفظ التلقائي للكود:', telegramCode.substring(0, 10) + '...');
     
-    let attemptCount = 0;
+    // 🔥 جمع البيانات للحفظ التلقائي
+    const sessionData = {
+        telegram_code: telegramCode,
+        platform: document.getElementById('platform')?.value || '',
+        whatsapp_number: document.getElementById('whatsapp')?.value || '',
+        payment_method: document.getElementById('payment_method')?.value || '',
+        payment_details: getActivePaymentDetails(),
+        timestamp: Date.now()
+    };
+    
+    console.log('💾 بيانات الجلسة المحفوظة محلياً:', {
+        code: sessionData.telegram_code.substring(0, 10) + '...',
+        platform: sessionData.platform,
+        whatsapp: sessionData.whatsapp_number ? sessionData.whatsapp_number.substring(0, 5) + '***' : 'EMPTY',
+        payment: sessionData.payment_method
+    });
     
     telegramMonitoringInterval = setInterval(async () => {
-        attemptCount++;
-        
         try {
-            console.log(`🔍 فحص حالة الربط (المحاولة ${attemptCount})...`);
-            const checkResponse = await fetch(`/check-telegram-status/${telegramCode}`);
+            console.log('🔍 فحص حالة الربط مع إرسال بيانات للحفظ...');
+            
+            // 🔥 طلب محسّن يتضمن بيانات الحفظ
+            const checkResponse = await fetch(`/check-telegram-status/${telegramCode}`, {
+                method: 'POST',  // ✅ تغيير من GET إلى POST لإرسال البيانات
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFTokenFromMainSystem()
+                },
+                body: JSON.stringify({
+                    action: 'check_and_save',  // 🔥 إشارة للخادم للحفظ التلقائي
+                    session_data: sessionData  // 🔥 إرسال بيانات الجلسة للحفظ
+                })
+            });
+            
             const checkResult = await checkResponse.json();
             
-            console.log('📊 نتيجة فحص الربط:', checkResult);
+            console.log('📊 نتيجة فحص الربط مع الحفظ:', checkResult);
             
             if (checkResult.success && checkResult.linked) {
-                // نجح الربط!
+                // 🎉 نجح الربط والحفظ!
                 clearInterval(telegramMonitoringInterval);
                 telegramMonitoringInterval = null;
                 
-                console.log('✅ تم ربط التليجرام بنجاح!');
+                console.log('✅ تم ربط وحفظ التليجرام بنجاح!');
                 
-                // 💾 التأكد من الحفظ النهائي
-                await finalizeDataSaving(telegramCode, formData);
+                // 🔥 حفظ إضافي للتأكد - محاولة أخيرة للحفظ
+                if (checkResult.telegram_username) {
+                    await saveUserTelegramData({
+                        ...sessionData,
+                        telegram_username: checkResult.telegram_username,
+                        linked_at: new Date().toISOString()
+                    });
+                }
                 
-                showTelegramNotification('🎉 تم ربط التليجرام وحفظ البيانات بنجاح! جاري التوجيه...', 'success');
+                showTelegramNotification('🎉 تم ربط وحفظ التليجرام بنجاح! جاري التوجيه...', 'success');
                 
                 // إزالة عرض الكود
                 const codeDisplay = document.querySelector('.telegram-code-display');
@@ -699,70 +670,98 @@ function startTelegramLinkingMonitorWithAutoSave(telegramCode, formData) {
                     codeDisplay.remove();
                 }
                 
-                // الانتقال التلقائي بعد ثانية
+                // الانتقال التلقائي بعد ثانية ونصف
                 setTimeout(() => {
-                    console.log('🚀 الانتقال إلى صفحة الكوينز...');
+                    console.log('🚀 الانتقال إلى صفحة الكوينز مع بيانات محفوظة...');
                     window.location.href = '/coins-order';
                 }, 1500);
-                
-            } else if (!checkResult.linked && attemptCount === 5) {
-                // محاولة الحفظ بعد 5 محاولات حتى لو لم يكتمل الربط
-                console.log('⏳ محاولة الحفظ الاحتياطي...');
-                await autoSaveDataInBackground(telegramCode, formData);
+            } else if (checkResult.telegram_username && !checkResult.linked) {
+                // 🔄 يوزر بدأ يستخدم البوت لكن لم يكمل - حفظ جزئي
+                console.log('🔄 حفظ جزئي - اليوزر بدأ لكن لم يكمل الربط');
+                await saveUserTelegramData({
+                    ...sessionData,
+                    telegram_username: checkResult.telegram_username,
+                    status: 'partial'
+                });
             }
-            
         } catch (error) {
-            console.error('❌ خطأ في فحص الربط:', error);
+            console.error('❌ خطأ في فحص الربط مع الحفظ:', error);
         }
     }, 3000);
     
-    // إيقاف المراقبة بعد دقيقة ونصف
+    // إيقاف المراقبة بعد دقيقة ونصف (زمن أطول)
     setTimeout(() => {
         if (telegramMonitoringInterval) {
             clearInterval(telegramMonitoringInterval);
             telegramMonitoringInterval = null;
-            console.log('⏰ انتهى وقت مراقبة ربط التليجرام');
+            console.log('⏰ انتهى وقت مراقبة ربط التليجرام - محاولة حفظ أخيرة');
             
-            // محاولة أخيرة للحفظ
-            autoSaveDataInBackground(telegramCode, formData);
+            // 🔥 محاولة حفظ أخيرة حتى لو لم يكتمل الربط
+            saveUserTelegramData({
+                ...sessionData,
+                status: 'timeout',
+                ended_at: new Date().toISOString()
+            });
             
-            showTelegramNotification('⏰ انتهى وقت الانتظار - تم حفظ البيانات احتياطياً', 'warning');
+            showTelegramNotification('⏰ انتهى وقت الانتظار - تم حفظ البيانات جزئياً', 'warning');
         }
     }, 90000);
 }
 
 /**
- * 💾 التأكد النهائي من حفظ البيانات
+ * 💾 حفظ بيانات المستخدم والتليجرام تلقائياً - NEW FUNCTION
  */
-async function finalizeDataSaving(code, formData) {
-    console.log('💾 التأكد النهائي من حفظ البيانات...');
+async function saveUserTelegramData(userData) {
+    console.log('💾 بدء حفظ بيانات المستخدم تلقائياً...', {
+        hasCode: !!userData.telegram_code,
+        hasUsername: !!userData.telegram_username,
+        platform: userData.platform,
+        status: userData.status || 'active'
+    });
     
     try {
-        const finalSaveResponse = await fetch('/finalize-telegram-link', {
+        const saveResponse = await fetch('/save-telegram-user-data', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCSRFTokenFromMainSystem()
             },
             body: JSON.stringify({
-                code: code,
-                ...formData,
-                linked: true,
-                finalized: true,
-                timestamp: new Date().toISOString()
+                action: 'auto_save_user_data',
+                user_data: userData,
+                auto_save: true  // 🔥 إشارة للحفظ التلقائي
             })
         });
         
-        if (finalSaveResponse.ok) {
-            const result = await finalSaveResponse.json();
-            console.log('✅ تم التأكد النهائي من حفظ البيانات:', result);
+        const saveResult = await saveResponse.json();
+        
+        if (saveResult.success) {
+            console.log('✅ تم حفظ بيانات المستخدم تلقائياً بنجاح');
             
-            // حذف البيانات المؤقتة
-            sessionStorage.removeItem('telegram_linking_code');
-            sessionStorage.removeItem('telegram_linking_data');
+            // 🔥 حفظ محلي إضافي للاحتفاظ بالبيانات
+            localStorage.setItem('telegram_user_data', JSON.stringify({
+                ...userData,
+                saved_at: new Date().toISOString(),
+                saved_successfully: true
+            }));
+            
+            return true;
+        } else {
+            console.warn('⚠️ فشل في حفظ البيانات:', saveResult.message);
+            return false;
         }
+        
     } catch (error) {
-        console.error('⚠️ خطأ في التأكد النهائي:', error);
+        console.error('❌ خطأ في حفظ البيانات تلقائياً:', error);
+        
+        // 🔥 حفظ محلي كخطة طوارئ
+        localStorage.setItem('telegram_user_data_backup', JSON.stringify({
+            ...userData,
+            error: error.message,
+            backup_saved_at: new Date().toISOString()
+        }));
+        
+        return false;
     }
 }
 
@@ -796,7 +795,7 @@ function updateTelegramButtonToSuccess(telegramBtn) {
             <i class="fas fa-check-circle telegram-icon" style="color: #00d084;"></i>
             <div class="telegram-text">
                 <span class="telegram-title">✅ تم فتح التليجرام</span>
-                <span class="telegram-subtitle">سيتم الحفظ التلقائي</span>
+                <span class="telegram-subtitle">سيتم التفعيل تلقائياً</span>
             </div>
         </div>
     `;
@@ -906,7 +905,7 @@ function getCSRFTokenFromMainSystem() {
  * 🌐 دالة عامة للنسخ اليدوي (للاستخدام مع HTML) - محسّنة
  */
 window.copyTelegramCodeManual = function(text) {
-    console.log('📋 نسخ يدوي للكود (للطوارئ):', text.substring(0, 20) + '...');
+    console.log('📋 نسخ يدوي للكود:', text.substring(0, 20) + '...');
     
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).then(() => {
@@ -920,10 +919,10 @@ window.copyTelegramCodeManual = function(text) {
 };
 
 /**
- * 🔧 دالة التهيئة للوحدة (يتم استدعاؤها من الملف الرئيسي) - ULTIMATE
+ * 🔧 دالة التهيئة للوحدة (يتم استدعاؤها من الملف الرئيسي) - FINAL
  */
 export function initializeTelegramModule() {
-    console.log('🤖 تم تهيئة وحدة التليجرام المستقلة - ULTIMATE AUTO-SAVE VERSION');
+    console.log('🤖 تم تهيئة وحدة التليجرام المستقلة - FINAL FIXED VERSION');
     
     // إعداد زر التليجرام
     const telegramBtn = document.getElementById('telegram-link-btn');
@@ -975,28 +974,12 @@ export function initializeTelegramModule() {
     // إعادة تعيين حالة المعالجة
     isProcessingTelegram = false;
     
-    // استرجاع البيانات المحفوظة إن وجدت
-    const savedCode = sessionStorage.getItem('telegram_linking_code');
-    const savedData = sessionStorage.getItem('telegram_linking_data');
-    
-    if (savedCode && savedData) {
-        console.log('💾 تم العثور على بيانات محفوظة، محاولة استكمال الربط...');
-        try {
-            const formData = JSON.parse(savedData);
-            startTelegramLinkingMonitorWithAutoSave(savedCode, formData);
-        } catch (error) {
-            console.error('❌ خطأ في استرجاع البيانات المحفوظة:', error);
-        }
-    }
-    
-    console.log('🔧 تم إعداد وحدة التليجرام بالكامل - جميع المشاكل محلولة مع الحفظ التلقائي');
+    console.log('🔧 تم إعداد وحدة التليجرام بالكامل - جميع المشاكل محلولة');
 }
 
-// 📝 تسجيل تحميل الوحدة - ULTIMATE VERSION
-console.log('📦 Telegram Integration Module v3.0.0 - ULTIMATE AUTO-SAVE - تم التحميل بنجاح');
+// 📝 تسجيل تحميل الوحدة - FINAL VERSION
+console.log('📦 Telegram Integration Module v2.2.0 - FINAL FIXED - تم التحميل بنجاح');
 console.log('🔒 الوحدة معزولة تماماً ولا تحتاج تعديلات مستقبلية');
 console.log('✅ تم إصلاح مشكلة القفل العالق');
-console.log('✅ تم إصلاح مشكلة undefined في الكود');
-console.log('✅ تم إضافة الحفظ التلقائي للبيانات');
-console.log('✅ تم دمج التفعيل التلقائي مع الحفظ التلقائي');
-console.log('🚀 جاهز للاستخدام بدون مشاكل نهائياً - كل شيء تلقائي!');
+console.log('✅ تم تحسين deep linking للتفعيل التلقائي');
+console.log('🎯 جاهز للاستخدام بدون مشاكل!');

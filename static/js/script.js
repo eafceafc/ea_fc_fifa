@@ -250,17 +250,26 @@ function clearPhoneInfo() {
     });
 }
 
-// تهيئة جميع مستمعي الأحداث
+// تهيئة جميع مستمعي الأحداث - النسخة النهائية الصحيحة
 function initializeEventListeners() {
-    // عناصر النموذج الأساسية
-    const platformCards = document.querySelectorAll('.platform-card');
+    console.log('🎯 بدء تهيئة جميع مستمعي الأحداث...');
+
+    // 🔥 الخطوة 1: تهيئة وحدة المنصة المستقلة
+    if (typeof window.FC26PlatformModule !== 'undefined') {
+        window.FC26PlatformModule.init((data) => {
+            console.log('🎮 [Callback] تم اختيار المنصة:', data.platform);
+            validationStates.platform = data.isValid;
+            checkFormValidity();
+        });
+    } else {
+        console.error('❌ CRITICAL: وحدة المنصة غير موجودة. تأكد من تحميل ملف platform-module.js أولاً في HTML.');
+    }
+
+    // 🔥 الخطوة 2: تهيئة باقي عناصر النموذج
     const paymentButtons = document.querySelectorAll('.payment-btn');
     const whatsappInput = document.getElementById('whatsapp');
     const form = document.getElementById('profileForm');
 
-    // معالجة اختيار المنصة
-    setupPlatformSelection(platformCards);
-    
     // معالجة اختيار طريقة الدفع
     setupPaymentSelection(paymentButtons);
     
@@ -279,34 +288,10 @@ function initializeEventListeners() {
     
     // منع إرسال النموذج بالضغط على Enter
     setupEnterKeyHandling();
+
+    console.log('✅ اكتملت تهيئة جميع مستمعي الأحداث بنجاح.');
 }
 
-// إعداد اختيار المنصة
-function setupPlatformSelection(platformCards) {
-    platformCards.forEach(card => {
-        card.addEventListener('click', function() {
-            // إزالة التحديد من الكل
-            platformCards.forEach(c => c.classList.remove('selected'));
-            
-            // تحديد البطاقة المضغوطة
-            this.classList.add('selected');
-            const platformInput = document.getElementById('platform');
-            if (platformInput) {
-                platformInput.value = this.dataset.platform;
-            }
-            
-            // تحديث حالة التحقق
-            validationStates.platform = true;
-            
-            // إضافة تأثير اهتزاز خفيف (للهواتف)
-            if (navigator.vibrate) {
-                navigator.vibrate(50);
-            }
-            
-            checkFormValidity();
-        });
-    });
-}
 
 // إعداد اختيار طريقة الدفع
 function setupPaymentSelection(paymentButtons) {
@@ -768,12 +753,12 @@ function updateValidationUI(input, isValid, message) {
 // التحقق الشامل من صحة النموذج
 function checkFormValidity() {
     // التحقق من جميع المتطلبات
-    const platform = document.getElementById('platform')?.value;
+    const platform = window.FC26PlatformModule ? window.FC26PlatformModule.getSelectedPlatform() : document.getElementById('platform')?.value;
     const whatsapp = document.getElementById('whatsapp')?.value;
     const paymentMethod = document.getElementById('payment_method')?.value;
     
     // تحديث حالات التحقق
-    validationStates.platform = !!platform;
+    validationStates.platform = window.FC26PlatformModule ? window.FC26PlatformModule.isValid() : !!platform;
     
     // التحقق من صحة الواتساب من المعلومات المعروضة
     const phoneInfo = document.querySelector('.phone-info.success-info');
@@ -1314,7 +1299,7 @@ async function generateTelegramCode() {
     const telegramCodeResult = document.getElementById('telegramCodeResult');
     
     // التحقق من البيانات الأساسية
-    const platform = document.getElementById('platform')?.value;
+    const platform = window.FC26PlatformModule ? window.FC26PlatformModule.getSelectedPlatform() : document.getElementById('platform')?.value;
     const whatsappNumber = document.getElementById('whatsapp')?.value;
     
     if (!platform || !whatsappNumber) {

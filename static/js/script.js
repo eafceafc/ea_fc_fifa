@@ -2149,3 +2149,30 @@ isValidInstaPayLink = function(link) {
 };
 
 console.log('🚀 InstaPay Smart Link Extraction System - Initialized');
+
+// إصلاح عاجل لزر التليجرام - ضمان التشغيل
+window.addEventListener('DOMContentLoaded', function() {
+    // التأكد من وجود دالة generateTelegramCode في النطاق العام
+    window.generateTelegramCode = generateTelegramCode;
+    window.openTelegramAppDirect = openTelegramAppDirect;
+    window.closeSuccessOverlay = closeSuccessOverlay;
+    
+    // التأكد من ربط زر التليجرام الرئيسي
+    const telegramBtn = document.getElementById('telegramBtn');
+    if (telegramBtn) {
+        telegramBtn.onclick = function() {
+            generateTelegramCode();
+        };
+        console.log('✅ Telegram button fixed and linked');
+    }
+    
+    // التأكد من ربط زر النجاح
+    const successBtn = document.querySelector('.success-btn');
+    if (successBtn) {
+        successBtn.onclick = function() {
+            closeSuccessOverlay();
+        };
+    }
+    
+    console.log('🔧 Emergency Telegram fix applied');
+});

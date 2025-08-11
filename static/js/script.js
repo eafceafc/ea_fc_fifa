@@ -1068,11 +1068,6 @@ window.FC26ProfileSetup = {
 // رسالة تأكيد التهيئة
 console.log('FC 26 Profile Setup - تم تهيئة JavaScript المدمج بنجاح');
 
-// متغيرات للتليجرام محدثة
-let currentTelegramCode = null;
-let telegramStatusChecker = null;
-let correctBotUsername = null;
-
 // تحميل username البوت الصحيح
 async function loadBotUsername() {
     try {

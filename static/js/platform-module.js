@@ -249,6 +249,14 @@ const platformModule = new PlatformModule();
 // تصدير للاستخدام الخارجي
 window.FC26PlatformModule = platformModule;
 
+// تهيئة تلقائية عند تحميل DOM
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        platformModule.init();
+    });
+} else {
+    platformModule.init();
+}
 
 // تصدير ES6 للوحدات
 export default platformModule;

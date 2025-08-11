@@ -142,6 +142,29 @@ body {
     box-shadow: 0 8px 20px rgba(255, 144, 0, 0.4);
 }
 
+/* تأثيرات وحدة المنصة الجديدة */
+.platform-card.pulse-effect {
+    animation: platformPulse 0.3s ease-out;
+}
+
+@keyframes platformPulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 12px 25px rgba(255, 144, 0, 0.6);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.platform-card.touch-active {
+    transform: scale(0.98);
+    opacity: 0.9;
+}
+
 .platform-icon {
     font-size: 2.5rem;
     margin-bottom: 10px;

@@ -93,6 +93,28 @@ function setupMobileKeyboardHandling() {
     });
 }
 
+// تكامل مع وحدة الواتساب
+function initializeWhatsAppIntegration() {
+    // التحقق من وجود الوحدة
+    if (typeof window.FC26WhatsAppValidator !== 'undefined') {
+        // تهيئة مع callback
+        window.FC26WhatsAppValidator.init((data) => {
+            // تحديث حالة التحقق عند تغيير الواتساب
+            validationStates.whatsapp = data.isValid;
+            checkFormValidity();
+            
+            console.log('📱 WhatsApp validation changed:', data.phone, data.isValid);
+        });
+        
+        // مستمع للأحداث المخصصة
+        document.addEventListener('whatsappValidationChanged', (event) => {
+            validationStates.whatsapp = event.detail.isValid;
+            checkFormValidity();
+        });
+    } else {
+        console.warn('⚠️ WhatsApp Validator Module not loaded');
+    }
+}
 
 // تهيئة جميع مستمعي الأحداث - النسخة النهائية الصحيحة
 function initializeEventListeners() {
@@ -111,15 +133,14 @@ function initializeEventListeners() {
 
     // 🔥 الخطوة 2: تهيئة باقي عناصر النموذج
     const paymentButtons = document.querySelectorAll('.payment-btn');
-    const whatsappInput = document.getElementById('whatsapp');
     const form = document.getElementById('profileForm');
 
     // معالجة اختيار طريقة الدفع
     setupPaymentSelection(paymentButtons);
     
-    // معالجة رقم الواتساب
-    setupWhatsAppInput(whatsappInput);
-    
+    // تهيئة تكامل الواتساب
+    initializeWhatsAppIntegration();
+        
     // معالجة الحقول الديناميكية
     setupDynamicInputs();
     
@@ -506,15 +527,19 @@ function updateValidationUI(input, isValid, message) {
 function checkFormValidity() {
     // التحقق من جميع المتطلبات
     const platform = window.FC26PlatformModule ? window.FC26PlatformModule.getSelectedPlatform() : document.getElementById('platform')?.value;
-    const whatsapp = document.getElementById('whatsapp')?.value;
+    const whatsappStatus = window.FC26WhatsAppValidator ? 
+    window.FC26WhatsAppValidator.getValidationStatus() : null;
+    const whatsapp = whatsappStatus ? whatsappStatus.phone : 
+    document.getElementById('whatsapp')?.value;
     const paymentMethod = document.getElementById('payment_method')?.value;
     
     // تحديث حالات التحقق
     validationStates.platform = window.FC26PlatformModule ? window.FC26PlatformModule.isValid() : !!platform;
     
     // التحقق من صحة الواتساب من المعلومات المعروضة
-    const phoneInfo = document.querySelector('.phone-info.success-info');
-    validationStates.whatsapp = !!(whatsapp && phoneInfo);
+    validationStates.whatsapp = window.FC26WhatsAppValidator ? 
+    window.FC26WhatsAppValidator.getValidationStatus().isValid : !!(whatsapp && 
+    document.querySelector('.phone-info.success-info'));
     
     // التحقق من طرق الدفع
     validatePaymentMethod();

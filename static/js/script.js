@@ -116,7 +116,7 @@ function initializeWhatsAppIntegration() {
     }
 }
 
-// تهيئة جميع مستمعي الأحداث - النسخة النهائية الصحيحة
+// ✅✅✅ هذه هي الدالة الكاملة والصحيحة - انسخها كما هي ✅✅✅
 function initializeEventListeners() {
     console.log('🎯 بدء تهيئة جميع مستمعي الأحداث...');
 
@@ -154,8 +154,18 @@ function initializeEventListeners() {
     // منع إرسال النموذج بالضغط على Enter
     setupEnterKeyHandling();
 
+    // 🔥 الخطوة 3: ربط زر التليجرام بالطريقة الصحيحة
+    const telegramBtn = document.getElementById('telegramBtn');
+    if (telegramBtn) {
+        telegramBtn.addEventListener('click', generateTelegramCode);
+        console.log('✅ Telegram button linked successfully via JS.');
+    } else {
+        console.error('❌ Telegram button #telegramBtn not found.');
+    }
+
     console.log('✅ اكتملت تهيئة جميع مستمعي الأحداث بنجاح.');
 }
+
 
 
 // إعداد اختيار طريقة الدفع

@@ -1160,7 +1160,7 @@ async function generateTelegramCode() {
                     </div>
                     <div class="generated-code">${result.code}</div>
                     <div class="telegram-actions">
-                        <button type="button" class="telegram-open-btn-big" onclick="openTelegramAppDirect()">
+                        <button type="button" class="telegram-open-btn-big" id="secondaryTelegramBtn">
                             <i class="fab fa-telegram"></i>
                             🚀 فتح التليجرام والربط الآن
                         </button>
@@ -1172,7 +1172,14 @@ async function generateTelegramCode() {
                     </div>
                 </div>
             `;
-            
+
+            // ربط الزر الجديد الذي تم إنشاؤه للتو
+            const secondaryBtn = document.getElementById('secondaryTelegramBtn');
+            if (secondaryBtn) {
+            secondaryBtn.addEventListener('click', openTelegramAppDirect);
+            }
+
+
             telegramCodeResult.style.display = 'block';
             setTimeout(() => {
                 telegramCodeResult.classList.add('show');

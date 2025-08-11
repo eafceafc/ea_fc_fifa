@@ -3,9 +3,15 @@
 // استيراد وحدة التحقق من الواتساب
 import { initializeWhatsAppValidator } from './whatsapp-validator.js';
 
+// ✅✅✅ هذا هو التعديل الصحيح والنهائي ✅✅✅
 // متغيرات عامة
 let isSubmitting = false;
 let lastSubmitTime = 0;
+
+// متغيرات للتليجرام
+let currentTelegramCode = null;
+let telegramStatusChecker = null;
+let correctBotUsername = null;
 
 // حالات التحقق
 let validationStates = {

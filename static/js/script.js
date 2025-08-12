@@ -799,7 +799,6 @@ async function generateTelegramCode() {
         if (result.success) {
             // حفظ الكود
             currentTelegramCode = result.code;
-            document.getElementById('generatedCode').textContent = result.code;
             
             // تحديث زر التليجرام ليصبح زر فتح مباشر
             telegramBtn.innerHTML = `

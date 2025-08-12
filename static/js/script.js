@@ -141,8 +141,8 @@ function initializeEventListeners() {
     initializeWhatsAppIntegration();
 
     // --- 3. تهيئة وحدة طرق الدفع (الجديدة) ---
-    if (typeof window.FC26PaymentModule !== 'undefined') {
-        window.FC26PaymentModule.init((data) => {
+    if (typeof paymentModule !== 'undefined') {
+        paymentModule.init((data) => {
             validationStates.paymentMethod = data.isValid;
             checkFormValidity();
             console.log('💳 Payment validation changed:', data.isValid);

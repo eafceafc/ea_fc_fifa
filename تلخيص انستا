@@ -1,0 +1,221 @@
+// ═══════════════════════════════════════════════════════════════
+// 🔗 نظام استخلاص روابط InstaPay الذكي - إضافة جديدة
+// ═══════════════════════════════════════════════════════════════
+
+// التحقق والاستخلاص الفوري لروابط InstaPay
+function validateInstapayInput(input) {
+    const text = input.value.trim();
+    const container = input.closest('.form-group');
+    
+    // إزالة المعاينة السابقة
+    const existingPreview = container.querySelector('.instapay-preview');
+    if (existingPreview) {
+        existingPreview.remove();
+    }
+    
+    if (!text) {
+        updateValidationUI(input, true, '');
+        return true;
+    }
+    
+    // محاولة استخلاص الرابط
+    const extractedLink = extractInstapayLink(text);
+    
+    if (extractedLink) {
+        // إنشاء معاينة الرابط
+        createInstapayPreview(container, extractedLink, text);
+        updateValidationUI(input, true, '✓ تم استخلاص رابط InstaPay');
+        return true;
+    } else {
+        updateValidationUI(input, false, 'لم يتم العثور على رابط InstaPay صحيح');
+        return false;
+    }
+}
+
+// استخلاص رابط InstaPay من النص (JavaScript)
+function extractInstapayLink(text) {
+    const patterns = [
+        /https?:\/\/(?:www\.)?ipn\.eg\/S\/[^\/\s]+\/instapay\/[A-Za-z0-9]+/gi,
+        /https?:\/\/(?:www\.)?instapay\.com\.eg\/[^\s<>"{}|\\^`\[\]]+/gi,
+        /https?:\/\/(?:www\.)?app\.instapay\.com\.eg\/[^\s<>"{}|\\^`\[\]]+/gi,
+        /https?:\/\/(?:www\.)?instapay\.app\/[^\s<>"{}|\\^`\[\]]+/gi,
+        /https?:\/\/(?:www\.)?ipn\.eg\/[^\s<>"{}|\\^`\[\]]+/gi,
+    ];
+    
+    for (const pattern of patterns) {
+        const matches = text.match(pattern);
+        if (matches && matches.length > 0) {
+            // تنظيف الرابط من العلامات في النهاية
+            let link = matches[0].replace(/[.,;!?]+$/, '');
+            if (isValidInstapayUrl(link)) {
+                return link;
+            }
+        }
+    }
+    
+    return null;
+}
+
+// التحقق من صحة رابط InstaPay (JavaScript)
+function isValidInstapayUrl(url) {
+    if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
+        return false;
+    }
+    
+    const validDomains = ['ipn.eg', 'instapay.com.eg', 'app.instapay.com.eg', 'instapay.app'];
+    const lowerUrl = url.toLowerCase();
+    
+    return validDomains.some(domain => lowerUrl.includes(domain)) && url.length >= 20;
+}
+
+// إنشاء معاينة الرابط المستخلص
+function createInstapayPreview(container, extractedLink, originalText) {
+    const previewDiv = document.createElement('div');
+    previewDiv.className = 'instapay-preview';
+    
+    previewDiv.innerHTML = `
+        <div class="preview-header">
+            <i class="fas fa-link"></i>
+            <span>تم استخلاص رابط InstaPay</span>
+        </div>
+        <div class="extracted-link">
+            <div class="link-label">الرابط المستخلص:</div>
+            <div class="link-url">${extractedLink}</div>
+        </div>
+        <div class="preview-actions">
+            <button type="button" class="test-link-btn" onclick="testInstapayLink('${extractedLink}')">
+                <i class="fas fa-external-link-alt"></i>
+                اختبار الرابط
+            </button>
+            <button type="button" class="copy-link-btn" onclick="copyInstapayLink('${extractedLink}')">
+                <i class="fas fa-copy"></i>
+                نسخ الرابط
+            </button>
+        </div>
+    `;
+    
+    container.appendChild(previewDiv);
+    
+    // انيميشن الظهور
+    setTimeout(() => {
+        previewDiv.classList.add('show');
+    }, 100);
+}
+
+// اختبار رابط InstaPay
+function testInstapayLink(url) {
+    window.open(url, '_blank');
+    showNotification('تم فتح الرابط في تبويب جديد', 'info');
+}
+
+// نسخ رابط InstaPay
+async function copyInstapayLink(url) {
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(url);
+        } else {
+            // طريقة احتياطية
+            const textArea = document.createElement('textarea');
+            textArea.value = url;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+        }
+        
+        showNotification('تم نسخ الرابط بنجاح!', 'success');
+        
+        if (navigator.vibrate) {
+            navigator.vibrate([50, 50, 50]);
+        }
+        
+    } catch (error) {
+        showNotification('فشل في نسخ الرابط', 'error');
+    }
+}
+
+// تحديث نظام الاستماع لحقل InstaPay
+function initializeInstapayListener() {
+    const instapayInput = document.getElementById('payment-link');
+    if (instapayInput) {
+        // إزالة المستمعين القدامى
+        instapayInput.removeEventListener('input', validateInstapayInput);
+        instapayInput.removeEventListener('paste', validateInstapayInput);
+        
+        // إضافة المستمعين الجدد
+        instapayInput.addEventListener('input', function() {
+            validateInstapayInput(this);
+        });
+        
+        instapayInput.addEventListener('paste', function() {
+            // تأخير قصير للسماح بلصق النص
+            setTimeout(() => {
+                validateInstapayInput(this);
+            }, 100);
+        });
+        
+        console.log('🔗 InstaPay input listener initialized');
+    }
+}
+
+// تحديث دالة setupDynamicInputs لتشمل InstaPay
+const originalSetupDynamicInputs = setupDynamicInputs;
+setupDynamicInputs = function() {
+    // استدعاء الدالة الأصلية
+    originalSetupDynamicInputs();
+    
+    // إضافة مستمع InstaPay
+    initializeInstapayListener();
+};
+
+// إضافة تحديث validatePaymentInput لدعم استخلاص InstaPay
+const originalValidatePaymentInput = validatePaymentInput;
+validatePaymentInput = function(input) {
+    const value = input.value.trim();
+    const inputId = input.id;
+    let isValid = false;
+    let errorMessage = '';
+    
+    if (!value) {
+        updateValidationUI(input, true, '');
+        return true;
+    }
+    
+    // التحقق من المحافظ الإلكترونية (11 رقم)
+    if (['vodafone_cash', 'etisalat_cash', 'orange_cash', 'we_pay', 
+         'fawry', 'aman', 'masary', 'bee', 'mobile-number'].includes(inputId)) {
+        isValid = /^01[0125][0-9]{8}$/.test(value) && value.length === 11;
+        errorMessage = isValid ? '' : 'رقم المحفظة يجب أن يكون 11 رقم ويبدأ بـ 010، 011، 012، أو 015';
+    }
+    // التحقق من كارت تيلدا (16 رقم)
+    else if (['telda_card', 'card-number'].includes(inputId)) {
+        const numbersOnly = value.replace(/\s/g, '');
+        isValid = /^\d{16}$/.test(numbersOnly);
+        errorMessage = isValid ? '' : 'رقم كارت تيلدا يجب أن يكون 16 رقم';
+    }
+    // التحقق من رابط إنستا باي - النسخة المحدثة
+    else if (['instapay_link', 'payment-link'].includes(inputId)) {
+        const extractedLink = extractInstapayLink(value);
+        isValid = !!extractedLink;
+        errorMessage = isValid ? '' : 'لم يتم العثور على رابط InstaPay صحيح';
+        
+        // تحديث قيمة الحقل للرابط المستخلص
+        if (isValid && extractedLink !== value) {
+            input.value = extractedLink;
+        }
+    }
+    
+    updateValidationUI(input, isValid, errorMessage);
+    return isValid;
+};
+
+// تحديث دالة isValidInstaPayLink لاستخدام النظام الجديد
+isValidInstaPayLink = function(link) {
+    return !!extractInstapayLink(link);
+};
+
+console.log('🚀 InstaPay Smart Link Extraction System - Initialized');

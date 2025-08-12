@@ -2,6 +2,7 @@
 // دمج متقدم لكودين مع جميع الميزات والتحسينات
 // استيراد وحدة التحقق من الواتساب
 import { initializeWhatsAppValidator } from './whatsapp-validator.js';
+import { initializePaymentModule } from './payment-module.js';  // ← أضف هذا السطر
 
 // ✅✅✅ هذا هو التعديل الصحيح والنهائي ✅✅✅
 // متغيرات عامة
@@ -721,8 +722,9 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// ✅✅✅ هذا هو الشكل الصحيح ✅✅✅
+// تصدير الوظائف للاستخدام الخارجي أو الاختبار
 window.FC26ProfileSetup = {
+    validateWhatsAppReal,
     showNotification,
     clearValidationStates,
     checkFormValidity,

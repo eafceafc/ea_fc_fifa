@@ -594,8 +594,6 @@ if (document.readyState === 'loading') {
     paymentModule.init();
 }
 
-// 1. إنشاء instance من الكلاس
-const paymentModule = new PaymentModule();
-
-// 2. جعل الـ instance "عامة" ليراها script.js
-window.FC26PaymentModule = paymentModule;
+// تصدير ES6 للوحدات
+export default paymentModule;
+export { PaymentModule, paymentModule as initializePaymentModule };

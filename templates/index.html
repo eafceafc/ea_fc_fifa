@@ -254,11 +254,18 @@
         </div>
     </div>
 
-<!-- وحدة المنصة المستقلة -->
+<!-- ✅✅✅ هذا هو الترتيب النهائي والصحيح ✅✅✅ -->
+
+<!-- 1. وحدة المنصة -->
 <script type="module" src="{{ url_for('static', filename='js/platform-module.js') }}"></script>
-<!-- وحدة التحقق من الواتساب المستقلة -->
+
+<!-- 2. وحدة الواتساب -->
 <script type="module" src="{{ url_for('static', filename='js/whatsapp-validator.js') }}"></script>
-<!-- السكربت الرئيسي -->
+
+<!-- 3. وحدة الدفع (الجديدة) -->
+<script type="module" src="{{ url_for('static', filename='js/payment-module.js') }}"></script>
+
+<!-- 4. السكربت الرئيسي (يجب أن يكون الأخير دائماً) -->
 <script type="module" src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

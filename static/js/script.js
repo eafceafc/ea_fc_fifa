@@ -1,5 +1,3 @@
-// FC 26 Profile Setup - كود JavaScript مدمج كامل
-// دمج متقدم لكودين مع جميع الميزات والتحسينات
 // استيراد وحدة التحقق من الواتساب
 import { initializeWhatsAppValidator } from './whatsapp-validator.js';
 
@@ -19,6 +17,197 @@ let validationStates = {
     paymentMethod: false,
     platform: false
 };
+
+// FC 26 Platform Module - JS DOM Class النسخة المحولة
+class PlatformModule {
+    constructor() {
+        this.selectedPlatform = null;
+        this.platformCards = [];
+        this.onPlatformChange = null;
+        this.initialized = false;
+    }
+
+    /**
+     * تهيئة وحدة المنصة
+     */
+    init(onChangeCallback = null) {
+        if (this.initialized) {
+            console.warn('🎮 Platform Module already initialized');
+            return;
+        }
+
+        this.onPlatformChange = onChangeCallback;
+        this.setupPlatformCards();
+        this.initialized = true;
+        
+        console.log('🎮 Platform Module initialized as DOM Class');
+    }
+
+    /**
+     * إعداد بطاقات المنصة مع مستمعي الأحداث
+     */
+    setupPlatformCards() {
+        this.platformCards = document.querySelectorAll('.platform-card');
+        
+        if (this.platformCards.length === 0) {
+            console.warn('⚠️ No platform cards found');
+            return;
+        }
+
+        this.platformCards.forEach(card => {
+            card.addEventListener('click', (event) => {
+                this.handlePlatformSelection(event, card);
+            });
+
+            // تحسينات للهواتف
+            if ('ontouchstart' in window) {
+                card.addEventListener('touchstart', () => {
+                    card.classList.add('touch-active');
+                }, {passive: true});
+                
+                card.addEventListener('touchend', () => {
+                    setTimeout(() => {
+                        card.classList.remove('touch-active');
+                    }, 150);
+                }, {passive: true});
+            }
+        });
+
+        console.log(`🎮 ${this.platformCards.length} platform cards initialized with DOM Class`);
+    }
+
+    /**
+     * معالجة اختيار المنصة
+     */
+    handlePlatformSelection(event, selectedCard) {
+        event.preventDefault();
+        
+        // إزالة التحديد من جميع البطاقات
+        this.clearAllSelections();
+        
+        // تحديد البطاقة المختارة
+        selectedCard.classList.add('selected');
+        
+        // حفظ المنصة المختارة
+        const platform = selectedCard.dataset.platform;
+        this.selectedPlatform = platform;
+        
+        // تحديث الحقل المخفي
+        this.updatePlatformInput(platform);
+        
+        // تأثيرات بصرية
+        this.addSelectionEffects(selectedCard);
+        
+        // إشعار النظام الرئيسي
+        this.notifyPlatformChange(platform, selectedCard);
+        
+        console.log(`🎮 Platform selected via DOM Class: ${platform}`);
+    }
+
+    /**
+     * إزالة التحديد من جميع البطاقات
+     */
+    clearAllSelections() {
+        this.platformCards.forEach(card => {
+            card.classList.remove('selected', 'touch-active');
+        });
+    }
+
+    /**
+     * تحديث الحقل المخفي للمنصة
+     */
+    updatePlatformInput(platform) {
+        const platformInput = document.getElementById('platform');
+        if (platformInput) {
+            platformInput.value = platform;
+        } else {
+            console.warn('⚠️ Platform input field not found');
+        }
+    }
+
+    /**
+     * إضافة تأثيرات بصرية للاختيار
+     */
+    addSelectionEffects(card) {
+        // اهتزاز للهواتف
+        if (navigator.vibrate) {
+            navigator.vibrate(50);
+        }
+
+        // تأثير نبضة
+        card.classList.add('pulse-effect');
+        setTimeout(() => {
+            card.classList.remove('pulse-effect');
+        }, 300);
+    }
+
+    /**
+     * إشعار النظام الرئيسي بتغيير المنصة
+     */
+    notifyPlatformChange(platform, card) {
+        if (typeof this.onPlatformChange === 'function') {
+            this.onPlatformChange({
+                platform: platform,
+                card: card,
+                isValid: true,
+                selectedPlatform: this.selectedPlatform
+            });
+        }
+
+        // إرسال حدث مخصص للنظام
+        const event = new CustomEvent('platformChanged', {
+            detail: {
+                platform: platform,
+                card: card,
+                module: this
+            }
+        });
+        document.dispatchEvent(event);
+    }
+
+    /**
+     * الحصول على المنصة المختارة حالياً
+     */
+    getSelectedPlatform() {
+        return this.selectedPlatform;
+    }
+
+    /**
+     * التحقق من صحة اختيار المنصة
+     */
+    isValid() {
+        return this.selectedPlatform !== null && this.selectedPlatform !== '';
+    }
+
+    /**
+     * إعادة تعيين المنصة المختارة
+     */
+    reset() {
+        this.clearAllSelections();
+        this.selectedPlatform = null;
+        this.updatePlatformInput('');
+        console.log('🎮 Platform selection reset');
+    }
+}
+
+// إنشاء instance عام من الكلاس الجديد
+const platformModule = new PlatformModule();
+
+// جسر التوافقية - يحافظ على الواجهة القديمة
+function setupPlatformSelection(platformCards) {
+    // تهيئة الكلاس الجديد
+    platformModule.init((data) => {
+        console.log('🎮 [Callback Bridge] تم اختيار المنصة:', data.platform);
+        validationStates.platform = data.isValid;
+        checkFormValidity();
+    });
+    
+    // الحفاظ على السلوك القديم
+    return platformModule;
+}
+
+// تصدير للنافذة العامة للتوافق
+window.FC26PlatformModule = platformModule;
 
 // تهيئة التطبيق
 document.addEventListener('DOMContentLoaded', function() {
@@ -122,20 +311,12 @@ function initializeWhatsAppIntegration() {
     }
 }
 
-// ✅✅✅ هذه هي الدالة الكاملة والصحيحة - انسخها كما هي ✅✅✅
 function initializeEventListeners() {
     console.log('🎯 بدء تهيئة جميع مستمعي الأحداث...');
 
-    // 🔥 الخطوة 1: تهيئة وحدة المنصة المستقلة
-    if (typeof window.FC26PlatformModule !== 'undefined') {
-        window.FC26PlatformModule.init((data) => {
-            console.log('🎮 [Callback] تم اختيار المنصة:', data.platform);
-            validationStates.platform = data.isValid;
-            checkFormValidity();
-        });
-    } else {
-        console.error('❌ CRITICAL: وحدة المنصة غير موجودة. تأكد من تحميل ملف platform-module.js أولاً في HTML.');
-    }
+    // 🔥 الخطوة 1: تهيئة وحدة المنصة الجديدة (DOM Class)
+    setupPlatformSelection();
+    console.log('✅ Platform Module initialized as DOM Class successfully');
 
     // 🔥 الخطوة 2: تهيئة باقي عناصر النموذج
     const paymentButtons = document.querySelectorAll('.payment-btn');
@@ -164,12 +345,12 @@ function initializeEventListeners() {
     const telegramBtn = document.getElementById('telegramBtn');
     if (telegramBtn) {
         telegramBtn.addEventListener('click', generateTelegramCode);
-        console.log('✅ Telegram button linked successfully via JS.');
+        console.log('✅ Telegram button linked successfully via DOM Class.');
     } else {
         console.error('❌ Telegram button #telegramBtn not found.');
     }
 
-    console.log('✅ اكتملت تهيئة جميع مستمعي الأحداث بنجاح.');
+    console.log('✅ اكتملت تهيئة جميع مستمعي الأحداث بنجاح مع DOM Classes.');
 }
 
 

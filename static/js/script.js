@@ -2716,3 +2716,410 @@ window.addEventListener('DOMContentLoaded', function () {
 
     console.log('🔧 Emergency Telegram fix applied');
 });
+
+
+// ============================================================================
+// 🔥 إصلاح نظام التحقق من طرق الدفع والواتساب
+// ============================================================================
+
+// الجزء 1: تفعيل PaymentValidator
+document.addEventListener('DOMContentLoaded', function() {
+    // تفعيل PaymentValidator
+    if (!window.paymentValidator) {
+        window.paymentValidator = new PaymentValidator();
+        console.log('✅ PaymentValidator activated');
+    }
+    
+    // إعادة ربط مستمعي طرق الدفع
+    reinitializePaymentListeners();
+});
+
+// الجزء 2: إصلاح مستمعي طرق الدفع
+function reinitializePaymentListeners() {
+    // قائمة جميع حقول الدفع
+    const paymentFields = {
+        'vodafone_cash': 'mobile',
+        'etisalat_cash': 'mobile', 
+        'orange_cash': 'mobile',
+        'we_pay': 'mobile',
+        'mobile-number': 'mobile',
+        'telda_card': 'card',
+        'card-number': 'card',
+        'instapay_link': 'link',
+        'payment-link': 'link'
+    };
+    
+    Object.keys(paymentFields).forEach(fieldId => {
+        const input = document.getElementById(fieldId);
+        if (input) {
+            // إزالة المستمعين القدامى
+            const newInput = input.cloneNode(true);
+            input.parentNode.replaceChild(newInput, input);
+            
+            // إضافة مستمعين جدد
+            newInput.addEventListener('input', function(e) {
+                handlePaymentInputValidation(e.target, paymentFields[fieldId]);
+            });
+            
+            newInput.addEventListener('blur', function(e) {
+                handlePaymentInputValidation(e.target, paymentFields[fieldId], true);
+            });
+        }
+    });
+}
+
+// الجزء 3: معالج التحقق من طرق الدفع المحسن
+function handlePaymentInputValidation(input, type, showError = false) {
+    const value = input.value.trim();
+    let isValid = false;
+    let errorMsg = '';
+    
+    if (!value) {
+        clearPaymentValidation(input);
+        updatePaymentState(input.id, false);
+        return;
+    }
+    
+    switch(type) {
+        case 'mobile':
+            const cleanMobile = value.replace(/[^\d]/g, '');
+            isValid = /^01[0125]\d{8}$/.test(cleanMobile);
+            errorMsg = 'رقم المحفظة يجب أن يكون 11 رقم (010/011/012/015)';
+            break;
+            
+        case 'card':
+            const cleanCard = value.replace(/[^\d]/g, '');
+            isValid = cleanCard.length === 16;
+            errorMsg = 'رقم البطاقة يجب أن يكون 16 رقم';
+            break;
+            
+        case 'link':
+            const extractedLink = extractInstapayLink(value);
+            isValid = !!extractedLink;
+            errorMsg = 'رابط InstaPay غير صحيح';
+            break;
+    }
+    
+    // تحديث واجهة المستخدم
+    if (isValid) {
+        showPaymentSuccess(input);
+    } else if (showError) {
+        showPaymentError(input, errorMsg);
+    }
+    
+    // تحديث حالة النظام
+    updatePaymentState(input.id, isValid);
+}
+
+// الجزء 4: تحديث حالة طرق الدفع
+function updatePaymentState(inputId, isValid) {
+    if (window.paymentValidator) {
+        window.paymentValidator.paymentStates[inputId] = isValid;
+        window.paymentValidator.updateGlobalPaymentState();
+    }
+    
+    // تحديث validationStates مباشرة
+    const hasAnyValidPayment = checkAnyValidPayment();
+    validationStates.paymentMethod = hasAnyValidPayment;
+    
+    // تحديث زر الحفظ
+    checkFormValidity();
+}
+
+// الجزء 5: فحص وجود أي طريقة دفع صحيحة
+function checkAnyValidPayment() {
+    const paymentInputs = document.querySelectorAll(
+        '#vodafone_cash, #etisalat_cash, #orange_cash, #we_pay, ' +
+        '#mobile-number, #telda_card, #card-number, #instapay_link, #payment-link'
+    );
+    
+    for (let input of paymentInputs) {
+        if (input.value.trim()) {
+            const type = input.id.includes('card') ? 'card' : 
+                        input.id.includes('link') ? 'link' : 'mobile';
+            
+            let isValid = false;
+            const value = input.value.trim();
+            
+            switch(type) {
+                case 'mobile':
+                    isValid = /^01[0125]\d{8}$/.test(value.replace(/[^\d]/g, ''));
+                    break;
+                case 'card':
+                    isValid = value.replace(/[^\d]/g, '').length === 16;
+                    break;
+                case 'link':
+                    isValid = !!extractInstapayLink(value);
+                    break;
+            }
+            
+            if (isValid) return true;
+        }
+    }
+    
+    return false;
+}
+
+// الجزء 6: واجهات النجاح والخطأ
+function showPaymentSuccess(input) {
+    const container = input.closest('.form-group') || input.closest('.dynamic-input');
+    if (!container) return;
+    
+    // إزالة الحالات السابقة
+    container.classList.remove('invalid');
+    container.classList.add('valid');
+    input.classList.remove('invalid');
+    input.classList.add('valid');
+    
+    // إزالة رسائل سابقة
+    const oldMsg = container.querySelector('.payment-validation-msg');
+    if (oldMsg) oldMsg.remove();
+    
+    // إضافة رسالة نجاح
+    const successMsg = document.createElement('div');
+    successMsg.className = 'payment-validation-msg success-msg';
+    successMsg.innerHTML = '<i class="fas fa-check-circle"></i> البيانات صحيحة';
+    successMsg.style.cssText = `
+        color: #10B981;
+        font-size: 0.9rem;
+        margin-top: 5px;
+        font-weight: 600;
+    `;
+    container.appendChild(successMsg);
+}
+
+function showPaymentError(input, message) {
+    const container = input.closest('.form-group') || input.closest('.dynamic-input');
+    if (!container) return;
+    
+    // إزالة الحالات السابقة
+    container.classList.remove('valid');
+    container.classList.add('invalid');
+    input.classList.remove('valid');
+    input.classList.add('invalid');
+    
+    // إزالة رسائل سابقة
+    const oldMsg = container.querySelector('.payment-validation-msg');
+    if (oldMsg) oldMsg.remove();
+    
+    // إضافة رسالة خطأ
+    const errorMsg = document.createElement('div');
+    errorMsg.className = 'payment-validation-msg error-msg';
+    errorMsg.innerHTML = `<i class="fas fa-times-circle"></i> ${message}`;
+    errorMsg.style.cssText = `
+        color: #EF4444;
+        font-size: 0.9rem;
+        margin-top: 5px;
+        font-weight: 600;
+    `;
+    container.appendChild(errorMsg);
+}
+
+function clearPaymentValidation(input) {
+    const container = input.closest('.form-group') || input.closest('.dynamic-input');
+    if (!container) return;
+    
+    container.classList.remove('valid', 'invalid');
+    input.classList.remove('valid', 'invalid');
+    
+    const msg = container.querySelector('.payment-validation-msg');
+    if (msg) msg.remove();
+}
+
+// ============================================================================
+// 🔥 إصلاح نظام التحقق من الواتساب
+// ============================================================================
+
+// إصلاح التحقق الفعلي من الواتساب
+async function performWhatsAppValidation(phoneNumber) {
+    if (!phoneNumber || phoneNumber.length < 10) {
+        return { is_valid: false, error: 'رقم قصير جداً' };
+    }
+    
+    try {
+        const response = await fetch('/validate-whatsapp', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ 
+                phone: phoneNumber,
+                phone_number: phoneNumber 
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Server error');
+        }
+        
+        const result = await response.json();
+        return result;
+        
+    } catch (error) {
+        console.error('WhatsApp validation error:', error);
+        
+        // Fallback للتحقق المحلي
+        const cleanNumber = phoneNumber.replace(/[^\d]/g, '');
+        const isValid = /^01[0125]\d{8}$/.test(cleanNumber);
+        
+        return {
+            is_valid: isValid,
+            error: isValid ? null : 'رقم غير صحيح',
+            fallback: true
+        };
+    }
+}
+
+// تحديث معالج الواتساب
+function enhanceWhatsAppValidation() {
+    const whatsappInput = document.getElementById('whatsapp');
+    if (!whatsappInput) return;
+    
+    let validationTimer = null;
+    
+    whatsappInput.addEventListener('input', function(e) {
+        const value = e.target.value.trim();
+        
+        // إلغاء التحقق السابق
+        if (validationTimer) {
+            clearTimeout(validationTimer);
+        }
+        
+        // تحقق محلي سريع
+        const cleanNumber = value.replace(/[^\d+]/g, '');
+        const quickValid = cleanNumber.length >= 10;
+        
+        if (!quickValid) {
+            validationStates.whatsapp = false;
+            checkFormValidity();
+            return;
+        }
+        
+        // إضافة مؤشر تحميل
+        e.target.classList.add('validating');
+        
+        // تحقق من الخادم بعد توقف الكتابة
+        validationTimer = setTimeout(async () => {
+            const result = await performWhatsAppValidation(value);
+            
+            e.target.classList.remove('validating');
+            
+            if (result.is_valid) {
+                e.target.classList.add('valid');
+                e.target.classList.remove('invalid');
+                validationStates.whatsapp = true;
+                
+                // عرض رسالة نجاح
+                showWhatsAppSuccess(e.target, result);
+            } else {
+                e.target.classList.add('invalid');
+                e.target.classList.remove('valid');
+                validationStates.whatsapp = false;
+                
+                // عرض رسالة خطأ
+                showWhatsAppError(e.target, result.error);
+            }
+            
+            checkFormValidity();
+            
+        }, 800); // انتظار 800ms
+    });
+}
+
+// عرض نجاح الواتساب
+function showWhatsAppSuccess(input, result) {
+    const container = input.closest('.form-group');
+    if (!container) return;
+    
+    // إزالة رسائل سابقة
+    const oldMsg = container.querySelector('.whatsapp-validation-msg');
+    if (oldMsg) oldMsg.remove();
+    
+    const successMsg = document.createElement('div');
+    successMsg.className = 'whatsapp-validation-msg success';
+    successMsg.innerHTML = `
+        <i class="fas fa-check-circle"></i> 
+        رقم صحيح ${result.carrier ? `- ${result.carrier}` : ''}
+    `;
+    successMsg.style.cssText = `
+        color: #10B981;
+        font-size: 0.9rem;
+        margin-top: 5px;
+        font-weight: 600;
+        animation: fadeIn 0.3s ease;
+    `;
+    container.appendChild(successMsg);
+}
+
+// عرض خطأ الواتساب
+function showWhatsAppError(input, error) {
+    const container = input.closest('.form-group');
+    if (!container) return;
+    
+    // إزالة رسائل سابقة
+    const oldMsg = container.querySelector('.whatsapp-validation-msg');
+    if (oldMsg) oldMsg.remove();
+    
+    const errorMsg = document.createElement('div');
+    errorMsg.className = 'whatsapp-validation-msg error';
+    errorMsg.innerHTML = `<i class="fas fa-times-circle"></i> ${error}`;
+    errorMsg.style.cssText = `
+        color: #EF4444;
+        font-size: 0.9rem;
+        margin-top: 5px;
+        font-weight: 600;
+        animation: fadeIn 0.3s ease;
+    `;
+    container.appendChild(errorMsg);
+}
+
+// ============================================================================
+// 🚀 التفعيل النهائي
+// ============================================================================
+
+// تفعيل كل شيء عند تحميل الصفحة
+window.addEventListener('load', function() {
+    console.log('🚀 Activating validation fixes...');
+    
+    // تفعيل إصلاحات طرق الدفع
+    reinitializePaymentListeners();
+    
+    // تفعيل إصلاحات الواتساب
+    enhanceWhatsAppValidation();
+    
+    // فحص أولي
+    checkFormValidity();
+    
+    console.log('✅ All validation fixes activated!');
+});
+
+// إضافة CSS للتأثيرات البصرية
+const validationStyles = document.createElement('style');
+validationStyles.textContent = `
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .validating {
+        border-color: #F59E0B !important;
+        animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+    
+    .form-input.valid {
+        border-color: #10B981 !important;
+        background: rgba(16, 185, 129, 0.05) !important;
+    }
+    
+    .form-input.invalid {
+        border-color: #EF4444 !important;
+        background: rgba(239, 68, 68, 0.05) !important;
+    }
+`;
+document.head.appendChild(validationStyles);

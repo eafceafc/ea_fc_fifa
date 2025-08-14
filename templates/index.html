@@ -254,11 +254,9 @@
         </div>
     </div>
 
-<!-- وحدة المنصة المستقلة -->
-<script type="module" src="{{ url_for('static', filename='js/platform-module.js') }}"></script>
 <!-- وحدة التحقق من الواتساب المستقلة -->
-<script type="module" src="{{ url_for('static', filename='js/whatsapp-validator.js') }}"></script>
-<!-- السكربت الرئيسي -->
-<script type="module" src="{{ url_for('static', filename='js/script.js') }}"></script>
+<script src="{{ url_for('static', filename='js/whatsapp-validator.js') }}"></script>
+<!-- السكربت الرئيسي المحدث مع DOM Classes -->
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

@@ -1,22 +1,319 @@
-// استيراد وحدة التحقق من الواتساب
-import { initializeWhatsAppValidator } from './whatsapp-validator.js';
-
-// ✅✅✅ هذا هو التعديل الصحيح والنهائي ✅✅✅
-// متغيرات عامة
+// ============================================================================
+// 🚀 النظام الأساسي - المتغيرات العامة
+// ============================================================================
 let isSubmitting = false;
 let lastSubmitTime = 0;
-
-// متغيرات للتليجرام
 let currentTelegramCode = null;
 let telegramStatusChecker = null;
 let correctBotUsername = null;
 
-// حالات التحقق
 let validationStates = {
     whatsapp: false,
     paymentMethod: false,
     platform: false
 };
+
+// ============================================================================
+// WhatsAppManager DOM Class - تحويل من ES6 Module
+// ============================================================================
+
+class WhatsAppManager {
+    constructor() {
+        this.validPrefixes = ['010', '011', '012', '015'];
+        this.whatsappLength = 11;
+        this.initialized = false;
+        
+        // تخزين العناصر للأداء
+        this.whatsappInput = null;
+        this.whatsappError = null;
+        this.submitButton = null;
+        
+        // 🔥 إضافة تهيئة فورية
+        this.init();
+    }
+
+    // تهيئة النظام
+    init() {
+        if (this.initialized) return;
+        
+        this.whatsappInput = document.getElementById('whatsapp');
+        this.whatsappError = document.getElementById('whatsapp-error');
+        this.submitButton = document.querySelector('.submit-btn');
+        
+        if (this.whatsappInput) {
+            this.setupEventListeners();
+            this.initialized = true;
+            console.log('✅ WhatsAppManager initialized successfully');
+        }
+    }
+
+    // إعداد مستمعي الأحداث
+    setupEventListeners() {
+        // التحقق أثناء الكتابة
+        this.whatsappInput.addEventListener('input', (e) => {
+            this.handleWhatsAppInput(e);
+        });
+
+        // التحقق عند فقدان التركيز
+        this.whatsappInput.addEventListener('blur', (e) => {
+            this.validateWhatsAppNumber(e.target.value);
+        });
+
+        // منع إدخال الحروف
+        this.whatsappInput.addEventListener('keypress', (e) => {
+            this.restrictToNumbers(e);
+        });
+
+        // التحقق عند الإرسال
+        if (this.submitButton) {
+            this.submitButton.addEventListener('click', (e) => {
+                if (!this.validateWhatsAppNumber(this.whatsappInput.value)) {
+                    e.preventDefault();
+                }
+            });
+        }
+    }
+
+    // معالجة إدخال الواتساب
+    handleWhatsAppInput(event) {
+        let value = event.target.value;
+        
+        // تنظيف القيمة
+        value = this.cleanWhatsAppNumber(value);
+        event.target.value = value;
+        
+        // التحقق المباشر
+        if (value.length >= 3) {
+            this.validateWhatsAppNumber(value, false);
+        } else {
+            this.hideWhatsAppError();
+        }
+    }
+
+    // تنظيف رقم الواتساب
+    cleanWhatsAppNumber(number) {
+        if (!number) return '';
+        
+        // إزالة كل شيء عدا الأرقام
+        return number.replace(/[^\d]/g, '');
+    }
+
+    // تقييد الإدخال للأرقام فقط
+    restrictToNumbers(event) {
+        const charCode = event.which ? event.which : event.keyCode;
+        
+        // السماح بالمفاتيح الخاصة (Backspace, Delete, Arrow keys, etc.)
+        if (charCode <= 31 || (charCode >= 48 && charCode <= 57)) {
+            return true;
+        }
+        
+        event.preventDefault();
+        return false;
+    }
+
+    // التحقق من صحة رقم الواتساب
+    validateWhatsAppNumber(number, showError = true) {
+        if (!number) {
+            if (showError) this.showWhatsAppError('يرجى إدخال رقم الواتساب');
+            return false;
+        }
+
+        // تنظيف الرقم
+        const cleanNumber = this.cleanWhatsAppNumber(number);
+        
+        // التحقق من الطول
+        if (cleanNumber.length !== this.whatsappLength) {
+            if (showError) {
+                this.showWhatsAppError(
+                    `رقم الواتساب يجب أن يكون ${this.whatsappLength} أرقام بالضبط`
+                );
+            }
+            return false;
+        }
+
+        // التحقق من البادئة
+        const prefix = cleanNumber.substring(0, 3);
+        if (!this.validPrefixes.includes(prefix)) {
+            if (showError) {
+                this.showWhatsAppError(
+                    'رقم الواتساب يجب أن يبدأ بـ ' + this.validPrefixes.join(' أو ')
+                );
+            }
+            return false;
+        }
+
+        // إذا وصل هنا، الرقم صحيح
+        this.hideWhatsAppError();
+        return true;
+    }
+
+    // عرض رسالة خطأ الواتساب
+    showWhatsAppError(message) {
+        if (this.whatsappError) {
+            this.whatsappError.textContent = message;
+            this.whatsappError.style.display = 'block';
+        }
+        
+        if (this.whatsappInput) {
+            this.whatsappInput.classList.add('error');
+        }
+    }
+
+    // إخفاء رسالة خطأ الواتساب
+    hideWhatsAppError() {
+        if (this.whatsappError) {
+            this.whatsappError.style.display = 'none';
+        }
+        
+        if (this.whatsappInput) {
+            this.whatsappInput.classList.remove('error');
+        }
+    }
+
+    // تنسيق رقم الواتساب للعرض
+    formatWhatsAppNumber(number) {
+        const cleanNumber = this.cleanWhatsAppNumber(number);
+        if (cleanNumber.length === this.whatsappLength) {
+            return `+20${cleanNumber}`;
+        }
+        return cleanNumber;
+    }
+
+    // الحصول على رقم الواتساب المنظف
+    getCleanWhatsAppNumber() {
+        if (!this.whatsappInput) return '';
+        return this.cleanWhatsAppNumber(this.whatsappInput.value);
+    }
+
+    // الحصول على رقم الواتساب المنسق
+    getFormattedWhatsAppNumber() {
+        return this.formatWhatsAppNumber(this.getCleanWhatsAppNumber());
+    }
+
+    // التحقق من حالة الواتساب
+    isWhatsAppValid() {
+        return this.validateWhatsAppNumber(this.getCleanWhatsAppNumber(), false);
+    }
+
+    // إعادة تعيين حقل الواتساب
+    resetWhatsApp() {
+        if (this.whatsappInput) {
+            this.whatsappInput.value = '';
+            this.hideWhatsAppError();
+        }
+    }
+
+    // تحديث القيم المسموحة
+    updateValidPrefixes(prefixes) {
+        if (Array.isArray(prefixes)) {
+            this.validPrefixes = prefixes;
+        }
+    }
+
+    // تحديث طول الرقم المطلوب
+    updateWhatsAppLength(length) {
+        if (typeof length === 'number' && length > 0) {
+            this.whatsappLength = length;
+        }
+    }
+}
+
+// ============================================================================
+// WhatsApp Real Validation - الدالة المفقودة
+// ============================================================================
+
+// 🔥 إضافة هذه الدالة بعد السطر 270
+function validateWhatsAppReal(number, showMessages = true) {
+    // استخدام WhatsAppManager للتحقق
+    if (window.whatsappManager) {
+        return window.whatsappManager.validateWhatsAppNumber(number, showMessages);
+    }
+    
+    // تحقق احتياطي إذا لم يكن WhatsAppManager متاح
+    if (!number) return false;
+    
+    const cleanNumber = number.replace(/[^\d]/g, '');
+    const validPrefixes = ['010', '011', '012', '015'];
+    
+    if (cleanNumber.length !== 11) return false;
+    
+    const prefix = cleanNumber.substring(0, 3);
+    return validPrefixes.includes(prefix);
+}
+
+// ============================================================================
+// إنشاء المثيل العام
+// ============================================================================
+
+// إنشاء مثيل عام من WhatsAppManager
+window.whatsappManager = null;
+
+// ============================================================================
+// AFTER (السطر - الكود المحدث):
+// ============================================================================
+// تهيئة WhatsAppManager عند تحميل DOM - محسن
+document.addEventListener('DOMContentLoaded', function() {
+    if (!window.whatsappManager) {
+        window.whatsappManager = new WhatsAppManager();
+    }
+    
+    // التأكد من التهيئة
+    if (window.whatsappManager && !window.whatsappManager.initialized) {
+        window.whatsappManager.init();
+    }
+    
+    console.log('✅ WhatsApp Manager DOM ready');
+});
+
+// ============================================================================
+// جسر التوافقية - Backward Compatibility Bridge
+// ============================================================================
+
+// ✅✅✅ هذا هو التعديل الصحيح ✅✅✅
+function initializeWhatsAppValidator() {
+    console.log('🔄 initializeWhatsAppValidator called - using WhatsAppManager');
+    
+    if (!window.whatsappManager) {
+        window.whatsappManager = new WhatsAppManager();
+    }
+    
+    // استدعاء init من هنا لضمان أن الـ DOM جاهز
+    window.whatsappManager.init(); 
+    
+    return window.whatsappManager;
+}
+
+// دوال مساعدة للتوافق مع الكود القديم
+window.validateWhatsApp = function(number) {
+    if (window.whatsappManager) {
+        return window.whatsappManager.validateWhatsAppNumber(number);
+    }
+    return false;
+};
+
+window.cleanWhatsAppNumber = function(number) {
+    if (window.whatsappManager) {
+        return window.whatsappManager.cleanWhatsAppNumber(number);
+    }
+    return number;
+};
+
+window.formatWhatsAppNumber = function(number) {
+    if (window.whatsappManager) {
+        return window.whatsappManager.formatWhatsAppNumber(number);
+    }
+    return number;
+};
+
+// تصدير للاستخدام مع ES6 (إذا احتجت لاحقاً)
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { 
+        WhatsAppManager,
+        initializeWhatsAppValidator 
+    };
+}
+
+
 
 // FC 26 Platform Module - JS DOM Class النسخة المحولة
 class PlatformModule {
@@ -288,26 +585,30 @@ function setupMobileKeyboardHandling() {
     });
 }
 
-// تكامل مع وحدة الواتساب
+// ============================================================================
+// AFTER (السطر 570 - الكود المحدث):
+// ============================================================================
 function initializeWhatsAppIntegration() {
-    // التحقق من وجود الوحدة
-    if (typeof window.FC26WhatsAppValidator !== 'undefined') {
-        // تهيئة مع callback
-        window.FC26WhatsAppValidator.init((data) => {
-            // تحديث حالة التحقق عند تغيير الواتساب
-            validationStates.whatsapp = data.isValid;
-            checkFormValidity();
-            
-            console.log('📱 WhatsApp validation changed:', data.phone, data.isValid);
-        });
+    // التحقق من WhatsAppManager الجديد
+    if (window.whatsappManager) {
+        console.log('✅ WhatsApp Manager is available');
         
-        // مستمع للأحداث المخصصة
-        document.addEventListener('whatsappValidationChanged', (event) => {
-            validationStates.whatsapp = event.detail.isValid;
-            checkFormValidity();
-        });
+        // ربط مع نظام التحقق
+        const whatsappInput = document.getElementById('whatsapp');
+        if (whatsappInput) {
+            whatsappInput.addEventListener('input', function() {
+                validationStates.whatsapp = window.whatsappManager.isWhatsAppValid();
+                checkFormValidity();
+            });
+        }
+        
     } else {
-        console.warn('⚠️ WhatsApp Validator Module not loaded');
+        console.warn('⚠️ WhatsApp Manager not loaded - initializing...');
+        // تهيئة فورية
+        if (!window.whatsappManager) {
+            window.whatsappManager = new WhatsAppManager();
+            window.whatsappManager.init();
+        }
     }
 }
 
@@ -1201,6 +1502,23 @@ function debounce(func, wait) {
     };
 }
 
+// ============================================================================
+// Phone Info Management - دالة مفقودة
+// ============================================================================
+
+// 🔥 إضافة هذه الدالة بعد السطر 1400
+function clearPhoneInfo() {
+    const phoneInfo = document.querySelector('.phone-info');
+    if (phoneInfo) {
+        phoneInfo.remove();
+    }
+    
+    const whatsappContainer = document.querySelector('#whatsapp').closest('.form-group');
+    if (whatsappContainer) {
+        whatsappContainer.classList.remove('success-info');
+    }
+}
+
 // إعادة تعيين حالات التحقق
 function clearValidationStates() {
     validationStates = {
@@ -1236,14 +1554,18 @@ if ('serviceWorker' in navigator) {
     });
 }
 
+// ============================================================================
+// AFTER (السطر - الكود المحدث):
+// ============================================================================
 // تصدير الوظائف للاستخدام الخارجي أو الاختبار
 window.FC26ProfileSetup = {
-    validateWhatsAppReal,
-    validatePaymentMethod,
-    showNotification,
-    clearValidationStates,
-    checkFormValidity,
-    updateSubmitButton
+    validateWhatsAppReal: validateWhatsAppReal,  // ✅ إصلاح المرجع
+    validatePaymentMethod: validatePaymentMethod,
+    showNotification: showNotification,
+    clearValidationStates: clearValidationStates,
+    checkFormValidity: checkFormValidity,
+    updateSubmitButton: updateSubmitButton,
+    whatsappManager: () => window.whatsappManager  // إضافة مرجع للمدير
 };
 
 // رسالة تأكيد التهيئة
@@ -1314,7 +1636,6 @@ async function generateTelegramCode() {
         if (result.success) {
             // حفظ الكود
             currentTelegramCode = result.code;
-            document.getElementById('generatedCode').textContent = result.code;
             
             // تحديث زر التليجرام ليصبح زر فتح مباشر
             telegramBtn.innerHTML = `

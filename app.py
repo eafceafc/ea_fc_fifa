@@ -684,24 +684,36 @@ def update_profile():
         
         processed_payment_details = ""
         
-        # التحقق من طرق الدفع
+        # التحقق من طرق الدفع - مع التحديثات المطلوبة
         if payment_method in ['vodafone_cash', 'etisalat_cash', 'orange_cash', 'we_cash', 'bank_wallet']:
             if not validate_mobile_payment(payment_details):
                 return jsonify({'success': False, 'message': 'Invalid mobile payment number'}), 400
             processed_payment_details = re.sub(r'\D', '', payment_details)
             
         elif payment_method == 'tilda':
-            if not validate_card_number(payment_details):
+            # تنظيف الرقم من أي شرطات أو مسافات
+            clean_card = re.sub(r'[^\d]', '', payment_details)
+            if not validate_card_number(clean_card):
                 return jsonify({'success': False, 'message': 'Invalid card number'}), 400
-            processed_payment_details = re.sub(r'\D', '', payment_details)
+            processed_payment_details = clean_card
             
         elif payment_method == 'instapay':
+            # التعامل مع النص الكامل أو الرابط المباشر
             is_valid, extracted_link = validate_instapay_link(payment_details)
             if not is_valid:
-                return jsonify({
-                    'success': False, 
-                    'message': 'لم يتم العثور على رابط InstaPay صحيح في النص المدخل'
-                }), 400
+                # محاولة أخيرة للبحث عن رابط
+                if 'http' in payment_details.lower():
+                    # استخلاص أي رابط موجود
+                    url_pattern = r'https?://[^\s<>"{}|\\^`\[\]]+'
+                    matches = re.findall(url_pattern, payment_details, re.IGNORECASE)
+                    if matches:
+                        is_valid, extracted_link = validate_instapay_link(matches[0])
+                
+                if not is_valid:
+                    return jsonify({
+                        'success': False, 
+                        'message': 'لم يتم العثور على رابط InstaPay صحيح في النص المدخل'
+                    }), 400
             
             # استخلاص معلومات إضافية
             instapay_info = extract_instapay_info(extracted_link)

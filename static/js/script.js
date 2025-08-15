@@ -218,6 +218,259 @@ class WhatsAppManager {
     }
 }
 
+
+
+// ============================================================================
+// WhatsApp  🚀🚀   - نهاية كلاش واتساب
+// ============================================================================
+
+
+// ============================================================================
+// 🎨 WhatsApp Visual Enhancement System - نظام التحسين البصري للواتساب
+// ============================================================================
+
+class WhatsAppVisualEnhancer {
+    constructor(whatsappManager) {
+        this.manager = whatsappManager;
+        this.progressBar = null;
+        this.statusDisplay = null;
+        this.formattedDisplay = null;
+        this.initialized = false;
+    }
+
+    // تهيئة النظام البصري
+    init() {
+        if (this.initialized || !this.manager.whatsappInput) return;
+
+        // إنشاء العناصر البصرية
+        this.createProgressBar();
+        this.createStatusDisplay();
+        this.setupEnhancedListeners();
+
+        this.initialized = true;
+        console.log('✨ WhatsApp Visual Enhancer initialized');
+    }
+
+    // إنشاء شريط التقدم
+    createProgressBar() {
+        const container = this.manager.whatsappInput.parentNode;
+
+        // إنشاء حاوي شريط التقدم
+        this.progressBar = document.createElement('div');
+        this.progressBar.className = 'whatsapp-progress';
+        this.progressBar.innerHTML = '<div class="whatsapp-progress-fill"></div>';
+        this.progressBar.style.cssText = `
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        `;
+
+        container.appendChild(this.progressBar);
+    }
+
+    // إنشاء عرض الحالة
+    createStatusDisplay() {
+        const container = this.manager.whatsappInput.parentNode;
+
+        this.statusDisplay = document.createElement('div');
+        this.statusDisplay.className = 'whatsapp-status';
+        this.statusDisplay.style.cssText = `
+            font-size: 0.9rem;
+            margin-top: 5px;
+            font-weight: 600;
+            opacity: 0;
+            transform: translateY(-5px);
+            transition: all 0.3s ease;
+            min-height: 20px;
+        `;
+
+        container.appendChild(this.statusDisplay);
+    }
+
+    // إعداد المستمعين المحسنين
+    setupEnhancedListeners() {
+        const input = this.manager.whatsappInput;
+
+        // معالج الإدخال المحسن
+        input.addEventListener('input', (e) => {
+            this.handleEnhancedInput(e);
+        });
+
+        // معالج التركيز
+        input.addEventListener('focus', () => {
+            this.showProgressBar();
+        });
+
+        // معالج فقدان التركيز
+        input.addEventListener('blur', () => {
+            if (!input.value) {
+                this.hideProgressBar();
+            }
+        });
+    }
+
+    // معالجة الإدخال المحسن
+    handleEnhancedInput(event) {
+        const input = event.target;
+        let value = input.value;
+
+        // إزالة كل شيء عدا الأرقام
+        const numbersOnly = value.replace(/[^\d]/g, '');
+
+        // تطبيق التنسيق
+        const formatted = this.formatWhatsAppNumber(numbersOnly);
+
+        // تحديث القيمة المنسقة فقط إذا تغيرت
+        if (formatted !== value) {
+            input.value = formatted;
+        }
+
+        // تحديث شريط التقدم
+        this.updateProgress(numbersOnly.length);
+
+        // تحديث الحالة
+        this.updateStatus(numbersOnly);
+    }
+
+    // تنسيق رقم الواتساب
+    formatWhatsAppNumber(numbers) {
+        if (!numbers) return '';
+
+        // تنسيق: 010-1234-5678
+        let formatted = '';
+
+        if (numbers.length <= 3) {
+            formatted = numbers;
+        } else if (numbers.length <= 7) {
+            formatted = numbers.slice(0, 3) + '-' + numbers.slice(3);
+        } else {
+            formatted = numbers.slice(0, 3) + '-' +
+                numbers.slice(3, 7) + '-' +
+                numbers.slice(7, 11);
+        }
+
+        return formatted;
+    }
+
+    // تحديث شريط التقدم
+    updateProgress(length) {
+        if (!this.progressBar) return;
+
+        const progressFill = this.progressBar.querySelector('.whatsapp-progress-fill');
+        const percentage = Math.min((length / 11) * 100, 100);
+
+        progressFill.style.width = percentage + '%';
+
+        // تغيير اللون حسب التقدم
+        if (percentage < 27) { // أقل من 3 أرقام
+            progressFill.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+        } else if (percentage < 64) { // 3-7 أرقام
+            progressFill.style.background = 'linear-gradient(90deg, #f97316, #ea580c)';
+        } else if (percentage < 100) { // 8-10 أرقام
+            progressFill.style.background = 'linear-gradient(90deg, #eab308, #ca8a04)';
+        } else { // 11 رقم كامل
+            progressFill.style.background = 'linear-gradient(90deg, #10b981, #059669)';
+        }
+    }
+
+    // تحديث عرض الحالة
+    updateStatus(numbers) {
+        if (!this.statusDisplay) return;
+
+        const length = numbers.length;
+        let message = '';
+        let color = '';
+        let icon = '';
+
+        if (length === 0) {
+            this.hideStatus();
+            return;
+        } else if (length < 3) {
+            message = `جاري الكتابة... (${length}/11)`;
+            color = '#F59E0B';
+            icon = '⏳';
+        } else if (length < 11) {
+            const prefix = numbers.substring(0, 3);
+            const validPrefixes = ['010', '011', '012', '015'];
+
+            if (!validPrefixes.includes(prefix)) {
+                message = 'البادئة غير صحيحة - استخدم 010/011/012/015';
+                color = '#EF4444';
+                icon = '⚠️';
+            } else {
+                message = `جاري الكتابة... (${length}/11)`;
+                color = '#3B82F6';
+                icon = '📱';
+            }
+        } else if (length === 11) {
+            const prefix = numbers.substring(0, 3);
+            const validPrefixes = ['010', '011', '012', '015'];
+
+            if (validPrefixes.includes(prefix)) {
+                message = 'رقم واتساب صحيح';
+                color = '#10B981';
+                icon = '✅';
+
+                // اهتزاز نجاح
+                if (navigator.vibrate) {
+                    navigator.vibrate([50, 30, 50]);
+                }
+            } else {
+                message = 'رقم غير صحيح - تحقق من البادئة';
+                color = '#EF4444';
+                icon = '❌';
+            }
+        } else {
+            message = 'رقم طويل جداً';
+            color = '#EF4444';
+            icon = '❌';
+        }
+
+        this.showStatus(`${icon} ${message}`, color);
+    }
+
+    // إظهار الحالة
+    showStatus(message, color) {
+        if (!this.statusDisplay) return;
+
+        this.statusDisplay.textContent = message;
+        this.statusDisplay.style.color = color;
+        this.statusDisplay.style.opacity = '1';
+        this.statusDisplay.style.transform = 'translateY(0)';
+    }
+
+    // إخفاء الحالة
+    hideStatus() {
+        if (!this.statusDisplay) return;
+
+        this.statusDisplay.style.opacity = '0';
+        this.statusDisplay.style.transform = 'translateY(-5px)';
+    }
+
+    // إظهار شريط التقدم
+    showProgressBar() {
+        if (this.progressBar) {
+            this.progressBar.style.opacity = '1';
+        }
+    }
+
+    // إخفاء شريط التقدم
+    hideProgressBar() {
+        if (this.progressBar) {
+            this.progressBar.style.opacity = '0';
+        }
+    }
+}
+
+// إنشاء مثيل عام من المحسن البصري
+window.whatsappEnhancer = null;
+
+
 // ============================================================================
 // WhatsApp Real Validation - الدالة المفقودة
 // ============================================================================
@@ -262,7 +515,13 @@ document.addEventListener('DOMContentLoaded', function () {
         window.whatsappManager.init();
     }
 
-    console.log('✅ WhatsApp Manager DOM ready');
+    // 🎨 تهيئة المحسن البصري الجديد
+    if (!window.whatsappEnhancer) {
+        window.whatsappEnhancer = new WhatsAppVisualEnhancer(window.whatsappManager);
+        window.whatsappEnhancer.init();
+    }
+
+    console.log('✅ WhatsApp Manager & Visual Enhancer DOM ready');
 });
 
 // ============================================================================
@@ -491,197 +750,6 @@ class PlatformModule {
 // PaymentValidator Class - إصلاح مشاكل التحقق من طرق الدفع
 // ============================================================================
 
-class PaymentValidator {
-    constructor() {
-        this.validatedInputs = new Set();
-        this.paymentStates = {
-            vodafone_cash: false,
-            etisalat_cash: false,
-            orange_cash: false,
-            we_pay: false,
-            telda_card: false,
-            card_number: false,
-            instapay_link: false,
-            payment_link: false
-        };
-        this.init();
-    }
-
-    init() {
-        this.setupPaymentInputListeners();
-        console.log('✅ PaymentValidator initialized');
-    }
-
-    setupPaymentInputListeners() {
-        // قائمة جميع حقول الدفع
-        const paymentInputIds = [
-            'vodafone_cash', 'etisalat_cash', 'orange_cash', 'we_pay',
-            'mobile-number', 'telda_card', 'card-number',
-            'instapay_link', 'payment-link'
-        ];
-
-        paymentInputIds.forEach(inputId => {
-            const input = document.getElementById(inputId);
-            if (input) {
-                // إزالة المستمعين القدامى
-                input.removeEventListener('input', this.handlePaymentInput);
-                input.removeEventListener('blur', this.handlePaymentBlur);
-
-                // إضافة المستمعين الجدد
-                input.addEventListener('input', (e) => this.handlePaymentInput(e));
-                input.addEventListener('blur', (e) => this.handlePaymentBlur(e));
-
-                console.log(`🔗 Payment listener added for: ${inputId}`);
-            }
-        });
-    }
-
-    handlePaymentInput(event) {
-        const input = event.target;
-        const inputId = input.id;
-        const value = input.value.trim();
-
-        // التحقق الفوري
-        const isValid = this.validateSinglePaymentInput(inputId, value);
-        this.updatePaymentInputUI(input, isValid, value);
-
-        // تحديث حالة النظام
-        this.paymentStates[inputId] = isValid && value.length > 0;
-        this.updateGlobalPaymentState();
-    }
-
-    handlePaymentBlur(event) {
-        const input = event.target;
-        const inputId = input.id;
-        const value = input.value.trim();
-
-        // التحقق النهائي
-        const isValid = this.validateSinglePaymentInput(inputId, value);
-        this.updatePaymentInputUI(input, isValid, value, true);
-
-        // تحديث الحالة
-        this.paymentStates[inputId] = isValid && value.length > 0;
-        this.updateGlobalPaymentState();
-    }
-
-    validateSinglePaymentInput(inputId, value) {
-        if (!value) return true; // فارغ = صحيح للحقول الاختيارية
-
-        // التحقق من المحافظ الإلكترونية (11 رقم)
-        if (['vodafone_cash', 'etisalat_cash', 'orange_cash', 'we_pay', 'mobile-number'].includes(inputId)) {
-            const cleanNumber = value.replace(/[^\d]/g, '');
-            return /^01[0125][0-9]{8}$/.test(cleanNumber) && cleanNumber.length === 11;
-        }
-
-        // التحقق من كارت تيلدا (16 رقم)
-        if (['telda_card', 'card-number'].includes(inputId)) {
-            const cleanNumber = value.replace(/[^\d]/g, '');
-            return /^\d{16}$/.test(cleanNumber);
-        }
-
-        // التحقق من إنستاباي
-        if (['instapay_link', 'payment-link'].includes(inputId)) {
-            return this.validateInstapayLink(value);
-        }
-
-        return false;
-    }
-
-    validateInstapayLink(link) {
-        const patterns = [
-            /^https?:\/\/(www\.)?instapay\.com\.eg\//i,
-            /^https?:\/\/(www\.)?instapay\.app\//i,
-            /^https?:\/\/(www\.)?app\.instapay\.com\.eg\//i,
-            /^https?:\/\/(www\.)?ipn\.eg\//i
-        ];
-
-        return patterns.some(pattern => pattern.test(link));
-    }
-
-    updatePaymentInputUI(input, isValid, value, showErrors = false) {
-        const container = input.closest('.form-group') || input.closest('.dynamic-input');
-        if (!container) return;
-
-        // إزالة الكلاسات القديمة
-        container.classList.remove('valid', 'invalid');
-        input.classList.remove('valid', 'invalid', 'error');
-
-        // إزالة رسائل قديمة
-        const oldMessages = container.querySelectorAll('.payment-validation-message');
-        oldMessages.forEach(msg => msg.remove());
-
-        if (!value) {
-            // فارغ - حالة عادية
-            return;
-        }
-
-        if (isValid) {
-            // صحيح
-            container.classList.add('valid');
-            input.classList.add('valid');
-
-            const successMsg = document.createElement('div');
-            successMsg.className = 'payment-validation-message success-message';
-            successMsg.textContent = '✅ البيانات صحيحة';
-            container.appendChild(successMsg);
-
-        } else if (showErrors) {
-            // خطأ مع عرض الرسالة
-            container.classList.add('invalid');
-            input.classList.add('invalid', 'error');
-
-            const errorMsg = document.createElement('div');
-            errorMsg.className = 'payment-validation-message error-message';
-            errorMsg.textContent = this.getErrorMessage(input.id, value);
-            container.appendChild(errorMsg);
-        }
-    }
-
-    getErrorMessage(inputId, value) {
-        if (['vodafone_cash', 'etisalat_cash', 'orange_cash', 'we_pay', 'mobile-number'].includes(inputId)) {
-            return 'رقم المحفظة يجب أن يكون 11 رقم ويبدأ بـ 010، 011، 012، أو 015';
-        }
-
-        if (['telda_card', 'card-number'].includes(inputId)) {
-            return 'رقم كارت تيلدا يجب أن يكون 16 رقم';
-        }
-
-        if (['instapay_link', 'payment-link'].includes(inputId)) {
-            return 'رابط إنستاباي غير صحيح';
-        }
-
-        return 'البيانات غير صحيحة';
-    }
-
-    updateGlobalPaymentState() {
-        // فحص وجود أي طريقة دفع صحيحة
-        const hasValidPayment = Object.values(this.paymentStates).some(state => state === true);
-
-        // تحديث النظام العام
-        validationStates.paymentMethod = hasValidPayment;
-
-        // تحديث زر الحفظ
-        checkFormValidity();
-
-        console.log('💳 Payment validation updated:', hasValidPayment);
-    }
-
-    // دالة للحصول على حالة التحقق
-    getValidationState() {
-        return Object.values(this.paymentStates).some(state => state === true);
-    }
-
-    // إعادة تعيين جميع الحالات
-    reset() {
-        Object.keys(this.paymentStates).forEach(key => {
-            this.paymentStates[key] = false;
-        });
-        this.updateGlobalPaymentState();
-    }
-}
-
-// إنشاء مثيل عام
-window.paymentValidator = null;
 
 // ============================================================================
 // النهاية الكلاس و نهاية العزل و صندوق اسود
@@ -836,6 +904,8 @@ function handleWhatsAppValidation(event) {
     }
 }
 
+// ✅✅✅ النسخة الكاملة والنهائية للدالة ✅✅✅
+
 function initializeEventListeners() {
     console.log('🎯 بدء تهيئة جميع مستمعي الأحداث...');
 
@@ -852,14 +922,6 @@ function initializeEventListeners() {
 
     // تهيئة تكامل الواتساب المحسن
     initializeWhatsAppIntegration();
-
-    // معالجة الحقول الديناميكية المحسنة
-    setupDynamicInputs();
-
-    // تأكيد إضافي للتحقق من النماذج
-    setTimeout(() => {
-        checkFormValidity();
-    }, 1000);
 
     // معالجة إرسال النموذج
     setupFormSubmission(form);
@@ -881,6 +943,22 @@ function initializeEventListeners() {
     }
 
     console.log('✅ اكتملت تهيئة جميع مستمعي الأحداث بنجاح مع DOM Classes.');
+
+    // 🔥🔥 التحديث النهائي: تطبيق إصلاحات أنظمة الدفع 🔥🔥
+    // نستخدم setTimeout لضمان أن كل شيء في الصفحة قد تم تحميله بالكامل
+    setTimeout(() => {
+        console.log('🔧 Applying payment system fixes...');
+
+        // استدعاء الدالة الجديدة التي تقوم بتفعيل أنظمة InstaPay و Telda المحسنة
+        setupDynamicInputs();
+
+        // فحص إضافي للتأكد من أن كل شيء يعمل بعد الإصلاحات
+        setTimeout(() => {
+            checkFormValidity();
+            console.log('✅ All payment fixes applied successfully!');
+        }, 500);
+
+    }, 1000);
 }
 
 
@@ -939,344 +1017,51 @@ function setupPaymentSelection(paymentButtons) {
                 navigator.vibrate(30);
             }
 
-            // إعادة التحقق من طرق الدفع
-            setTimeout(validatePaymentMethod, 200);
-        });
-    });
-}
-
-
-// إعداد الحقول الديناميكية لطرق الدفع
-function setupDynamicInputs() {
-    // جميع حقول طرق الدفع
-    const paymentInputs = [
-        'vodafone_cash', 'etisalat_cash', 'orange_cash', 'we_pay',
-        'fawry', 'aman', 'masary', 'bee', 'mobile-number',
-        'telda_card', 'card-number', 'instapay_link', 'payment-link'
-    ];
-
-    paymentInputs.forEach(inputId => {
-        const input = document.getElementById(inputId);
-        if (input) {
-            input.addEventListener('input', function () {
-                validatePaymentInput(this);
-                checkFormValidity();
-            });
-
-            input.addEventListener('blur', function () {
-                validatePaymentInput(this);
-                checkFormValidity();
-            });
-        }
-    });
-
-    // نظام تيلدا المحسن - تنسيق متطور للبطاقات
-    function initializeTeldaCardSystem() {
-        const teldaInput = document.getElementById('telda_card') || document.getElementById('card-number');
-        if (!teldaInput) return;
-
-        // إضافة أيقونة تيلدا
-        const inputContainer = teldaInput.parentNode;
-        if (!inputContainer.querySelector('.telda-icon')) {
-            const teldaIcon = document.createElement('div');
-            teldaIcon.className = 'telda-icon';
-            teldaIcon.innerHTML = '<i class="fas fa-credit-card"></i>';
-            inputContainer.style.position = 'relative';
-            inputContainer.appendChild(teldaIcon);
-        }
-
-        // معالج الإدخال المحسن
-        teldaInput.addEventListener('input', function (e) {
-            let value = e.target.value.replace(/[^\d]/g, ''); // أرقام فقط
-            let formattedValue = '';
-
-            // تنسيق بصيغة 1234-5678-9012-3456
-            for (let i = 0; i < value.length; i += 4) {
-                if (i > 0) formattedValue += '-';
-                formattedValue += value.substr(i, 4);
-            }
-
-            // تحديد طول مناسب (16 رقم + 3 شرطات = 19 حرف)
-            if (formattedValue.length <= 19) {
-                e.target.value = formattedValue;
-            }
-
-            // التحقق الفوري
-            validateTeldaCard(e.target);
-            addTeldaVisualEffects(e.target, value);
+            // 🔥🔥 هذا هو السطر الجديد الذي يحل المشكلة 🔥🔥
+            // بعد اختيار طريقة الدفع، قم بإعادة فحص النموذج بالكامل
+            // لتحديث حالة زر الحفظ
             checkFormValidity();
-        });
-
-        // معالج اللصق المحسن
-        teldaInput.addEventListener('paste', function (e) {
-            e.preventDefault();
-            let pastedText = (e.clipboardData || window.clipboardData).getData('text');
-            let numbers = pastedText.replace(/[^\d]/g, '');
-
-            if (numbers.length <= 16) {
-                this.value = numbers;
-                this.dispatchEvent(new Event('input'));
-            }
-        });
-
-        // تأثيرات التركيز
-        teldaInput.addEventListener('focus', function () {
-            this.parentNode.classList.add('telda-focused');
-        });
-
-        teldaInput.addEventListener('blur', function () {
-            this.parentNode.classList.remove('telda-focused');
-            finalTeldaValidation(this);
-        });
-    }
-
-    // التحقق من صحة كارت تيلدا
-    function validateTeldaCard(input) {
-        const value = input.value;
-        const numbersOnly = value.replace(/[^\d]/g, '');
-        const container = input.parentNode;
-
-        // إزالة تأثيرات سابقة
-        container.classList.remove('telda-valid', 'telda-invalid', 'telda-partial');
-
-        if (numbersOnly.length === 0) {
-            return;
-        } else if (numbersOnly.length < 16) {
-            container.classList.add('telda-partial');
-            showTeldaStatus(input, 'جاري الكتابة...', 'partial');
-        } else if (numbersOnly.length === 16) {
-            container.classList.add('telda-valid');
-            showTeldaStatus(input, '✅ رقم كارت صحيح', 'valid');
-
-            // اهتزاز نجاح
-            if (navigator.vibrate) {
-                navigator.vibrate([50, 30, 50]);
-            }
-        } else {
-            container.classList.add('telda-invalid');
-            showTeldaStatus(input, '❌ رقم طويل جداً', 'invalid');
-        }
-    }
-
-    // التحقق النهائي لكارت تيلدا
-    function finalTeldaValidation(input) {
-        const numbersOnly = input.value.replace(/[^\d]/g, '');
-
-        if (numbersOnly.length > 0 && numbersOnly.length !== 16) {
-            showTeldaStatus(input, '⚠️ رقم كارت تيلدا يجب أن يكون 16 رقم', 'invalid');
-        }
-    }
-
-    // عرض حالة تيلدا
-    function showTeldaStatus(input, message, type) {
-        const existingStatus = input.parentNode.querySelector('.telda-status');
-        if (existingStatus) {
-            existingStatus.remove();
-        }
-
-        if (!message) return;
-
-        const statusDiv = document.createElement('div');
-        statusDiv.className = `telda-status telda-${type}`;
-        statusDiv.textContent = message;
-
-        input.parentNode.appendChild(statusDiv);
-
-        setTimeout(() => {
-            statusDiv.classList.add('show');
-        }, 100);
-
-        // إزالة تلقائية بعد 3 ثوان للرسائل الجزئية
-        if (type === 'partial') {
+            // 🔥 تأخير إضافي للتأكد من تحديث الحقول الديناميكية
             setTimeout(() => {
-                if (statusDiv.parentNode) {
-                    statusDiv.classList.remove('show');
-                    setTimeout(() => statusDiv.remove(), 300);
+                const activeInput = document.querySelector('.dynamic-input.show input');
+                if (activeInput) {
+                    // تشغيل التحقق الفوري للحقل النشط
+                    validatePaymentInput(activeInput);
+                    checkFormValidity();
                 }
-            }, 3000);
-        }
-    }
+            }, 300);
 
-    // تأثيرات بصرية لتيلدا
-    function addTeldaVisualEffects(input, numbersValue) {
-        const container = input.parentNode;
-
-        // تأثير النبض للأرقام الجديدة
-        if (numbersValue.length > 0 && numbersValue.length % 4 === 0) {
-            container.classList.add('telda-pulse');
-            setTimeout(() => {
-                container.classList.remove('telda-pulse');
-            }, 200);
-        }
-
-        // شريط التقدم
-        updateTeldaProgressBar(input, numbersValue.length);
-    }
-
-    // شريط تقدم تيلدا
-    function updateTeldaProgressBar(input, length) {
-        let progressBar = input.parentNode.querySelector('.telda-progress');
-
-        if (!progressBar) {
-            progressBar = document.createElement('div');
-            progressBar.className = 'telda-progress';
-            progressBar.innerHTML = '<div class="telda-progress-fill"></div>';
-            input.parentNode.appendChild(progressBar);
-        }
-
-        const progressFill = progressBar.querySelector('.telda-progress-fill');
-        const percentage = Math.min((length / 16) * 100, 100);
-
-        progressFill.style.width = percentage + '%';
-
-        // ألوان مختلفة حسب التقدم
-        if (percentage < 25) {
-            progressFill.style.background = '#ef4444';
-        } else if (percentage < 50) {
-            progressFill.style.background = '#f97316';
-        } else if (percentage < 75) {
-            progressFill.style.background = '#eab308';
-        } else if (percentage < 100) {
-            progressFill.style.background = '#22c55e';
-        } else {
-            progressFill.style.background = '#10b981';
-        }
-    }
-
-    // معالجة خاصة لكارت تيلدا (تنسيق الأرقام) - استبدال الكود القديم
-    initializeTeldaCardSystem();
-}
-
-// التحقق من صحة حقول الدفع
-function validatePaymentInput(input) {
-    const value = input.value.trim();
-    const inputId = input.id;
-    let isValid = false;
-    let errorMessage = '';
-
-    if (!value) {
-        updateValidationUI(input, true, ''); // فارغ = صحيح للحقول الاختيارية
-        return true;
-    }
-
-    // التحقق من المحافظ الإلكترونية (11 رقم)
-    if (['vodafone_cash', 'etisalat_cash', 'orange_cash', 'we_pay',
-        'fawry', 'aman', 'masary', 'bee', 'mobile-number'].includes(inputId)) {
-        isValid = /^01[0125][0-9]{8}$/.test(value) && value.length === 11;
-        errorMessage = isValid ? '' : 'رقم المحفظة يجب أن يكون 11 رقم ويبدأ بـ 010، 011، 012، أو 015';
-    }
-    // التحقق من كارت تيلدا (16 رقم)
-    else if (['telda_card', 'card-number'].includes(inputId)) {
-        const numbersOnly = value.replace(/\s/g, '');
-        isValid = /^\d{16}$/.test(numbersOnly);
-        errorMessage = isValid ? '' : 'رقم كارت تيلدا يجب أن يكون 16 رقم';
-    }
-    // التحقق من رابط إنستا باي
-    else if (['instapay_link', 'payment-link'].includes(inputId)) {
-        isValid = isValidInstaPayLink(value);
-        errorMessage = isValid ? '' : 'رابط إنستا باي غير صحيح';
-    }
-
-    updateValidationUI(input, isValid, errorMessage);
-    return isValid;
-}
-
-// التحقق الشامل من طرق الدفع
-function validatePaymentMethod() {
-    const paymentInputs = document.querySelectorAll('input[name$="_cash"], input[name="telda_card"], input[name="instapay_link"], .dynamic-input.show input');
-    let hasValidPayment = false;
-
-    paymentInputs.forEach(input => {
-        if (validatePaymentInput(input)) {
-            const value = input.value.trim();
-            if (value) {
-                hasValidPayment = true;
-            }
-        }
+        });
     });
-
-    validationStates.paymentMethod = hasValidPayment;
-    return hasValidPayment;
 }
 
-// التحقق من صحة رابط إنستا باي
-function isValidInstaPayLink(link) {
-    const instaPayPatterns = [
-        /^https?:\/\/(www\.)?instapay\.com\.eg\//i,
-        /^https?:\/\/(www\.)?instapay\.app\//i,
-        /^instapay:\/\//i,
-        /^https?:\/\/(www\.)?app\.instapay\.com\.eg\//i
-    ];
 
-    return instaPayPatterns.some(pattern => pattern.test(link));
-}
 
-// تحديث واجهة التحقق للحقول
-function updateValidationUI(input, isValid, message) {
-    const container = input.closest('.form-group');
-    if (!container) return;
 
-    // إزالة الكلاسات الموجودة
-    container.classList.remove('valid', 'invalid');
-    input.classList.remove('valid', 'invalid');
 
-    // إزالة رسائل الخطأ الموجودة
-    const existingError = container.querySelector('.error-message');
-    const existingSuccess = container.querySelector('.success-message');
-    if (existingError) existingError.remove();
-    if (existingSuccess) existingSuccess.remove();
 
-    if (message) {
-        if (isValid) {
-            container.classList.add('valid');
-            input.classList.add('valid');
-            if (message.includes('✓')) {
-                const successMsg = document.createElement('div');
-                successMsg.className = 'success-message';
-                successMsg.textContent = message;
-                container.appendChild(successMsg);
-            }
-        } else {
-            container.classList.add('invalid');
-            input.classList.add('invalid');
-            const errorMsg = document.createElement('div');
-            errorMsg.className = 'error-message';
-            errorMsg.textContent = message;
-            container.appendChild(errorMsg);
-        }
-    } else if (isValid) {
-        container.classList.add('valid');
-        input.classList.add('valid');
-    }
-}
 
-// التحقق الشامل من صحة النموذج - محسن
+
+// ============================================================================
+// ✅✅✅ النسخة النهائية والمثالية للدالة ✅✅✅
+// ============================================================================
 function checkFormValidity() {
-    // فحص المنصة
-    const platform = window.FC26PlatformModule ?
-        window.FC26PlatformModule.getSelectedPlatform() :
-        document.getElementById('platform')?.value;
-    validationStates.platform = !!platform;
+    // 1. فحص المنصة (كما هو)
+    validationStates.platform = !!(window.FC26PlatformModule?.getSelectedPlatform());
 
-    // فحص الواتساب
-    const whatsappValue = document.getElementById('whatsapp')?.value?.trim();
-    if (window.whatsappManager && whatsappValue) {
-        validationStates.whatsapp = window.whatsappManager.validateWhatsAppNumber(whatsappValue, false);
-    } else {
-        validationStates.whatsapp = false;
-    }
+    // 2. فحص الواتساب (كما هو)
+    const whatsappValue = document.getElementById('whatsapp')?.value;
+    validationStates.whatsapp = window.whatsappManager?.validateWhatsAppNumber(whatsappValue, false) || false;
 
-    // فحص طرق الدفع
-    if (window.paymentValidator) {
-        validationStates.paymentMethod = window.paymentValidator.getValidationState();
-    } else {
-        validationStates.paymentMethod = false;
-    }
+    // 3. 🔥🔥 الإصلاح النهائي: لا تقم بإعادة الفحص! 🔥🔥
+    // نحن نثق الآن في أن validationStates.paymentMethod يتم تحديثها
+    // بشكل صحيح من دوال التحقق الأخرى (مثل validateTeldaCardEnhanced).
+    // نحن هنا فقط نقرأ القيمة النهائية.
 
     // الحالة النهائية
     const isFormValid = validationStates.platform &&
         validationStates.whatsapp &&
-        validationStates.paymentMethod;
+        validationStates.paymentMethod; // <-- فقط اقرأ القيمة
 
     // تحديث زر الحفظ
     updateSubmitButton(isFormValid);
@@ -1284,12 +1069,13 @@ function checkFormValidity() {
     console.log('🔍 Form validity check:', {
         platform: validationStates.platform,
         whatsapp: validationStates.whatsapp,
-        payment: validationStates.paymentMethod,
+        payment: validationStates.paymentMethod, // <-- اطبع القيمة الصحيحة
         overall: isFormValid
     });
 
     return isFormValid;
 }
+
 
 
 // تحديث زر الإرسال
@@ -1370,6 +1156,28 @@ async function handleFormSubmit(e) {
 
     try {
         const formData = new FormData(e.target);
+
+            // 🔥 إصلاح بيانات الدفع قبل الإرسال
+        const paymentMethod = formData.get('payment_method');
+        const paymentDetailsInput = document.querySelector('.dynamic-input.show input');
+    
+        if (paymentDetailsInput) {
+            let cleanedValue = paymentDetailsInput.value;
+        
+            // تنظيف رقم تيلدا من الشرطات
+            if (paymentMethod === 'tilda') {
+                cleanedValue = cleanedValue.replace(/[^\d]/g, '');
+                formData.set('payment_details', cleanedValue);
+            }
+            // استخدام الرابط المستخلص لإنستا باي
+            else if (paymentMethod === 'instapay') {
+                const extractedLink = extractInstapayLinkEnhanced(cleanedValue);
+                if (extractedLink) {
+                    formData.set('payment_details', extractedLink);
+                }
+            }
+        }
+
 
         // محاولة كلا الـ endpoints
         let response;
@@ -1803,7 +1611,7 @@ if ('serviceWorker' in navigator) {
 // تصدير الوظائف للاستخدام الخارجي أو الاختبار
 window.FC26ProfileSetup = {
     validateWhatsAppReal: validateWhatsAppReal,  // ✅ إصلاح المرجع
-    validatePaymentMethod: validatePaymentMethod,
+    validatePaymentInput: validatePaymentInput,
     showNotification: showNotification,
     clearValidationStates: clearValidationStates,
     checkFormValidity: checkFormValidity,
@@ -2608,323 +2416,11 @@ async function copyInstapayLink(url) {
     }
 }
 
-// تحديث نظام الاستماع لحقل InstaPay
-function initializeInstapayListener() {
-    const instapayInput = document.getElementById('payment-link');
-    if (instapayInput) {
-        // إزالة المستمعين القدامى
-        instapayInput.removeEventListener('input', validateInstapayInput);
-        instapayInput.removeEventListener('paste', validateInstapayInput);
-
-        // إضافة المستمعين الجدد
-        instapayInput.addEventListener('input', function () {
-            validateInstapayInput(this);
-        });
-
-        instapayInput.addEventListener('paste', function () {
-            // تأخير قصير للسماح بلصق النص
-            setTimeout(() => {
-                validateInstapayInput(this);
-            }, 100);
-        });
-
-        console.log('🔗 InstaPay input listener initialized');
-    }
-}
-
-// تحديث دالة setupDynamicInputs لتشمل InstaPay
-const originalSetupDynamicInputs = setupDynamicInputs;
-setupDynamicInputs = function () {
-    // استدعاء الدالة الأصلية
-    originalSetupDynamicInputs();
-
-    // إضافة مستمع InstaPay
-    initializeInstapayListener();
-};
-
-// إضافة تحديث validatePaymentInput لدعم استخلاص InstaPay
-const originalValidatePaymentInput = validatePaymentInput;
-validatePaymentInput = function (input) {
-    const value = input.value.trim();
-    const inputId = input.id;
-    let isValid = false;
-    let errorMessage = '';
-
-    if (!value) {
-        updateValidationUI(input, true, '');
-        return true;
-    }
-
-    // التحقق من المحافظ الإلكترونية (11 رقم)
-    if (['vodafone_cash', 'etisalat_cash', 'orange_cash', 'we_pay',
-        'fawry', 'aman', 'masary', 'bee', 'mobile-number'].includes(inputId)) {
-        isValid = /^01[0125][0-9]{8}$/.test(value) && value.length === 11;
-        errorMessage = isValid ? '' : 'رقم المحفظة يجب أن يكون 11 رقم ويبدأ بـ 010، 011، 012، أو 015';
-    }
-    // التحقق من كارت تيلدا (16 رقم)
-    else if (['telda_card', 'card-number'].includes(inputId)) {
-        const numbersOnly = value.replace(/\s/g, '');
-        isValid = /^\d{16}$/.test(numbersOnly);
-        errorMessage = isValid ? '' : 'رقم كارت تيلدا يجب أن يكون 16 رقم';
-    }
-    // التحقق من رابط إنستا باي - النسخة المحدثة
-    else if (['instapay_link', 'payment-link'].includes(inputId)) {
-        const extractedLink = extractInstapayLink(value);
-        isValid = !!extractedLink;
-        errorMessage = isValid ? '' : 'لم يتم العثور على رابط InstaPay صحيح';
-
-        // تحديث قيمة الحقل للرابط المستخلص
-        if (isValid && extractedLink !== value) {
-            input.value = extractedLink;
-        }
-    }
-
-    updateValidationUI(input, isValid, errorMessage);
-    return isValid;
-};
-
-// تحديث دالة isValidInstaPayLink لاستخدام النظام الجديد
-isValidInstaPayLink = function (link) {
-    return !!extractInstapayLink(link);
-};
-
-console.log('🚀 InstaPay Smart Link Extraction System - Initialized');
-
-// إصلاح عاجل لزر التليجرام - ضمان التشغيل
-window.addEventListener('DOMContentLoaded', function () {
-    // التأكد من وجود دالة generateTelegramCode في النطاق العام
-    window.generateTelegramCode = generateTelegramCode;
-    window.openTelegramAppDirect = openTelegramAppDirect;
-    window.closeSuccessOverlay = closeSuccessOverlay;
-
-    // التأكد من ربط زر التليجرام الرئيسي
-    const telegramBtn = document.getElementById('telegramBtn');
-    if (telegramBtn) {
-        telegramBtn.onclick = function () {
-            generateTelegramCode();
-        };
-        console.log('✅ Telegram button fixed and linked');
-    }
-
-    // التأكد من ربط زر النجاح
-    const successBtn = document.querySelector('.success-btn');
-    if (successBtn) {
-        successBtn.onclick = function () {
-            closeSuccessOverlay();
-        };
-    }
-
-    console.log('🔧 Emergency Telegram fix applied');
-});
 
 
-// ============================================================================
-// 🔥 إصلاح نظام التحقق من طرق الدفع والواتساب
-// ============================================================================
 
-// الجزء 1: تفعيل PaymentValidator
-document.addEventListener('DOMContentLoaded', function() {
-    // تفعيل PaymentValidator
-    if (!window.paymentValidator) {
-        window.paymentValidator = new PaymentValidator();
-        console.log('✅ PaymentValidator activated');
-    }
-    
-    // إعادة ربط مستمعي طرق الدفع
-    reinitializePaymentListeners();
-});
 
-// الجزء 2: إصلاح مستمعي طرق الدفع
-function reinitializePaymentListeners() {
-    // قائمة جميع حقول الدفع
-    const paymentFields = {
-        'vodafone_cash': 'mobile',
-        'etisalat_cash': 'mobile', 
-        'orange_cash': 'mobile',
-        'we_pay': 'mobile',
-        'mobile-number': 'mobile',
-        'telda_card': 'card',
-        'card-number': 'card',
-        'instapay_link': 'link',
-        'payment-link': 'link'
-    };
-    
-    Object.keys(paymentFields).forEach(fieldId => {
-        const input = document.getElementById(fieldId);
-        if (input) {
-            // إزالة المستمعين القدامى
-            const newInput = input.cloneNode(true);
-            input.parentNode.replaceChild(newInput, input);
-            
-            // إضافة مستمعين جدد
-            newInput.addEventListener('input', function(e) {
-                handlePaymentInputValidation(e.target, paymentFields[fieldId]);
-            });
-            
-            newInput.addEventListener('blur', function(e) {
-                handlePaymentInputValidation(e.target, paymentFields[fieldId], true);
-            });
-        }
-    });
-}
 
-// الجزء 3: معالج التحقق من طرق الدفع المحسن
-function handlePaymentInputValidation(input, type, showError = false) {
-    const value = input.value.trim();
-    let isValid = false;
-    let errorMsg = '';
-    
-    if (!value) {
-        clearPaymentValidation(input);
-        updatePaymentState(input.id, false);
-        return;
-    }
-    
-    switch(type) {
-        case 'mobile':
-            const cleanMobile = value.replace(/[^\d]/g, '');
-            isValid = /^01[0125]\d{8}$/.test(cleanMobile);
-            errorMsg = 'رقم المحفظة يجب أن يكون 11 رقم (010/011/012/015)';
-            break;
-            
-        case 'card':
-            const cleanCard = value.replace(/[^\d]/g, '');
-            isValid = cleanCard.length === 16;
-            errorMsg = 'رقم البطاقة يجب أن يكون 16 رقم';
-            break;
-            
-        case 'link':
-            const extractedLink = extractInstapayLink(value);
-            isValid = !!extractedLink;
-            errorMsg = 'رابط InstaPay غير صحيح';
-            break;
-    }
-    
-    // تحديث واجهة المستخدم
-    if (isValid) {
-        showPaymentSuccess(input);
-    } else if (showError) {
-        showPaymentError(input, errorMsg);
-    }
-    
-    // تحديث حالة النظام
-    updatePaymentState(input.id, isValid);
-}
-
-// الجزء 4: تحديث حالة طرق الدفع
-function updatePaymentState(inputId, isValid) {
-    if (window.paymentValidator) {
-        window.paymentValidator.paymentStates[inputId] = isValid;
-        window.paymentValidator.updateGlobalPaymentState();
-    }
-    
-    // تحديث validationStates مباشرة
-    const hasAnyValidPayment = checkAnyValidPayment();
-    validationStates.paymentMethod = hasAnyValidPayment;
-    
-    // تحديث زر الحفظ
-    checkFormValidity();
-}
-
-// الجزء 5: فحص وجود أي طريقة دفع صحيحة
-function checkAnyValidPayment() {
-    const paymentInputs = document.querySelectorAll(
-        '#vodafone_cash, #etisalat_cash, #orange_cash, #we_pay, ' +
-        '#mobile-number, #telda_card, #card-number, #instapay_link, #payment-link'
-    );
-    
-    for (let input of paymentInputs) {
-        if (input.value.trim()) {
-            const type = input.id.includes('card') ? 'card' : 
-                        input.id.includes('link') ? 'link' : 'mobile';
-            
-            let isValid = false;
-            const value = input.value.trim();
-            
-            switch(type) {
-                case 'mobile':
-                    isValid = /^01[0125]\d{8}$/.test(value.replace(/[^\d]/g, ''));
-                    break;
-                case 'card':
-                    isValid = value.replace(/[^\d]/g, '').length === 16;
-                    break;
-                case 'link':
-                    isValid = !!extractInstapayLink(value);
-                    break;
-            }
-            
-            if (isValid) return true;
-        }
-    }
-    
-    return false;
-}
-
-// الجزء 6: واجهات النجاح والخطأ
-function showPaymentSuccess(input) {
-    const container = input.closest('.form-group') || input.closest('.dynamic-input');
-    if (!container) return;
-    
-    // إزالة الحالات السابقة
-    container.classList.remove('invalid');
-    container.classList.add('valid');
-    input.classList.remove('invalid');
-    input.classList.add('valid');
-    
-    // إزالة رسائل سابقة
-    const oldMsg = container.querySelector('.payment-validation-msg');
-    if (oldMsg) oldMsg.remove();
-    
-    // إضافة رسالة نجاح
-    const successMsg = document.createElement('div');
-    successMsg.className = 'payment-validation-msg success-msg';
-    successMsg.innerHTML = '<i class="fas fa-check-circle"></i> البيانات صحيحة';
-    successMsg.style.cssText = `
-        color: #10B981;
-        font-size: 0.9rem;
-        margin-top: 5px;
-        font-weight: 600;
-    `;
-    container.appendChild(successMsg);
-}
-
-function showPaymentError(input, message) {
-    const container = input.closest('.form-group') || input.closest('.dynamic-input');
-    if (!container) return;
-    
-    // إزالة الحالات السابقة
-    container.classList.remove('valid');
-    container.classList.add('invalid');
-    input.classList.remove('valid');
-    input.classList.add('invalid');
-    
-    // إزالة رسائل سابقة
-    const oldMsg = container.querySelector('.payment-validation-msg');
-    if (oldMsg) oldMsg.remove();
-    
-    // إضافة رسالة خطأ
-    const errorMsg = document.createElement('div');
-    errorMsg.className = 'payment-validation-msg error-msg';
-    errorMsg.innerHTML = `<i class="fas fa-times-circle"></i> ${message}`;
-    errorMsg.style.cssText = `
-        color: #EF4444;
-        font-size: 0.9rem;
-        margin-top: 5px;
-        font-weight: 600;
-    `;
-    container.appendChild(errorMsg);
-}
-
-function clearPaymentValidation(input) {
-    const container = input.closest('.form-group') || input.closest('.dynamic-input');
-    if (!container) return;
-    
-    container.classList.remove('valid', 'invalid');
-    input.classList.remove('valid', 'invalid');
-    
-    const msg = container.querySelector('.payment-validation-msg');
-    if (msg) msg.remove();
-}
 
 // ============================================================================
 // 🔥 إصلاح نظام التحقق من الواتساب
@@ -2935,7 +2431,7 @@ async function performWhatsAppValidation(phoneNumber) {
     if (!phoneNumber || phoneNumber.length < 10) {
         return { is_valid: false, error: 'رقم قصير جداً' };
     }
-    
+
     try {
         const response = await fetch('/validate-whatsapp', {
             method: 'POST',
@@ -2943,26 +2439,26 @@ async function performWhatsAppValidation(phoneNumber) {
                 'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
             },
-            body: JSON.stringify({ 
+            body: JSON.stringify({
                 phone: phoneNumber,
-                phone_number: phoneNumber 
+                phone_number: phoneNumber
             })
         });
-        
+
         if (!response.ok) {
             throw new Error('Server error');
         }
-        
+
         const result = await response.json();
         return result;
-        
+
     } catch (error) {
         console.error('WhatsApp validation error:', error);
-        
+
         // Fallback للتحقق المحلي
         const cleanNumber = phoneNumber.replace(/[^\d]/g, '');
         const isValid = /^01[0125]\d{8}$/.test(cleanNumber);
-        
+
         return {
             is_valid: isValid,
             error: isValid ? null : 'رقم غير صحيح',
@@ -2975,54 +2471,54 @@ async function performWhatsAppValidation(phoneNumber) {
 function enhanceWhatsAppValidation() {
     const whatsappInput = document.getElementById('whatsapp');
     if (!whatsappInput) return;
-    
+
     let validationTimer = null;
-    
-    whatsappInput.addEventListener('input', function(e) {
+
+    whatsappInput.addEventListener('input', function (e) {
         const value = e.target.value.trim();
-        
+
         // إلغاء التحقق السابق
         if (validationTimer) {
             clearTimeout(validationTimer);
         }
-        
+
         // تحقق محلي سريع
         const cleanNumber = value.replace(/[^\d+]/g, '');
         const quickValid = cleanNumber.length >= 10;
-        
+
         if (!quickValid) {
             validationStates.whatsapp = false;
             checkFormValidity();
             return;
         }
-        
+
         // إضافة مؤشر تحميل
         e.target.classList.add('validating');
-        
+
         // تحقق من الخادم بعد توقف الكتابة
         validationTimer = setTimeout(async () => {
             const result = await performWhatsAppValidation(value);
-            
+
             e.target.classList.remove('validating');
-            
+
             if (result.is_valid) {
                 e.target.classList.add('valid');
                 e.target.classList.remove('invalid');
                 validationStates.whatsapp = true;
-                
+
                 // عرض رسالة نجاح
                 showWhatsAppSuccess(e.target, result);
             } else {
                 e.target.classList.add('invalid');
                 e.target.classList.remove('valid');
                 validationStates.whatsapp = false;
-                
+
                 // عرض رسالة خطأ
                 showWhatsAppError(e.target, result.error);
             }
-            
+
             checkFormValidity();
-            
+
         }, 800); // انتظار 800ms
     });
 }
@@ -3031,15 +2527,15 @@ function enhanceWhatsAppValidation() {
 function showWhatsAppSuccess(input, result) {
     const container = input.closest('.form-group');
     if (!container) return;
-    
+
     // إزالة رسائل سابقة
     const oldMsg = container.querySelector('.whatsapp-validation-msg');
     if (oldMsg) oldMsg.remove();
-    
+
     const successMsg = document.createElement('div');
     successMsg.className = 'whatsapp-validation-msg success';
     successMsg.innerHTML = `
-        <i class="fas fa-check-circle"></i> 
+        <i class="fas fa-check-circle"></i>
         رقم صحيح ${result.carrier ? `- ${result.carrier}` : ''}
     `;
     successMsg.style.cssText = `
@@ -3056,11 +2552,11 @@ function showWhatsAppSuccess(input, result) {
 function showWhatsAppError(input, error) {
     const container = input.closest('.form-group');
     if (!container) return;
-    
+
     // إزالة رسائل سابقة
     const oldMsg = container.querySelector('.whatsapp-validation-msg');
     if (oldMsg) oldMsg.remove();
-    
+
     const errorMsg = document.createElement('div');
     errorMsg.className = 'whatsapp-validation-msg error';
     errorMsg.innerHTML = `<i class="fas fa-times-circle"></i> ${error}`;
@@ -3074,25 +2570,719 @@ function showWhatsAppError(input, error) {
     container.appendChild(errorMsg);
 }
 
+
+// ============================================================================
+// 🔥 نظام الدفع المحسن (إصلاحات InstaPay و Telda)
+// ============================================================================
+
+
+// إصلاح دالة ربط InstaPay - استبدال الموجود
+function initializeInstapayListener() {
+    const instapayInputs = ['payment-link', 'instapay_link'];
+
+    instapayInputs.forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (input) {
+            console.log(`🔗 Setting up InstaPay listener for: ${inputId}`);
+
+            // إزالة المستمعين القدامى
+            const newInput = input.cloneNode(true);
+            input.parentNode.replaceChild(newInput, input);
+
+            // إضافة مستمعين جدد محسنين
+            newInput.addEventListener('input', function (e) {
+                validateInstapayInputEnhanced(e.target);
+            });
+
+            newInput.addEventListener('paste', function (e) {
+                setTimeout(() => {
+                    validateInstapayInputEnhanced(e.target);
+                }, 100);
+            });
+
+            newInput.addEventListener('blur', function (e) {
+                validateInstapayInputEnhanced(e.target, true);
+            });
+        }
+    });
+}
+
+// دالة محسنة للتحقق من InstaPay
+function validateInstapayInputEnhanced(input, showError = false) {
+    const text = input.value.trim();
+    const container = input.closest('.form-group') || input.closest('.dynamic-input');
+
+    // إزالة المعاينة السابقة
+    const existingPreview = container.querySelector('.instapay-preview');
+    if (existingPreview) {
+        existingPreview.remove();
+    }
+
+    if (!text) {
+        clearPaymentValidation(input);
+        updatePaymentState(input.id, false);
+        checkFormValidity(); // 🔥 إضافة مهمة
+        return true;
+    }
+
+    // محاولة استخلاص الرابط بطرق متعددة
+    const extractedLink = extractInstapayLinkEnhanced(text);
+
+    if (extractedLink) {
+        // إنشاء معاينة الرابط
+        createInstapayPreview(container, extractedLink, text);
+        showPaymentSuccess(input);
+        updatePaymentState(input.id, true);
+        
+        // تحديث قيمة الحقل للرابط المستخلص
+        if (input.value !== extractedLink) {
+            input.value = extractedLink;
+        }
+
+        console.log(`✅ InstaPay link extracted: ${extractedLink}`);
+        checkFormValidity(); // 🔥 إضافة مهمة
+        return true;
+        
+    } else if (showError) {
+        showPaymentError(input, 'لم يتم العثور على رابط InstaPay صحيح');
+        updatePaymentState(input.id, false);
+        checkFormValidity(); // 🔥 إضافة مهمة
+        return false;
+    }
+
+    updatePaymentState(input.id, false);
+    checkFormValidity(); // 🔥 إضافة مهمة
+    return false;
+}
+
+// تحسين دالة استخلاص روابط InstaPay
+function extractInstapayLinkEnhanced(text) {
+    // أنماط محسنة مع ترتيب أولوية
+    const patterns = [
+        // النمط الأساسي الأكثر شيوعاً
+        /https?:\/\/(?:www\.)?ipn\.eg\/S\/[^\/\s]+\/instapay\/[A-Za-z0-9]+/gi,
+        // أنماط إضافية
+        /https?:\/\/(?:www\.)?instapay\.com\.eg\/[^\s<>"{}|\\^`\[\]']+/gi,
+        /https?:\/\/(?:www\.)?app\.instapay\.com\.eg\/[^\s<>"{}|\\^`\[\]']+/gi,
+        /https?:\/\/(?:www\.)?instapay\.app\/[^\s<>"{}|\\^`\[\]']+/gi,
+        /https?:\/\/(?:www\.)?ipn\.eg\/[^\s<>"{}|\\^`\[\]']+/gi,
+        // نمط عام للـ InstaPay
+        /https?:\/\/[^\s<>"{}|\\^`\[\]']*instapay[^\s<>"{}|\\^`\[\]']*/gi,
+    ];
+
+    // البحث بكل الأنماط
+    for (const pattern of patterns) {
+        const matches = text.match(pattern);
+        if (matches && matches.length > 0) {
+            for (const match of matches) {
+                // تنظيف الرابط
+                let link = match.trim();
+                // إزالة العلامات من النهاية
+                link = link.replace(/[.,;!?\)]+$/, '');
+
+                // التحقق من صحة الرابط
+                if (isValidInstapayUrlEnhanced(link)) {
+                    return link;
+                }
+            }
+        }
+    }
+
+    return null;
+}
+
+// تحسين دالة التحقق من صحة الرابط
+function isValidInstapayUrlEnhanced(url) {
+    if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
+        return false;
+    }
+
+    const validDomains = [
+        'ipn.eg',
+        'instapay.com.eg',
+        'app.instapay.com.eg',
+        'instapay.app',
+        'pay.instapay.com.eg'
+    ];
+
+    const lowerUrl = url.toLowerCase();
+    const domainMatch = validDomains.some(domain => lowerUrl.includes(domain));
+    const lengthValid = url.length >= 15; // تقليل الحد الأدنى قليلاً
+
+    return domainMatch && lengthValid;
+}
+
+// إصلاح نظام تيلدا - استبدال الموجود
+function initializeTeldaCardSystem() {
+    const teldaInputs = ['telda_card', 'card-number'];
+
+    teldaInputs.forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+
+        console.log(`💳 Setting up Telda system for: ${inputId}`);
+
+        // إزالة المستمعين القدامى
+        const newInput = input.cloneNode(true);
+        input.parentNode.replaceChild(newInput, input);
+
+        // إضافة نظام التنسيق المحسن
+        newInput.addEventListener('input', function (e) {
+            let value = e.target.value.replace(/[^\d]/g, ''); // أرقام فقط
+            let formattedValue = '';
+
+            // تنسيق بصيغة 1234-5678-9012-3456
+            for (let i = 0; i < value.length; i += 4) {
+                if (i > 0) formattedValue += '-';
+                formattedValue += value.substr(i, 4);
+            }
+
+            // تحديد طول مناسب (16 رقم + 3 شرطات = 19 حرف)
+            if (formattedValue.length <= 19) {
+                e.target.value = formattedValue;
+            }
+
+            // التحقق والتحديث
+            validateTeldaCardEnhanced(e.target);
+            updateTeldaProgress(e.target, value.length);
+        });
+
+        // معالجة اللصق
+        newInput.addEventListener('paste', function (e) {
+            e.preventDefault();
+            let pastedText = (e.clipboardData || window.clipboardData).getData('text');
+            let numbers = pastedText.replace(/[^\d]/g, '');
+
+            if (numbers.length <= 16) {
+                // تنسيق الأرقام الملصقة
+                let formatted = '';
+                for (let i = 0; i < numbers.length; i += 4) {
+                    if (i > 0) formatted += '-';
+                    formatted += numbers.substr(i, 4);
+                }
+                this.value = formatted;
+
+                // تشغيل التحقق
+                validateTeldaCardEnhanced(this);
+                updateTeldaProgress(this, numbers.length);
+            }
+        });
+
+        // معالجة التركيز
+        newInput.addEventListener('focus', function () {
+            this.parentNode.classList.add('telda-focused');
+        });
+
+        newInput.addEventListener('blur', function () {
+            this.parentNode.classList.remove('telda-focused');
+            validateTeldaCardEnhanced(this, true);
+        });
+    });
+}
+
+// دالة التحقق المحسنة لتيلدا
+function validateTeldaCardEnhanced(input, showError = false) {
+    const value = input.value;
+    const numbersOnly = value.replace(/[^\d]/g, '');
+    const container = input.closest('.form-group') || input.closest('.dynamic-input');
+
+    if (numbersOnly.length === 0) {
+        clearPaymentValidation(input);
+        updatePaymentState(input.id, false);
+        checkFormValidity(); // 🔥 إضافة مهمة
+        return;
+    }
+
+    if (numbersOnly.length < 16) {
+        if (container) {
+            container.classList.remove('valid', 'invalid');
+            container.classList.add('partial');
+        }
+        if (!showError) {
+            showTeldaStatus(input, `جاري الكتابة... (${numbersOnly.length}/16)`, 'partial');
+        }
+        updatePaymentState(input.id, false);
+        checkFormValidity(); // 🔥 إضافة مهمة
+
+    } else if (numbersOnly.length === 16) {
+        showPaymentSuccess(input);
+        showTeldaStatus(input, '✅ رقم كارت صحيح', 'valid');
+        updatePaymentState(input.id, true);
+        checkFormValidity(); // 🔥 إضافة مهمة
+
+        if (navigator.vibrate) {
+            navigator.vibrate([50, 30, 50]);
+        }
+
+    } else {
+        if (showError) {
+            showPaymentError(input, '❌ رقم طويل جداً');
+        }
+        showTeldaStatus(input, '❌ رقم طويل جداً', 'invalid');
+        updatePaymentState(input.id, false);
+        checkFormValidity(); // 🔥 إضافة مهمة
+    }
+}
+
+// إضافة شريط التقدم لتيلدا
+function updateTeldaProgress(input, length) {
+    const container = input.parentNode;
+    let progressBar = container.querySelector('.telda-progress');
+
+    if (!progressBar) {
+        progressBar = document.createElement('div');
+        progressBar.className = 'telda-progress';
+        progressBar.innerHTML = '<div class="telda-progress-fill"></div>';
+        progressBar.style.cssText = `
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+        `;
+        container.appendChild(progressBar);
+    }
+
+    const progressFill = progressBar.querySelector('.telda-progress-fill');
+    if (!progressFill.style.transition) {
+        progressFill.style.cssText = `
+            height: 100%;
+            background: linear-gradient(90deg, #10B981, #059669);
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        `;
+    }
+
+    const percentage = Math.min((length / 16) * 100, 100);
+    progressFill.style.width = percentage + '%';
+
+    // ألوان مختلفة حسب التقدم
+    if (percentage < 25) {
+        progressFill.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+    } else if (percentage < 50) {
+        progressFill.style.background = 'linear-gradient(90deg, #f97316, #ea580c)';
+    } else if (percentage < 75) {
+        progressFill.style.background = 'linear-gradient(90deg, #eab308, #ca8a04)';
+    } else if (percentage < 100) {
+        progressFill.style.background = 'linear-gradient(90deg, #22c55e, #16a34a)';
+    } else {
+        progressFill.style.background = 'linear-gradient(90deg, #10b981, #059669)';
+    }
+}
+
+// دالة عرض حالة تيلدا
+function showTeldaStatus(input, message, type) {
+    const container = input.parentNode;
+    let statusDiv = container.querySelector('.telda-status');
+
+    if (statusDiv) {
+        statusDiv.remove();
+    }
+
+    if (!message) return;
+
+    statusDiv = document.createElement('div');
+    statusDiv.className = `telda-status telda-${type}`;
+    statusDiv.textContent = message;
+    statusDiv.style.cssText = `
+        font-size: 0.9rem;
+        margin-top: 5px;
+        font-weight: 600;
+        opacity: 0;
+        transform: translateY(-5px);
+        transition: all 0.3s ease;
+    `;
+
+    // ألوان حسب النوع
+    if (type === 'valid') {
+        statusDiv.style.color = '#10B981';
+    } else if (type === 'invalid') {
+        statusDiv.style.color = '#EF4444';
+    } else {
+        statusDiv.style.color = '#F59E0B';
+    }
+
+    container.appendChild(statusDiv);
+
+    setTimeout(() => {
+        statusDiv.style.opacity = '1';
+        statusDiv.style.transform = 'translateY(0)';
+    }, 100);
+
+    // إزالة تلقائية للرسائل الجزئية
+    if (type === 'partial') {
+        setTimeout(() => {
+            if (statusDiv.parentNode) {
+                statusDiv.style.opacity = '0';
+                setTimeout(() => statusDiv.remove(), 300);
+            }
+        }, 2000);
+    }
+}
+
+// إصلاح التحقق الشامل من طرق الدفع - استبدال الموجود
+function validatePaymentInput(input) {
+    const value = input.value.trim();
+    const inputId = input.id;
+    let isValid = false;
+    let errorMessage = '';
+
+    // إذا كان الحقل فارغاً
+    if (!value) {
+        clearPaymentValidation(input);
+        updatePaymentState(inputId, false);
+        checkFormValidity(); // 🔥 إضافة مهمة
+        return false;
+    }
+
+    // التحقق من المحافظ الإلكترونية (11 رقم)
+    if (['vodafone_cash', 'etisalat_cash', 'orange_cash', 'we_pay', 'mobile-number'].includes(inputId)) {
+        const cleanNumber = value.replace(/[^\d]/g, '');
+        isValid = /^01[0125][0-9]{8}$/.test(cleanNumber) && cleanNumber.length === 11;
+        errorMessage = 'رقم المحفظة يجب أن يكون 11 رقم (010/011/012/015)';
+    }
+    // التحقق من كارت تيلدا (16 رقم)
+    else if (['telda_card', 'card-number'].includes(inputId)) {
+        const numbersOnly = value.replace(/[^\d]/g, '');
+        isValid = /^\d{16}$/.test(numbersOnly) && numbersOnly.length === 16;
+        errorMessage = `رقم كارت تيلدا يجب أن يكون 16 رقم (تم إدخال ${numbersOnly.length} رقم)`;
+    }
+    // التحقق من رابط إنستا باي
+    else if (['instapay_link', 'payment-link'].includes(inputId)) {
+        const extractedLink = extractInstapayLinkEnhanced(value);
+        isValid = !!extractedLink;
+        errorMessage = 'لم يتم العثور على رابط InstaPay صحيح';
+
+        if (isValid && extractedLink !== value) {
+            input.value = extractedLink;
+        }
+    }
+
+    // تحديث الواجهة والحالة
+    if (isValid) {
+        showPaymentSuccess(input);
+    } else {
+        showPaymentError(input, errorMessage);
+    }
+    
+    updatePaymentState(inputId, isValid);
+    checkFormValidity(); // 🔥 إضافة مهمة
+    
+    return isValid;
+}
+
+// تحديث setupDynamicInputs لضمان تشغيل جميع الإصلاحات
+function setupDynamicInputs() {
+    // جميع حقول طرق الدفع
+    const paymentInputs = [
+        'vodafone_cash', 'etisalat_cash', 'orange_cash', 'we_pay',
+        'fawry', 'aman', 'masary', 'bee', 'mobile-number',
+        'telda_card', 'card-number', 'instapay_link', 'payment-link'
+    ];
+
+    paymentInputs.forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (input) {
+            // إزالة المستمعين القدامى
+            const newInput = input.cloneNode(true);
+            input.parentNode.replaceChild(newInput, input);
+            
+            // إضافة مستمع واحد فقط
+            newInput.addEventListener('input', function() {
+                validatePaymentInput(this);
+            });
+
+            newInput.addEventListener('blur', function() {
+                validatePaymentInput(this);
+            });
+        }
+    });
+
+    // 🔥 تفعيل أنظمة الدفع المحسنة
+    console.log('💳 Initializing enhanced payment systems...');
+
+    // تشغيل نظام تيلدا المحسن
+    setTimeout(() => {
+        initializeTeldaCardSystem();
+        console.log('✅ Telda system initialized');
+    }, 100);
+
+    // تشغيل نظام InstaPay المحسن
+    setTimeout(() => {
+        initializeInstapayListener();
+        console.log('✅ InstaPay system initialized');
+    }, 200);
+}
+
+
+
+
+// ============================================================================
+// 🔥 نهاية قسم الإصلاحات
+// ============================================================================
+
+
+// ============================================================================
+// ✅✅✅ الدوال المساعدة الموحدة لنظام الدفع ✅✅✅
+// ============================================================================
+
+// ✅✅✅ النسخة الجديدة والمبسطة ✅✅✅
+function updatePaymentState(inputId, isValid) {
+    validationStates.paymentMethod = isValid;
+    console.log(`💳 Payment state for [${inputId}] is now ${isValid}`);
+    // لا تقم باستدعاء checkFormValidity من هنا
+}
+
+function showPaymentSuccess(input) {
+    const container = input.closest('.form-group') || input.closest('.dynamic-input');
+    if (!container) return;
+
+    container.classList.remove('invalid', 'partial');
+    container.classList.add('valid');
+
+    const oldMsg = container.querySelector('.payment-validation-msg');
+    if (oldMsg) oldMsg.remove();
+
+    const successMsg = document.createElement('div');
+    successMsg.className = 'payment-validation-msg success-msg';
+    successMsg.innerHTML = '<i class="fas fa-check-circle"></i> البيانات صحيحة';
+    successMsg.style.cssText = `color: #10B981; font-size: 0.9rem; margin-top: 5px; font-weight: 600;`;
+    container.appendChild(successMsg);
+}
+
+function showPaymentError(input, message) {
+    const container = input.closest('.form-group') || input.closest('.dynamic-input');
+    if (!container) return;
+
+    container.classList.remove('valid', 'partial');
+    container.classList.add('invalid');
+
+    const oldMsg = container.querySelector('.payment-validation-msg');
+    if (oldMsg) oldMsg.remove();
+
+    const errorMsg = document.createElement('div');
+    errorMsg.className = 'payment-validation-msg error-msg';
+    errorMsg.innerHTML = `<i class="fas fa-times-circle"></i> ${message}`;
+    errorMsg.style.cssText = `color: #EF4444; font-size: 0.9rem; margin-top: 5px; font-weight: 600;`;
+    container.appendChild(errorMsg);
+}
+
+function clearPaymentValidation(input) {
+    const container = input.closest('.form-group') || input.closest('.dynamic-input');
+    if (!container) return;
+
+    container.classList.remove('valid', 'invalid', 'partial');
+
+    const msg = container.querySelector('.payment-validation-msg');
+    if (msg) msg.remove();
+}
+
+
 // ============================================================================
 // 🚀 التفعيل النهائي
 // ============================================================================
 
-// تفعيل كل شيء عند تحميل الصفحة
-window.addEventListener('load', function() {
-    console.log('🚀 Activating validation fixes...');
-    
-    // تفعيل إصلاحات طرق الدفع
-    reinitializePaymentListeners();
-    
-    // تفعيل إصلاحات الواتساب
-    enhanceWhatsAppValidation();
-    
-    // فحص أولي
-    checkFormValidity();
-    
-    console.log('✅ All validation fixes activated!');
-});
+
+
+// ============================================================================
+// ✅✅✅ ستايل بداية من اول هنا ✅✅✅
+// ============================================================================
+
+// إضافة الأنماط المطلوبة للتحسينات الجديدة
+const enhancedPaymentStyles = document.createElement('style');
+enhancedPaymentStyles.textContent = `
+    /* تحسينات تيلدا */
+    .telda-focused {
+        transform: scale(1.02);
+        box-shadow: 0 0 15px rgba(255, 144, 0, 0.3);
+    }
+
+    .form-group.partial {
+        border-left: 4px solid #F59E0B;
+    }
+
+    .telda-progress {
+        width: 100%;
+        height: 4px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 2px;
+        margin-top: 8px;
+        overflow: hidden;
+    }
+
+    .telda-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #10B981, #059669);
+        border-radius: 2px;
+        transition: all 0.3s ease;
+        width: 0%;
+    }
+
+    .telda-status {
+        font-size: 0.9rem;
+        margin-top: 5px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    /* تحسينات InstaPay */
+    .instapay-preview {
+        margin-top: 15px;
+        padding: 15px;
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.15));
+        border: 2px solid #10B981;
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.4s ease;
+    }
+
+    .instapay-preview.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .preview-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+        color: #10B981;
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+
+    .link-url {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        padding: 12px 15px;
+        color: #10B981;
+        font-family: 'Courier New', monospace;
+        font-size: 0.95rem;
+        font-weight: 600;
+        word-break: break-all;
+        direction: ltr;
+        text-align: left;
+        margin-top: 8px;
+    }
+
+    .preview-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 15px;
+    }
+
+    .test-link-btn, .copy-link-btn {
+        flex: 1;
+        padding: 12px 16px;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-family: 'Cairo', sans-serif;
+    }
+
+    .test-link-btn {
+        background: linear-gradient(135deg, #3B82F6, #2563EB);
+        color: white;
+        border: 2px solid #3B82F6;
+    }
+
+    .test-link-btn:hover {
+        background: linear-gradient(135deg, #2563EB, #1D4ED8);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+    }
+
+    .copy-link-btn {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-white);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .copy-link-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.5);
+        transform: translateY(-2px);
+    }
+`;
+document.head.appendChild(enhancedPaymentStyles);
+
+// ============================================================================
+// 2222222
+// ============================================================================
+
+
+// إضافة أنماط الواتساب المحسنة
+const whatsappEnhancedStyles = document.createElement('style');
+whatsappEnhancedStyles.textContent = `
+    /* تحسينات الواتساب البصرية */
+    .whatsapp-progress {
+        width: 100%;
+        height: 4px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 2px;
+        margin-top: 8px;
+        overflow: hidden;
+        transition: opacity 0.3s ease;
+    }
+
+    .whatsapp-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #10B981, #059669);
+        border-radius: 2px;
+        transition: all 0.3s ease;
+        width: 0%;
+    }
+
+    .whatsapp-status {
+        font-size: 0.9rem;
+        margin-top: 5px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        min-height: 20px;
+    }
+
+    #whatsapp {
+        font-family: 'Courier New', monospace;
+        letter-spacing: 1px;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    #whatsapp:focus {
+        transform: scale(1.02);
+        box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+    }
+
+    .form-group.whatsapp-valid {
+        border-left: 4px solid #10B981;
+    }
+
+    .form-group.whatsapp-invalid {
+        border-left: 4px solid #EF4444;
+    }
+
+    .form-group.whatsapp-partial {
+        border-left: 4px solid #F59E0B;
+    }
+`;
+document.head.appendChild(whatsappEnhancedStyles);
+
+
+
+// ============================================================================
+// 111111111
+// ============================================================================
 
 // إضافة CSS للتأثيرات البصرية
 const validationStyles = document.createElement('style');
@@ -3101,22 +3291,22 @@ validationStyles.textContent = `
         from { opacity: 0; transform: translateY(-5px); }
         to { opacity: 1; transform: translateY(0); }
     }
-    
+
     .validating {
         border-color: #F59E0B !important;
         animation: pulse 1.5s infinite;
     }
-    
+
     @keyframes pulse {
         0%, 100% { opacity: 1; }
         50% { opacity: 0.7; }
     }
-    
+
     .form-input.valid {
         border-color: #10B981 !important;
         background: rgba(16, 185, 129, 0.05) !important;
     }
-    
+
     .form-input.invalid {
         border-color: #EF4444 !important;
         background: rgba(239, 68, 68, 0.05) !important;

@@ -337,7 +337,7 @@ class WhatsAppVisualEnhancer {
         this.updateStatus(numbersOnly);
     }
 
-// تنسيق رقم الواتساب
+    // تنسيق رقم الواتساب
     formatWhatsAppNumber(numbers) {
         if (!numbers) return '';
         // تنسيق: بدون فواصل
@@ -930,14 +930,6 @@ function initializeEventListeners() {
     // منع إرسال النموذج بالضغط على Enter
     setupEnterKeyHandling();
 
-    // 🔥 الخطوة 3: ربط زر التليجرام بالطريقة الصحيحة
-    const telegramBtn = document.getElementById('telegramBtn');
-    if (telegramBtn) {
-        telegramBtn.addEventListener('click', generateTelegramCode);
-        console.log('✅ Telegram button linked successfully via DOM Class.');
-    } else {
-        console.error('❌ Telegram button #telegramBtn not found.');
-    }
 
     console.log('✅ اكتملت تهيئة جميع مستمعي الأحداث بنجاح مع DOM Classes.');
 
@@ -1154,13 +1146,13 @@ async function handleFormSubmit(e) {
     try {
         const formData = new FormData(e.target);
 
-            // 🔥 إصلاح بيانات الدفع قبل الإرسال
+        // 🔥 إصلاح بيانات الدفع قبل الإرسال
         const paymentMethod = formData.get('payment_method');
         const paymentDetailsInput = document.querySelector('.dynamic-input.show input');
-    
+
         if (paymentDetailsInput) {
             let cleanedValue = paymentDetailsInput.value;
-        
+
             // تنظيف رقم تيلدا من الشرطات
             if (paymentMethod === 'tilda') {
                 cleanedValue = cleanedValue.replace(/[^\d]/g, '');
@@ -1619,74 +1611,122 @@ window.FC26ProfileSetup = {
 // رسالة تأكيد التهيئة
 console.log('FC 26 Profile Setup - تم تهيئة JavaScript المدمج بنجاح');
 
-// تحميل username البوت الصحيح
-async function loadBotUsername() {
-    try {
-        const response = await fetch('/get-bot-username');
-        const result = await response.json();
-        correctBotUsername = result.bot_username;
-        console.log('✅ Bot username loaded:', correctBotUsername);
-    } catch (error) {
-        console.error('❌ Failed to load bot username:', error);
-        correctBotUsername = 'YourBotName_bot'; // fallback
-    }
-}
 
-// دالة توليد كود التليجرام - محدثة
-async function generateTelegramCode() {
-    const telegramBtn = document.getElementById('telegramBtn');
-    const telegramCodeResult = document.getElementById('telegramCodeResult');
 
-    // التحقق من البيانات الأساسية
-    const platform = window.FC26PlatformModule ? window.FC26PlatformModule.getSelectedPlatform() : document.getElementById('platform')?.value;
-    const whatsappNumber = document.getElementById('whatsapp')?.value;
+// ============================================================================
+// 🔥 TelegramManager - النظام المعزول الكامل
+// ============================================================================
 
-    if (!platform || !whatsappNumber) {
-        showNotification('يرجى إكمال الملف الشخصي أولاً (المنصة ورقم الواتساب)', 'error');
-        return;
-    }
+/* ===========================
+   FC26 TelegramManager (Isolated Class)
+   - عزل تام لكل ما يتعلق بالتليجرام
+   - صفر تداخل مع باقي الأنظمة
+   =========================== */
 
-    // حالة التحميل
-    telegramBtn.classList.add('generating');
-    telegramBtn.disabled = true;
-    telegramBtn.innerHTML = `
-        <div class="telegram-btn-content">
-            <i class="fas fa-spinner fa-spin telegram-icon"></i>
-            <div class="telegram-text">
-                <span class="telegram-title">⚡ جاري إنشاء الرابط</span>
-                <span class="telegram-subtitle">انتظر لحظة...</span>
-            </div>
-        </div>
-    `;
+(function () {
+    'use strict';
 
-    try {
-        const formData = {
-            platform: platform,
-            whatsapp_number: whatsappNumber,
-            payment_method: document.getElementById('payment_method')?.value || '',
-            payment_details: document.querySelector('.dynamic-input.show input')?.value || ''
-        };
+    class TelegramManager {
+        constructor() {
+            // DOM references
+            this.btn = document.getElementById('telegramBtn');
+            this.codeResultEl = document.getElementById('telegramCodeResult');
+            this.overlayEl = document.getElementById('telegramSuccessOverlay');
+            this.generatedCodeEl = document.getElementById('generatedCode');
 
-        console.log('📤 Generating Telegram code with data:', formData);
+            // State management
+            this.currentCode = null;
+            this.botUsername = null;
+            this.pollTimer = null;
+            this.startedAt = 0;
+            this._inited = false;
 
-        const response = await fetch('/generate-telegram-code', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify(formData)
-        });
+            // Bindings
+            this.openAppDirect = this.openAppDirect.bind(this);
+            this._onBeforeUnload = this._onBeforeUnload.bind(this);
+        }
 
-        const result = await response.json();
-        console.log('📥 Telegram code result:', result);
+        // Helper methods
+        _getPlatform() {
+            try {
+                if (window.FC26PlatformModule && typeof window.FC26PlatformModule.getSelectedPlatform === 'function') {
+                    return window.FC26PlatformModule.getSelectedPlatform() || '';
+                }
+            } catch (_) { }
+            const hidden = document.getElementById('platform');
+            return hidden ? (hidden.value || '') : '';
+        }
 
-        if (result.success) {
-            // حفظ الكود
-            currentTelegramCode = result.code;
+        _getWhatsApp() {
+            const w = document.getElementById('whatsapp');
+            return w ? (w.value || '').trim() : '';
+        }
 
-            // تحديث زر التليجرام ليصبح زر فتح مباشر
-            telegramBtn.innerHTML = `
+        _getPayment() {
+            const method = document.getElementById('payment_method')?.value || '';
+            const activeInput = document.querySelector('.dynamic-input.show input');
+            const details = activeInput ? activeInput.value : '';
+            return { method, details };
+        }
+
+        async loadBotUsername() {
+            if (this.botUsername) return this.botUsername;
+            try {
+                const r = await fetch('/get-bot-username');
+                const j = await r.json();
+                this.botUsername = (j && j.bot_username) ? j.bot_username.replace(/^@/, '') : 'YourBotName_bot';
+            } catch (e) {
+                console.error('❌ Failed to load bot username:', e);
+                this.botUsername = 'YourBotName_bot';
+            }
+            return this.botUsername;
+        }
+
+        init() {
+            if (this._inited) return;
+            this._inited = true;
+
+            // Preload bot username
+            this.loadBotUsername();
+
+            // Bind button click
+            if (this.btn && !this.btn.dataset.tmBound) {
+                this.btn.addEventListener('click', (e) => {
+                    try { e.preventDefault(); } catch (_) { }
+                    this.generateCode();
+                }, { passive: true });
+                this.btn.dataset.tmBound = '1';
+                console.log('✅ TelegramManager button bound successfully');
+            }
+
+            // Cleanup timers
+            window.addEventListener('beforeunload', this._onBeforeUnload, { passive: true });
+            console.log('✅ TelegramManager initialized');
+        }
+
+        _setBtnLoading(loading) {
+            if (!this.btn) return;
+            if (loading) {
+                this.btn.classList.add('generating');
+                this.btn.disabled = true;
+                this.btn.innerHTML = `
+                    <div class="telegram-btn-content">
+                        <i class="fas fa-spinner fa-spin telegram-icon"></i>
+                        <div class="telegram-text">
+                            <span class="telegram-title">⚡ جاري إنشاء الرابط</span>
+                            <span class="telegram-subtitle">انتظر لحظة...</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                this.btn.classList.remove('generating');
+                this.btn.disabled = false;
+            }
+        }
+
+        _setBtnOpenMode() {
+            if (!this.btn) return;
+            this.btn.innerHTML = `
                 <div class="telegram-btn-content">
                     <i class="fab fa-telegram telegram-icon"></i>
                     <div class="telegram-text">
@@ -1695,20 +1735,20 @@ async function generateTelegramCode() {
                     </div>
                 </div>
             `;
+            this.btn.onclick = this.openAppDirect;
+            this.btn.disabled = false;
+        }
 
-            // تغيير وظيفة الزر للفتح المباشر
-            telegramBtn.onclick = function () {
-                openTelegramAppDirect();
-            };
-
-            // إظهار منطقة الكود (بدون زر النسخ)
-            telegramCodeResult.innerHTML = `
+        _renderCodeResult(code) {
+            if (!this.codeResultEl) return;
+            this.codeResultEl.style.display = 'block';
+            this.codeResultEl.innerHTML = `
                 <div class="code-container">
                     <div class="code-header">
                         <i class="fas fa-rocket"></i>
                         <span>جاهز للربط التلقائي</span>
                     </div>
-                    <div class="generated-code">${result.code}</div>
+                    <div class="generated-code">${code}</div>
                     <div class="telegram-actions">
                         <button type="button" class="telegram-open-btn-big" id="secondaryTelegramBtn">
                             <i class="fab fa-telegram"></i>
@@ -1716,300 +1756,340 @@ async function generateTelegramCode() {
                         </button>
                     </div>
                     <div class="telegram-instructions">
-                        <div class="single-step">
-                            ⚡ اضغط الزر وسيتم الربط التلقائي!
-                        </div>
+                        <div class="single-step">⚡ اضغط الزر وسيتم الربط التلقائي!</div>
                     </div>
                 </div>
             `;
+            const sec = document.getElementById('secondaryTelegramBtn');
+            if (sec) sec.addEventListener('click', this.openAppDirect, { passive: true });
 
-            // ربط الزر الجديد الذي تم إنشاؤه للتو
-            const secondaryBtn = document.getElementById('secondaryTelegramBtn');
-            if (secondaryBtn) {
-                secondaryBtn.addEventListener('click', openTelegramAppDirect);
-            }
-
-
-            telegramCodeResult.style.display = 'block';
             setTimeout(() => {
-                telegramCodeResult.classList.add('show');
-
-                // تمرير تلقائي
-                telegramCodeResult.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'center'
-                });
+                this.codeResultEl.classList.add('show');
+                this.codeResultEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }, 100);
-
-            // اهتزاز نجاح
-            if (navigator.vibrate) {
-                navigator.vibrate([100, 50, 100]);
-            }
-
-            showNotification(`✅ جاهز للربط! الكود: ${result.code}`, 'success');
-
-        } else {
-            showNotification(result.message || 'خطأ في إنشاء الكود', 'error');
-            resetTelegramButton();
         }
 
-    } catch (error) {
-        console.error('خطأ في توليد كود التليجرام:', error);
-        showNotification('خطأ في الاتصال، يرجى المحاولة مرة أخرى', 'error');
-        resetTelegramButton();
-    }
-
-    // إزالة حالة التحميل
-    telegramBtn.classList.remove('generating');
-    telegramBtn.disabled = false;
-}
-
-// دالة فتح التليجرام المباشر - الربط التلقائي
-function openTelegramAppDirect() {
-    const code = currentTelegramCode || document.getElementById('generatedCode').textContent;
-
-    if (!code) {
-        showNotification('❌ لا يوجد كود للربط', 'error');
-        return;
-    }
-
-    if (!correctBotUsername) {
-        showNotification('جاري تحميل معلومات البوت...', 'info');
-        loadBotUsername().then(() => {
-            openTelegramAppDirect();
-        });
-        return;
-    }
-
-    // تجميد واجهة المستخدم
-    const telegramCodeResult = document.getElementById('telegramCodeResult');
-    const allButtons = document.querySelectorAll('button');
-
-    if (telegramCodeResult) {
-        telegramCodeResult.style.opacity = '0.6';
-        telegramCodeResult.style.pointerEvents = 'none';
-    }
-
-    allButtons.forEach(btn => {
-        btn.disabled = true;
-        btn.style.opacity = '0.6';
-    });
-
-    // روابط التليجرام
-    const telegramAppUrl = `tg://resolve?domain=${correctBotUsername}&start=${code}`;
-    const telegramWebUrl = `https://t.me/${correctBotUsername}?start=${code}`;
-
-    console.log('🚀 AUTO-LINKING Telegram:', correctBotUsername, 'Code:', code);
-
-    // فتح التليجرام حسب النوع
-    if (navigator.userAgent.match(/(iPhone|iPad|iPod|Android)/i)) {
-        // للهواتف - محاولة التطبيق أولاً ثم الويب
-        const tempLink = document.createElement('a');
-        tempLink.href = telegramAppUrl;
-        tempLink.style.display = 'none';
-        document.body.appendChild(tempLink);
-        tempLink.click();
-        document.body.removeChild(tempLink);
-
-        setTimeout(() => {
-            window.open(telegramWebUrl, '_blank');
-        }, 800);
-    } else {
-        // للكمبيوتر - فتح الرابط مباشرة
-        window.open(telegramWebUrl, '_blank');
-    }
-
-    // رسائل الربط التلقائي
-    showNotification('🚀 فتح التليجرام...', 'info');
-
-    setTimeout(() => {
-        showNotification('⚡ جاري الربط التلقائي...', 'info');
-    }, 1500);
-
-    setTimeout(() => {
-        showNotification('🔗 انتظار تأكيد الربط...', 'info');
-    }, 3000);
-
-    // بدء فحص الربط التلقائي
-    startAutoTelegramLinking(code);
-}
-
-// نظام الربط التلقائي المطور
-function startAutoTelegramLinking(code) {
-    let attemptCount = 0;
-    const maxAttempts = 45; // 2.25 دقيقة
-
-    const autoLinker = setInterval(async () => {
-        attemptCount++;
-
-        try {
-            const response = await fetch(`/check-telegram-status/${code}`);
-            const result = await response.json();
-
-            if (result.success && result.linked) {
-                // نجح الربط!
-                clearInterval(autoLinker);
-                console.log('🎉 AUTO-LINK SUCCESS!');
-
-                // إظهار النجاح الفوري
-                showUltimateSuccess();
+        async generateCode() {
+            const platform = this._getPlatform();
+            const whatsappNumber = this._getWhatsApp();
+            if (!platform || !whatsappNumber) {
+                if (typeof showNotification === 'function') {
+                    showNotification('يرجى إكمال الملف الشخصي أولاً (المنصة ورقم الواتساب)', 'error');
+                }
                 return;
             }
 
-            // تحديثات الحالة
-            if (attemptCount === 5) {
-                showNotification('📡 البحث عن الربط...', 'info');
-            } else if (attemptCount === 10) {
-                showNotification('🔍 فحص حالة الاتصال...', 'info');
-            } else if (attemptCount === 20) {
-                showNotification('⏳ يرجى التأكد من إرسال الكود للبوت', 'info');
-            } else if (attemptCount === 30) {
-                showNotification('⚠️ تأكد من فتح التليجرام وإرسال الكود', 'info');
+            const p = this._getPayment();
+            const payload = {
+                platform,
+                whatsapp_number: whatsappNumber,
+                payment_method: p.method || '',
+                payment_details: p.details || ''
+            };
+
+            try {
+                this._setBtnLoading(true);
+                const res = await fetch('/generate-telegram-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                this._setBtnLoading(false);
+
+                if (!data || !data.success) {
+                    if (typeof showNotification === 'function') {
+                        showNotification(data.message || 'خطأ في إنشاء الكود', 'error');
+                    }
+                    this.resetButton();
+                    return;
+                }
+
+                this.currentCode = data.code;
+                this.startedAt = Date.now();
+                this._setBtnOpenMode();
+                this._renderCodeResult(data.code);
+
+                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                if (typeof showNotification === 'function') {
+                    showNotification(`✅ جاهز للربط! الكود: ${data.code}`, 'success');
+                }
+
+                this.startAutoLinking(this.currentCode);
+
+            } catch (e) {
+                console.error('Telegram generate error:', e);
+                this._setBtnLoading(false);
+                if (typeof showNotification === 'function') {
+                    showNotification('خطأ في الاتصال، يرجى المحاولة مرة أخرى', 'error');
+                }
+                this.resetButton();
+            }
+        }
+
+        async openAppDirect() {
+            const code = this.currentCode || (this.generatedCodeEl && this.generatedCodeEl.textContent) || '';
+            if (!code) {
+                if (typeof showNotification === 'function') {
+                    showNotification('❌ لا يوجد كود للربط', 'error');
+                }
+                return;
             }
 
-        } catch (error) {
-            console.error('خطأ في الربط التلقائي:', error);
+            if (!this.botUsername) {
+                await this.loadBotUsername();
+            }
+
+            const allButtons = document.querySelectorAll('button');
+            const codeBox = this.codeResultEl;
+            if (codeBox) {
+                codeBox.style.opacity = '0.6';
+                codeBox.style.pointerEvents = 'none';
+            }
+            allButtons.forEach(b => { try { b.disabled = true; b.style.opacity = '0.6'; } catch (_) { } });
+
+            const appUrl = `tg://resolve?domain=${this.botUsername}&start=${encodeURIComponent(code)}`;
+            const webUrl = `https://t.me/${this.botUsername}?start=${encodeURIComponent(code)}`;
+
+            try {
+                if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+                    const a = document.createElement('a');
+                    a.href = appUrl;
+                    a.style.display = 'none';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    setTimeout(() => window.open(webUrl, '_blank'), 800);
+                } else {
+                    window.open(webUrl, '_blank');
+                }
+            } catch (_) {
+                window.open(webUrl, '_blank');
+            }
+
+            if (typeof showNotification === 'function') {
+                showNotification('🚀 فتح التليجرام...', 'info');
+                setTimeout(() => showNotification('⚡ جاري الربط التلقائي...', 'info'), 1500);
+                setTimeout(() => showNotification('🔗 انتظار تأكيد الربط...', 'info'), 3000);
+            }
+
+            if (!this.pollTimer) {
+                this.startAutoLinking(code);
+            }
         }
 
-        // انتهاء المحاولات
-        if (attemptCount >= maxAttempts) {
-            clearInterval(autoLinker);
-            showTimeoutError();
+        startAutoLinking(code) {
+            let attempt = 0;
+            const maxAttempts = 45;
+            if (this.pollTimer) clearInterval(this.pollTimer);
+
+            this.pollTimer = setInterval(async () => {
+                attempt++;
+                try {
+                    const r = await fetch(`/check-telegram-status/${encodeURIComponent(code)}`, {
+                        method: 'GET',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Cache-Control': 'no-cache' }
+                    });
+                    if (r.ok) {
+                        const j = await r.json();
+                        if (j.success && j.linked) {
+                            clearInterval(this.pollTimer);
+                            this.pollTimer = null;
+                            this.showSuccess();
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('AutoLink poll error:', e);
+                }
+
+                if (attempt === 5 && typeof showNotification === 'function') {
+                    showNotification('📡 البحث عن الربط...', 'info');
+                }
+                if (attempt === 10 && typeof showNotification === 'function') {
+                    showNotification('🔍 فحص حالة الاتصال...', 'info');
+                }
+                if (attempt === 20 && typeof showNotification === 'function') {
+                    showNotification('⏳ يرجى التأكد من إرسال الكود للبوت', 'info');
+                }
+                if (attempt === 30 && typeof showNotification === 'function') {
+                    showNotification('⚠️ تأكد من فتح التليجرام وإرسال الكود', 'info');
+                }
+
+                if (attempt >= maxAttempts) {
+                    clearInterval(this.pollTimer);
+                    this.pollTimer = null;
+                    this.showTimeoutError();
+                }
+            }, 3000);
         }
 
-    }, 3000); // فحص كل 3 ثوان
-}
+        async checkAdvancedStatus(code) {
+            try {
+                const r = await fetch(`/check-telegram-status/${encodeURIComponent(code)}`, {
+                    method: 'GET',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Cache-Control': 'no-cache' }
+                });
+                const j = await r.json();
+                return j;
+            } catch (e) {
+                return { success: false, linked: false, error: String(e) };
+            }
+        }
 
-// عرض النجاح النهائي
-function showUltimateSuccess() {
-    // إخفاء كل شيء فوراً
-    const loading = document.getElementById('loading');
-    const formContainer = document.querySelector('.container');
+        showSuccess() {
+            const loading = document.getElementById('loading');
+            const container = document.querySelector('.container');
+            if (loading) loading.classList.remove('show');
+            if (container) {
+                container.style.opacity = '0';
+                container.style.transform = 'scale(0.95)';
+            }
 
-    if (loading) loading.classList.remove('show');
-    if (formContainer) {
-        formContainer.style.opacity = '0';
-        formContainer.style.transform = 'scale(0.95)';
-    }
+            setTimeout(() => {
+                if (this.overlayEl) {
+                    this.overlayEl.classList.add('show');
+                    document.body.style.overflow = 'hidden';
+                    const sc = this.overlayEl.querySelector('.success-container');
+                    if (sc) {
+                        sc.innerHTML = `
+                            <div class="success-animation">
+                                <i class="fas fa-check-circle success-mega-icon"></i>
+                            </div>
+                            <h2 class="success-title">🎉 تم ربط حسابك بنجاح!</h2>
+                            <p class="success-subtitle">
+                                ✅ تم حفظ ملفك الشخصي بأمان<br>
+                                💾 تم حفظ جميع معلوماتك<br>
+                                🚀 مرحباً بك في عالم FC 26!
+                            </p>
+                            <div class="success-actions">
+                                <button type="button" class="success-btn" onclick="closeSuccessOverlay()">
+                                    <i class="fas fa-home"></i>
+                                    العودة للرئيسية
+                                </button>
+                            </div>
+                        `;
+                    }
+                    if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 500]);
+                }
+            }, 800);
 
-    // إظهار شاشة النجاح الكاملة
-    setTimeout(() => {
-        const successOverlay = document.getElementById('telegramSuccessOverlay');
-        if (successOverlay) {
-            successOverlay.classList.add('show');
+            if (typeof showNotification === 'function') {
+                showNotification('🎉 تم الربط بنجاح!', 'success');
+                setTimeout(() => showNotification('💾 تم حفظ ملفك الشخصي!', 'success'), 1200);
+                setTimeout(() => showNotification('✅ تم حفظ معلوماتك بأمان!', 'success'), 2400);
+                setTimeout(() => showNotification('🏆 مرحباً بك في FC 26!', 'success'), 3600);
+            }
 
-            // منع التمرير
-            document.body.style.overflow = 'hidden';
+            try {
+                if (typeof playSuccessSound === 'function') playSuccessSound();
+            } catch (_) { }
+        }
 
-            // تحديث المحتوى
-            const successContainer = successOverlay.querySelector('.success-container');
-            if (successContainer) {
-                successContainer.innerHTML = `
-                    <div class="success-animation">
-                        <i class="fas fa-check-circle success-mega-icon"></i>
+        showTimeoutError() {
+            if (typeof showNotification === 'function') {
+                showNotification('⏰ انتهت مهلة الربط التلقائي - يرجى المحاولة مرة أخرى', 'error');
+            }
+
+            const allButtons = document.querySelectorAll('button');
+            const codeBox = this.codeResultEl;
+            if (codeBox) {
+                codeBox.style.opacity = '1';
+                codeBox.style.pointerEvents = 'auto';
+            }
+            allButtons.forEach(b => {
+                try {
+                    b.disabled = false;
+                    b.style.opacity = '1';
+                } catch (_) { }
+            });
+            this.resetButton();
+        }
+
+        resetButton() {
+            if (!this.btn) return;
+            this.btn.innerHTML = `
+                <div class="telegram-btn-content">
+                    <i class="fab fa-telegram telegram-icon"></i>
+                    <div class="telegram-text">
+                        <span class="telegram-title">📱 ربط مع التليجرام</span>
+                        <span class="telegram-subtitle">احصل على كود فوري وادخل للبوت</span>
                     </div>
-                    <h2 class="success-title">🎉 تم ربط حسابك بنجاح!</h2>
-                    <p class="success-subtitle">
-                        ✅ تم حفظ ملفك الشخصي بأمان<br>
-                        💾 تم حفظ جميع معلوماتك<br>
-                        🚀 مرحباً بك في عالم FC 26!
-                    </p>
-                    <div class="success-actions">
-                        <button type="button" class="success-btn" onclick="closeSuccessOverlay()">
-                            <i class="fas fa-home"></i>
-                            العودة للرئيسية
-                        </button>
-                    </div>
-                `;
-            }
-
-            // تأثيرات بصرية قوية
-            if (navigator.vibrate) {
-                navigator.vibrate([300, 100, 300, 100, 500]);
-            }
-        }
-    }, 800);
-
-    // رسائل الاحتفال المتتالية
-    showNotification('🎉 تم الربط بنجاح!', 'success');
-
-    setTimeout(() => {
-        showNotification('💾 تم حفظ ملفك الشخصي!', 'success');
-    }, 1200);
-
-    setTimeout(() => {
-        showNotification('✅ تم حفظ معلوماتك بأمان!', 'success');
-    }, 2400);
-
-    setTimeout(() => {
-        showNotification('🏆 مرحباً بك في FC 26!', 'success');
-    }, 3600);
-}
-
-// عرض خطأ انتهاء الوقت
-function showTimeoutError() {
-    showNotification('⏰ انتهت مهلة الربط التلقائي - يرجى المحاولة مرة أخرى', 'error');
-
-    // إعادة تفعيل الواجهة
-    const telegramCodeResult = document.getElementById('telegramCodeResult');
-    const allButtons = document.querySelectorAll('button');
-
-    if (telegramCodeResult) {
-        telegramCodeResult.style.opacity = '1';
-        telegramCodeResult.style.pointerEvents = 'auto';
-    }
-
-    allButtons.forEach(btn => {
-        btn.disabled = false;
-        btn.style.opacity = '1';
-    });
-
-    resetTelegramButton();
-}
-
-// إعادة تعيين زر التليجرام
-function resetTelegramButton() {
-    const telegramBtn = document.getElementById('telegramBtn');
-    if (telegramBtn) {
-        telegramBtn.innerHTML = `
-            <div class="telegram-btn-content">
-                <i class="fab fa-telegram telegram-icon"></i>
-                <div class="telegram-text">
-                    <span class="telegram-title">📱 ربط مع التليجرام</span>
-                    <span class="telegram-subtitle">احصل على كود فوري وادخل للبوت</span>
                 </div>
-            </div>
-        `;
-        telegramBtn.onclick = function () {
-            generateTelegramCode();
-        };
-        telegramBtn.disabled = false;
-        telegramBtn.classList.remove('generating');
-    }
-}
+            `;
+            this.btn.onclick = () => this.generateCode();
+            this.btn.disabled = false;
+            this.btn.classList.remove('generating');
+        }
 
-// دالة إغلاق شاشة النجاح محدثة
-function closeSuccessOverlay() {
-    const successOverlay = document.getElementById('telegramSuccessOverlay');
-    if (successOverlay) {
-        successOverlay.classList.remove('show');
+        closeSuccessOverlay() {
+            if (this.overlayEl) {
+                this.overlayEl.classList.remove('show');
+                document.body.style.overflow = '';
+                const container = document.querySelector('.container');
+                if (container) {
+                    container.style.opacity = '1';
+                    container.style.transform = 'scale(1)';
+                }
+            }
+            setTimeout(() => window.location.reload(), 500);
+        }
 
-        // إعادة التمرير
-        document.body.style.overflow = '';
+        cleanup() {
+            if (this.pollTimer) {
+                clearInterval(this.pollTimer);
+                this.pollTimer = null;
+            }
+        }
 
-        // إعادة الحاوي الرئيسي
-        const formContainer = document.querySelector('.container');
-        if (formContainer) {
-            formContainer.style.opacity = '1';
-            formContainer.style.transform = 'scale(1)';
+        _onBeforeUnload() {
+            this.cleanup();
         }
     }
 
-    // إعادة تحميل الصفحة للبدء من جديد
-    setTimeout(() => {
-        window.location.reload();
-    }, 500);
-}
+    // Instance + Auto-Boot
+    window.telegramManager = window.telegramManager || new TelegramManager();
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => window.telegramManager.init());
+    } else {
+        window.telegramManager.init();
+    }
+
+    // Compatibility Bridge (الجسر للحفاظ على الدوال القديمة)
+    window.loadBotUsername = function () {
+        return window.telegramManager.loadBotUsername();
+    };
+    window.generateTelegramCode = function () {
+        return window.telegramManager.generateCode();
+    };
+    window.openTelegramAppDirect = function () {
+        return window.telegramManager.openAppDirect();
+    };
+    window.startAutoTelegramLinking = function (code) {
+        return window.telegramManager.startAutoLinking(code);
+    };
+    window.showUltimateSuccess = function () {
+        return window.telegramManager.showSuccess();
+    };
+    window.showTimeoutError = function () {
+        return window.telegramManager.showTimeoutError();
+    };
+    window.resetTelegramButton = function () {
+        return window.telegramManager.resetButton();
+    };
+    window.closeSuccessOverlay = function () {
+        return window.telegramManager.closeSuccessOverlay();
+    };
+    window.checkAdvancedTelegramStatus = function (code) {
+        return window.telegramManager.checkAdvancedStatus(code);
+    };
+
+})();
+
+
+
+
+
 
 // تشغيل صوت النجاح المطور
 function playSuccessSound() {
@@ -2037,46 +2117,7 @@ function playSuccessSound() {
     }
 }
 
-// دالة مساعدة لفحص حالة الربط المتقدم
-async function checkAdvancedTelegramStatus(code) {
-    try {
-        const response = await fetch(`/check-telegram-status/${code}`, {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Cache-Control': 'no-cache'
-            }
-        });
 
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-
-        const result = await response.json();
-        return result;
-
-    } catch (error) {
-        console.error('Status check error:', error);
-        return { success: false, linked: false, error: error.message };
-    }
-}
-
-// تنظيف جميع مؤقتات التليجرام
-function cleanupTelegramTimers() {
-    if (telegramStatusChecker) {
-        clearInterval(telegramStatusChecker);
-        telegramStatusChecker = null;
-    }
-}
-
-// إضافة مستمع لتنظيف المؤقتات عند إغلاق الصفحة
-window.addEventListener('beforeunload', function () {
-    cleanupTelegramTimers();
-});
-
-// نظام إدارة البريد الإلكتروني المتعدد
-let emailAddresses = [];
-const maxEmails = 6; // الحد الأقصى للإيميلات
 
 // إضافة بريد إلكتروني جديد
 function addNewEmail() {
@@ -2237,41 +2278,6 @@ function updateAddEmailButton() {
     }
 }
 
-// التحقق من صحة البريد الإلكتروني
-function isValidEmail(email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-}
-
-// إضافة مستمع للمفتاح Enter في حقل الإيميل
-document.addEventListener('DOMContentLoaded', function () {
-    const emailInput = document.getElementById('newEmailInput');
-    if (emailInput) {
-        emailInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                addNewEmail();
-            }
-        });
-
-        // التحقق أثناء الكتابة
-        emailInput.addEventListener('input', function () {
-            const email = this.value.trim();
-            if (email && !isValidEmail(email)) {
-                this.style.borderColor = '#EF4444';
-            } else {
-                this.style.borderColor = '';
-            }
-        });
-    }
-
-    // إضافة رسالة فارغة في البداية
-    if (emailAddresses.length === 0) {
-        addEmptyMessage();
-    }
-});
-
-console.log('🔗 Telegram system updated - Auto-link with single button');
 
 // ═══════════════════════════════════════════════════════════════
 // 🔗 نظام استخلاص روابط InstaPay الذكي - إضافة جديدة
@@ -2630,7 +2636,7 @@ function validateInstapayInputEnhanced(input, showError = false) {
         createInstapayPreview(container, extractedLink, text);
         showPaymentSuccess(input);
         updatePaymentState(input.id, true);
-        
+
         // تحديث قيمة الحقل للرابط المستخلص
         if (input.value !== extractedLink) {
             input.value = extractedLink;
@@ -2639,7 +2645,7 @@ function validateInstapayInputEnhanced(input, showError = false) {
         console.log(`✅ InstaPay link extracted: ${extractedLink}`);
         checkFormValidity(); // 🔥 إضافة مهمة
         return true;
-        
+
     } else if (showError) {
         showPaymentError(input, 'لم يتم العثور على رابط InstaPay صحيح');
         updatePaymentState(input.id, false);
@@ -2962,10 +2968,10 @@ function validatePaymentInput(input) {
     } else {
         showPaymentError(input, errorMessage);
     }
-    
+
     updatePaymentState(inputId, isValid);
     checkFormValidity(); // 🔥 إضافة مهمة
-    
+
     return isValid;
 }
 
@@ -2984,13 +2990,13 @@ function setupDynamicInputs() {
             // إزالة المستمعين القدامى
             const newInput = input.cloneNode(true);
             input.parentNode.replaceChild(newInput, input);
-            
+
             // إضافة مستمع واحد فقط
-            newInput.addEventListener('input', function() {
+            newInput.addEventListener('input', function () {
                 validatePaymentInput(this);
             });
 
-            newInput.addEventListener('blur', function() {
+            newInput.addEventListener('blur', function () {
                 validatePaymentInput(this);
             });
         }

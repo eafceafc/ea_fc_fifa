@@ -1694,13 +1694,13 @@ console.log('FC 26 Profile Setup - تم تهيئة JavaScript المدمج بن�
                 this.btn.addEventListener('click', (e) => {
                     try { e.preventDefault(); } catch (_) { }
                     this.generateCode();
-                }, { passive: true });
+                }, { passive: false });
                 this.btn.dataset.tmBound = '1';
                 console.log('✅ TelegramManager button bound successfully');
             }
 
             // Cleanup timers
-            window.addEventListener('beforeunload', this._onBeforeUnload, { passive: true });
+            window.addEventListener('beforeunload', this._onBeforeUnload, { passive: false });
             console.log('✅ TelegramManager initialized');
         }
 
@@ -1761,7 +1761,7 @@ console.log('FC 26 Profile Setup - تم تهيئة JavaScript المدمج بن�
                 </div>
             `;
             const sec = document.getElementById('secondaryTelegramBtn');
-            if (sec) sec.addEventListener('click', this.openAppDirect, { passive: true });
+            if (sec) sec.addEventListener('click', this.openAppDirect, { passive: false });
 
             setTimeout(() => {
                 this.codeResultEl.classList.add('show');
@@ -2087,6 +2087,9 @@ console.log('FC 26 Profile Setup - تم تهيئة JavaScript المدمج بن�
 })();
 
 
+// ============================================================================
+// 🔥 TelegramManager - 🔥 الناهية 🔥 المعزول 🔥  الكامل 🔥🔥🔥
+// ============================================================================
 
 
 

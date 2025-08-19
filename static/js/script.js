@@ -2122,164 +2122,769 @@ function playSuccessSound() {
 
 
 
-// إضافة بريد إلكتروني جديد
-function addNewEmail() {
-    const emailInput = document.getElementById('newEmailInput');
-    const email = emailInput.value.trim();
 
-    if (!email) {
-        showNotification('يرجى إدخال البريد الإلكتروني', 'error');
-        emailInput.focus();
-        return;
-    }
 
-    if (!isValidEmail(email)) {
-        showNotification('البريد الإلكتروني غير صحيح', 'error');
-        emailInput.focus();
-        return;
-    }
+// ============================================================================
+// 🏰 EmailManager - النظام المعزول بالكامل (IIFE + Class Pattern)
+// ============================================================================
 
-    if (emailAddresses.includes(email.toLowerCase())) {
-        showNotification('هذا البريد مضاف بالفعل', 'error');
-        emailInput.focus();
-        return;
-    }
+(function() {
+    'use strict';
 
-    if (emailAddresses.length >= maxEmails) {
-        showNotification(`لا يمكن إضافة أكثر من ${maxEmails} عناوين بريد`, 'error');
-        return;
-    }
+    /**
+     * 🏰 EmailManager Class - نظام إدارة البريد الإلكتروني المعزول تماماً
+     * 
+     * ✅ عزل مطلق: كل شيء داخل IIFE
+     * ✅ إدارة حالة داخلية: الكلاس هو المصدر الوحيد للحقيقة
+     * ✅ صفر تبعيات خارجية: مكتفي ذاتياً 100%
+     * ✅ واجهة برمجية نظيفة: Clean API للتواصل مع الخارج
+     * ✅ حماية مطلقة: لا يتأثر بأي تغييرات خارجية
+     */
+    class EmailManager {
+        constructor() {
+            // 🔒 الحالة الداخلية المحمية
+            this.state = {
+                emails: [],
+                maxEmails: 6,
+                initialized: false,
+                isProcessing: false
+            };
 
-    // إضافة الإيميل للقائمة
-    emailAddresses.push(email.toLowerCase());
+            // 🎯 مراجع DOM المحمية
+            this.elements = {
+                container: null,
+                newEmailInput: null,
+                emailAddressesInput: null,
+                addEmailButton: null
+            };
 
-    // إنشاء عنصر الإيميل الجديد
-    createEmailElement(email, emailAddresses.length);
+            // 🛡️ إعدادات الحماية
+            this.config = {
+                maxEmails: 6,
+                notificationDuration: 5000,
+                animationDelay: 400,
+                validEmailRegex: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                vibratePatterns: {
+                    success: [50, 50, 100],
+                    error: [100, 50, 100, 50, 100],
+                    delete: [30, 30, 30]
+                }
+            };
 
-    // تنظيف الحقل
-    emailInput.value = '';
-    emailInput.focus();
-
-    // تحديث الحقل المخفي
-    updateEmailsInput();
-
-    // تحديث حالة الزر
-    updateAddEmailButton();
-
-    // رسالة نجاح
-    showNotification(`تم إضافة البريد رقم ${emailAddresses.length}`, 'success');
-
-    // اهتزاز للهواتف
-    if (navigator.vibrate) {
-        navigator.vibrate([50, 50, 100]);
-    }
-}
-
-// إنشاء عنصر البريد الإلكتروني
-function createEmailElement(email, number) {
-    const container = document.getElementById('emailsContainer');
-
-    // إزالة رسالة "فارغ" إن وجدت
-    const emptyMsg = container.querySelector('.emails-empty');
-    if (emptyMsg) {
-        emptyMsg.remove();
-    }
-
-    const emailDiv = document.createElement('div');
-    emailDiv.className = `email-item email-${number}`;
-    emailDiv.setAttribute('data-email', email);
-
-    emailDiv.innerHTML = `
-        <div class="email-number">${number}</div>
-        <div class="email-text">${email}</div>
-        <button type="button" class="delete-email-btn" onclick="removeEmail('${email}')" title="حذف البريد">
-            <i class="fas fa-times"></i>
-        </button>
-    `;
-
-    container.appendChild(emailDiv);
-}
-
-// حذف بريد إلكتروني
-function removeEmail(email) {
-    const emailElement = document.querySelector(`[data-email="${email}"]`);
-    if (!emailElement) return;
-
-    // تأثير الحذف
-    emailElement.classList.add('removing');
-
-    setTimeout(() => {
-        // إزالة من القائمة
-        const index = emailAddresses.indexOf(email);
-        if (index > -1) {
-            emailAddresses.splice(index, 1);
+            // 🔗 ربط السياق للـ methods
+            this.addNewEmail = this.addNewEmail.bind(this);
+            this.removeEmail = this.removeEmail.bind(this);
+            this.handleKeyPress = this.handleKeyPress.bind(this);
+            this.handleInputChange = this.handleInputChange.bind(this);
         }
 
-        // إزالة العنصر
-        emailElement.remove();
+        /**
+         * 🚀 تهيئة النظام
+         */
+        init() {
+            if (this.state.initialized) {
+                console.warn('⚠️ EmailManager: النظام مُهيأ بالفعل');
+                return false;
+            }
 
-        // إعادة ترقيم الإيميلات
-        renumberEmails();
+            try {
+                // 🔍 البحث عن العناصر المطلوبة
+                this.elements.container = document.getElementById('emailsContainer');
+                this.elements.newEmailInput = document.getElementById('newEmailInput');
+                this.elements.emailAddressesInput = document.getElementById('emailAddressesInput');
+                this.elements.addEmailButton = document.querySelector('.add-email-btn');
 
-        // تحديث الحقل المخفي
-        updateEmailsInput();
+                // 🚫 التحقق من وجود العناصر الأساسية
+                if (!this.validateElements()) {
+                    console.error('❌ EmailManager: عناصر DOM المطلوبة غير موجودة');
+                    return false;
+                }
 
-        // تحديث حالة الزر
-        updateAddEmailButton();
+                // 🔗 ربط الأحداث
+                this.bindEvents();
 
-        // إضافة رسالة فارغة إذا لم تعد هناك إيميلات
-        if (emailAddresses.length === 0) {
-            addEmptyMessage();
+                // 🎨 تهيئة الواجهة
+                this.initializeUI();
+
+                // ✅ تحديث الحالة
+                this.state.initialized = true;
+                console.log('✅ EmailManager: تم التهيئة بنجاح');
+                
+                return true;
+
+            } catch (error) {
+                console.error('❌ EmailManager: خطأ في التهيئة:', error);
+                return false;
+            }
         }
 
-        showNotification('تم حذف البريد الإلكتروني', 'success');
+        /**
+         * 🔍 التحقق من وجود العناصر المطلوبة
+         */
+        validateElements() {
+            return !!(this.elements.container && 
+                     this.elements.newEmailInput && 
+                     this.elements.addEmailButton);
+        }
 
-    }, 400);
-}
+        /**
+         * 🔗 ربط الأحداث
+         */
+        bindEvents() {
+            // زر الإضافة
+            if (this.elements.addEmailButton) {
+                this.elements.addEmailButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.addNewEmail();
+                });
+            }
 
-// إعادة ترقيم الإيميلات بعد الحذف
-function renumberEmails() {
-    const emailItems = document.querySelectorAll('.email-item:not(.removing)');
+            // حقل الإدخال
+            if (this.elements.newEmailInput) {
+                // Enter key
+                this.elements.newEmailInput.addEventListener('keypress', this.handleKeyPress);
+                
+                // تحديث حالة الزر عند الكتابة
+                this.elements.newEmailInput.addEventListener('input', this.handleInputChange);
+            }
+        }
 
-    emailItems.forEach((item, index) => {
-        const newNumber = index + 1;
-        const numberElement = item.querySelector('.email-number');
+        /**
+         * ⌨️ معالجة ضغط المفاتيح
+         */
+        handleKeyPress(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.addNewEmail();
+            }
+        }
 
-        // تحديث الرقم
-        numberElement.textContent = newNumber;
+        /**
+         * 📝 معالجة تغيير المدخلات
+         */
+        handleInputChange() {
+            this.updateAddButton();
+        }
 
-        // تحديث الكلاس
-        item.className = `email-item email-${newNumber}`;
-    });
-}
+        /**
+         * 🎨 تهيئة الواجهة
+         */
+        initializeUI() {
+            // إضافة رسالة فارغة إذا لزم
+            if (this.state.emails.length === 0) {
+                this.showEmptyMessage();
+            }
 
-// إضافة رسالة فارغة
-function addEmptyMessage() {
-    const container = document.getElementById('emailsContainer');
-    const emptyDiv = document.createElement('div');
-    emptyDiv.className = 'emails-empty';
-    emptyDiv.innerHTML = '<i class="fas fa-envelope-open"></i> لم تتم إضافة أي عناوين بريد إلكتروني';
-    container.appendChild(emptyDiv);
-}
+            // تحديث حالة الزر
+            this.updateAddButton();
 
-// تحديث الحقل المخفي
-function updateEmailsInput() {
-    const input = document.getElementById('emailAddressesInput');
-    input.value = JSON.stringify(emailAddresses);
-}
+            // تحديث الحقل المخفي
+            this.updateHiddenInput();
+        }
 
-// تحديث حالة زر الإضافة
-function updateAddEmailButton() {
-    const button = document.querySelector('.add-email-btn');
+        /**
+         * ✅ التحقق من صحة البريد الإلكتروني
+         */
+        isValidEmail(email) {
+            if (!email || typeof email !== 'string') {
+                return false;
+            }
 
-    if (emailAddresses.length >= maxEmails) {
-        button.disabled = true;
-        button.innerHTML = '<i class="fas fa-check"></i> تم الوصول للحد الأقصى';
-    } else {
-        button.disabled = false;
-        button.innerHTML = '<i class="fas fa-plus"></i> إضافة بريد إلكتروني';
+            const cleanEmail = email.trim().toLowerCase();
+            
+            // التحقق الأساسي
+            if (!this.config.validEmailRegex.test(cleanEmail)) {
+                return false;
+            }
+
+            // فحوص إضافية
+            if (cleanEmail.length > 254) return false;
+            if (cleanEmail.includes('..')) return false;
+            if (cleanEmail.startsWith('.') || cleanEmail.endsWith('.')) return false;
+            
+            // التحقق من الجزء المحلي والنطاق
+            const [localPart, domain] = cleanEmail.split('@');
+            if (localPart.length > 64) return false;
+            if (domain.length > 253) return false;
+
+            return true;
+        }
+
+        /**
+         * 📧 إضافة بريد إلكتروني جديد
+         */
+        addNewEmail() {
+            // منع المعالجة المتزامنة
+            if (this.state.isProcessing) return false;
+            
+            this.state.isProcessing = true;
+
+            const input = this.elements.newEmailInput;
+            if (!input) {
+                this.state.isProcessing = false;
+                return false;
+            }
+
+            const email = input.value.trim();
+
+            // التحققات
+            if (!email) {
+                this.showNotification('يرجى إدخال البريد الإلكتروني', 'error');
+                input.focus();
+                this.state.isProcessing = false;
+                return false;
+            }
+
+            if (!this.isValidEmail(email)) {
+                this.showNotification('البريد الإلكتروني غير صحيح', 'error');
+                input.focus();
+                this.state.isProcessing = false;
+                return false;
+            }
+
+            const normalizedEmail = email.toLowerCase();
+
+            if (this.state.emails.includes(normalizedEmail)) {
+                this.showNotification('هذا البريد مضاف بالفعل', 'error');
+                input.focus();
+                this.state.isProcessing = false;
+                return false;
+            }
+
+            if (this.state.emails.length >= this.config.maxEmails) {
+                this.showNotification(`لا يمكن إضافة أكثر من ${this.config.maxEmails} عناوين بريد`, 'error');
+                this.state.isProcessing = false;
+                return false;
+            }
+
+            // ✅ إضافة البريد
+            this.state.emails.push(normalizedEmail);
+            
+            // إزالة رسالة الفراغ
+            this.removeEmptyMessage();
+            
+            // إنشاء العنصر
+            this.createEmailElement(normalizedEmail, this.state.emails.length);
+            
+            // تنظيف وتحديث
+            input.value = '';
+            input.focus();
+            this.updateHiddenInput();
+            this.updateAddButton();
+            
+            // إشعار النجاح
+            this.showNotification(`تم إضافة البريد رقم ${this.state.emails.length}`, 'success');
+            
+            // اهتزاز
+            this.vibrate('success');
+            
+            this.state.isProcessing = false;
+            return true;
+        }
+
+        /**
+         * 🏗️ إنشاء عنصر البريد الإلكتروني
+         */
+        createEmailElement(email, number) {
+            if (!this.elements.container) return;
+
+            const emailDiv = document.createElement('div');
+            emailDiv.className = `email-item email-${number}`;
+            emailDiv.setAttribute('data-email', email);
+            emailDiv.style.opacity = '0';
+            emailDiv.style.transform = 'translateY(20px)';
+
+            // محتوى آمن
+            const safeEmail = this.escapeHtml(email);
+            
+            emailDiv.innerHTML = `
+                <div class="email-number">${number}</div>
+                <div class="email-text">${safeEmail}</div>
+                <button type="button" class="delete-email-btn" title="حذف البريد">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+
+            // ربط حدث الحذف
+            const deleteBtn = emailDiv.querySelector('.delete-email-btn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.removeEmail(email);
+                });
+            }
+
+            // إضافة للحاوية
+            this.elements.container.appendChild(emailDiv);
+
+            // انيميشن الظهور
+            requestAnimationFrame(() => {
+                emailDiv.style.transition = 'all 0.3s ease';
+                emailDiv.style.opacity = '1';
+                emailDiv.style.transform = 'translateY(0)';
+            });
+        }
+
+        /**
+         * 🗑️ حذف بريد إلكتروني
+         */
+        removeEmail(email) {
+            if (this.state.isProcessing) return false;
+            
+            this.state.isProcessing = true;
+
+            const element = this.elements.container?.querySelector(`[data-email="${email}"]`);
+            if (!element) {
+                this.state.isProcessing = false;
+                return false;
+            }
+
+            // انيميشن الحذف
+            element.style.transition = 'all 0.3s ease';
+            element.style.opacity = '0';
+            element.style.transform = 'translateX(-100%)';
+
+            setTimeout(() => {
+                // إزالة من الحالة
+                const index = this.state.emails.indexOf(email);
+                if (index > -1) {
+                    this.state.emails.splice(index, 1);
+                }
+
+                // إزالة العنصر
+                element.remove();
+
+                // إعادة الترقيم
+                this.renumberEmails();
+
+                // التحديثات
+                this.updateHiddenInput();
+                this.updateAddButton();
+
+                // رسالة فارغة إذا لزم
+                if (this.state.emails.length === 0) {
+                    this.showEmptyMessage();
+                }
+
+                // إشعار
+                this.showNotification('تم حذف البريد الإلكتروني', 'success');
+                
+                // اهتزاز
+                this.vibrate('delete');
+                
+                this.state.isProcessing = false;
+
+            }, this.config.animationDelay);
+
+            return true;
+        }
+
+        /**
+         * 🔢 إعادة ترقيم الإيميلات
+         */
+        renumberEmails() {
+            const items = this.elements.container?.querySelectorAll('.email-item');
+            if (!items) return;
+
+            items.forEach((item, index) => {
+                const newNumber = index + 1;
+                const numberEl = item.querySelector('.email-number');
+                
+                if (numberEl) {
+                    numberEl.textContent = newNumber;
+                }
+                
+                item.className = `email-item email-${newNumber}`;
+            });
+        }
+
+        /**
+         * 📝 عرض رسالة الفراغ
+         */
+        showEmptyMessage() {
+            if (!this.elements.container) return;
+            
+            // تحقق من عدم وجود رسالة مسبقاً
+            if (this.elements.container.querySelector('.emails-empty')) return;
+
+            const emptyDiv = document.createElement('div');
+            emptyDiv.className = 'emails-empty';
+            emptyDiv.innerHTML = '<i class="fas fa-envelope-open"></i> لم تتم إضافة أي عناوين بريد إلكتروني';
+            this.elements.container.appendChild(emptyDiv);
+        }
+
+        /**
+         * 🗑️ إزالة رسالة الفراغ
+         */
+        removeEmptyMessage() {
+            const emptyMsg = this.elements.container?.querySelector('.emails-empty');
+            if (emptyMsg) {
+                emptyMsg.remove();
+            }
+        }
+
+        /**
+         * 💾 تحديث الحقل المخفي
+         */
+        updateHiddenInput() {
+            if (this.elements.emailAddressesInput) {
+                this.elements.emailAddressesInput.value = JSON.stringify(this.state.emails);
+            }
+        }
+
+        /**
+         * 🔘 تحديث زر الإضافة
+         */
+        updateAddButton() {
+            const button = this.elements.addEmailButton;
+            if (!button) return;
+
+            const inputValue = this.elements.newEmailInput?.value.trim() || '';
+            const hasInput = inputValue.length > 0;
+            const hasReachedLimit = this.state.emails.length >= this.config.maxEmails;
+
+            if (hasReachedLimit) {
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-check"></i> تم الوصول للحد الأقصى';
+            } else if (hasInput) {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-plus"></i> إضافة بريد إلكتروني';
+            } else {
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-plus"></i> إضافة بريد إلكتروني';
+            }
+        }
+
+        /**
+         * 🔔 عرض الإشعارات
+         */
+        showNotification(message, type = 'info') {
+            // إنشاء عنصر الإشعار
+            const notification = document.createElement('div');
+            notification.className = `email-notification ${type}`;
+            
+            const icons = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-circle',
+                info: 'fa-info-circle'
+            };
+
+            const colors = {
+                success: '#10B981',
+                error: '#DC2626',
+                info: '#3B82F6'
+            };
+
+            notification.innerHTML = `
+                <div class="notification-content">
+                    <i class="fas ${icons[type] || icons.info}"></i>
+                    <span>${this.escapeHtml(message)}</span>
+                </div>
+                <button class="notification-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+
+            // الأنماط المباشرة
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${colors[type] || colors.info};
+                color: white;
+                padding: 15px 20px;
+                border-radius: 10px;
+                z-index: 10000;
+                font-weight: 600;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                max-width: 90%;
+                opacity: 0;
+                transition: all 0.3s ease;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            `;
+
+            document.body.appendChild(notification);
+
+            // إظهار
+            requestAnimationFrame(() => {
+                notification.style.opacity = '1';
+            });
+
+            // زر الإغلاق
+            const closeBtn = notification.querySelector('.notification-close');
+            if (closeBtn) {
+                closeBtn.style.cssText = `
+                    background: none;
+                    border: none;
+                    color: white;
+                    cursor: pointer;
+                    padding: 0;
+                    margin-left: 10px;
+                `;
+                
+                closeBtn.addEventListener('click', () => {
+                    this.hideNotification(notification);
+                });
+            }
+
+            // إخفاء تلقائي
+            setTimeout(() => {
+                this.hideNotification(notification);
+            }, this.config.notificationDuration);
+        }
+
+        /**
+         * 🙈 إخفاء الإشعار
+         */
+        hideNotification(notification) {
+            if (!notification) return;
+            
+            notification.style.opacity = '0';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }
+
+        /**
+         * 📱 الاهتزاز
+         */
+        vibrate(type = 'default') {
+            if (!navigator.vibrate) return;
+            
+            const pattern = this.config.vibratePatterns[type] || [50];
+            
+            try {
+                navigator.vibrate(pattern);
+            } catch (error) {
+                // تجاهل الأخطاء
+            }
+        }
+
+        /**
+         * 🛡️ حماية من XSS
+         */
+        escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, (m) => map[m]);
+        }
+
+        /**
+         * 📊 الحصول على الحالة
+         */
+        getState() {
+            return {
+                emails: [...this.state.emails],
+                count: this.state.emails.length,
+                maxEmails: this.config.maxEmails,
+                hasReachedLimit: this.state.emails.length >= this.config.maxEmails,
+                isInitialized: this.state.initialized
+            };
+        }
+
+        /**
+         * 🔄 إعادة تعيين
+         */
+        reset() {
+            this.state.emails = [];
+            this.updateHiddenInput();
+            this.updateAddButton();
+            
+            // مسح العناصر
+            if (this.elements.container) {
+                this.elements.container.innerHTML = '';
+                this.showEmptyMessage();
+            }
+            
+            this.showNotification('تم مسح جميع عناوين البريد', 'info');
+        }
+
+        /**
+         * 📥 تحديد إيميلات من الخارج
+         */
+        setEmails(emails) {
+            if (!Array.isArray(emails)) {
+                console.error('❌ EmailManager: المدخل يجب أن يكون مصفوفة');
+                return false;
+            }
+
+            // مسح الحالي
+            this.reset();
+
+            // إضافة الجديد
+            emails.forEach(email => {
+                if (this.isValidEmail(email) && this.state.emails.length < this.config.maxEmails) {
+                    const normalizedEmail = email.toLowerCase();
+                    if (!this.state.emails.includes(normalizedEmail)) {
+                        this.state.emails.push(normalizedEmail);
+                        this.createEmailElement(normalizedEmail, this.state.emails.length);
+                    }
+                }
+            });
+
+            // التحديثات
+            this.updateHiddenInput();
+            this.updateAddButton();
+
+            if (this.state.emails.length > 0) {
+                this.removeEmptyMessage();
+            }
+
+            return true;
+        }
+
+        /**
+         * 🔧 تحديث الإعدادات
+         */
+        updateConfig(newConfig) {
+            if (typeof newConfig === 'object') {
+                Object.assign(this.config, newConfig);
+                this.updateAddButton();
+            }
+        }
+
+        /**
+         * 🧹 تنظيف الموارد
+         */
+        destroy() {
+            // إزالة الأحداث
+            if (this.elements.addEmailButton) {
+                this.elements.addEmailButton.removeEventListener('click', this.addNewEmail);
+            }
+            
+            if (this.elements.newEmailInput) {
+                this.elements.newEmailInput.removeEventListener('keypress', this.handleKeyPress);
+                this.elements.newEmailInput.removeEventListener('input', this.handleInputChange);
+            }
+
+            // مسح المراجع
+            this.elements = {};
+            this.state.emails = [];
+            this.state.initialized = false;
+            
+            console.log('🧹 EmailManager: تم التنظيف');
+        }
     }
+
+    // ============================================================================
+    // 🌐 التفعيل والتصدير
+    // ============================================================================
+
+    /**
+     * 🎯 إنشاء المثيل الوحيد
+     */
+    const emailManager = new EmailManager();
+
+    /**
+     * 🚀 التهيئة التلقائية عند تحميل DOM
+     */
+    function autoInit() {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(() => emailManager.init(), 100);
+            });
+        } else {
+            setTimeout(() => emailManager.init(), 100);
+        }
+    }
+
+    // بدء التهيئة التلقائية
+    autoInit();
+
+    // ============================================================================
+    // 🌐 الواجهة البرمجية العامة (Public API)
+    // ============================================================================
+
+    /**
+     * 🔒 تصدير محدود وآمن للنطاق العالمي
+     */
+    if (typeof window !== 'undefined') {
+        window.EmailManagerAPI = {
+            // الوظائف الأساسية
+            init: () => emailManager.init(),
+            addEmail: () => emailManager.addNewEmail(),
+            removeEmail: (email) => emailManager.removeEmail(email),
+            reset: () => emailManager.reset(),
+            
+            // القراءة
+            getState: () => emailManager.getState(),
+            getEmails: () => [...emailManager.state.emails],
+            getCount: () => emailManager.state.emails.length,
+            isInitialized: () => emailManager.state.initialized,
+            
+            // التحديث
+            setEmails: (emails) => emailManager.setEmails(emails),
+            updateConfig: (config) => emailManager.updateConfig(config),
+            
+            // معلومات النظام
+            version: '2.0.0 - Fully Isolated',
+            
+            // للتطوير فقط (يمكن حذفها في الإنتاج)
+            debug: {
+                manager: emailManager,
+                checkElements: () => ({
+                    container: !!emailManager.elements.container,
+                    input: !!emailManager.elements.newEmailInput,
+                    button: !!emailManager.elements.addEmailButton
+                })
+            }
+        };
+
+        console.log('🌐 EmailManagerAPI: متاح عالمياً مع عزل كامل');
+    }
+
+})(); // نهاية IIFE - العزل المطلق
+
+// ============================================================================
+// 🔄 جسر التوافقية (Compatibility Bridge)
+// ============================================================================
+
+/**
+ * دوال التوافق مع الكود القديم
+ * يمكن حذفها بعد تحديث كل الأماكن التي تستخدمها
+ */
+
+// دالة addNewEmail القديمة
+if (typeof addNewEmail === 'undefined') {
+    window.addNewEmail = function() {
+        if (window.EmailManagerAPI) {
+            return window.EmailManagerAPI.addEmail();
+        }
+        console.warn('⚠️ EmailManager غير متاح');
+        return false;
+    };
 }
+
+// دالة removeEmail القديمة  
+if (typeof removeEmail === 'undefined') {
+    window.removeEmail = function(email) {
+        if (window.EmailManagerAPI) {
+            return window.EmailManagerAPI.removeEmail(email);
+        }
+        console.warn('⚠️ EmailManager غير متاح');
+        return false;
+    };
+}
+
+console.log('🏰 EmailManager: النظام المعزول جاهز للاستخدام!');
+
+
+
+// ============================================================================
+// 🏰🏰🏰 EmailManager - النظام 🏰 المعزول بالكامل 🏰 النهاي 🏰ة 🏰 (IIFE + Class Pattern)
+// ============================================================================
+
 
 
 // ═══════════════════════════════════════════════════════════════
@@ -2421,8 +3026,6 @@ async function copyInstapayLink(url) {
         showNotification('فشل في نسخ الرابط', 'error');
     }
 }
-
-
 
 
 

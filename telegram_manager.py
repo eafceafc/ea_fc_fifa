@@ -18,8 +18,16 @@ class TelegramManager:
     def __init__(self):
         # 🔥 تحميل محسن من متغيرات البيئة
         self.bot_token = os.environ.get('TELEGRAM_BOT_TOKEN')
-        self.bot_username = os.environ.get('TELEGRAM_BOT_USERNAME', 'YourBotName_bot')
+        # استخدام اسم البوت الصحيح من متغير البيئة أو القيمة الافتراضية الصحيحة
+        self.bot_username = os.environ.get('TELEGRAM_BOT_USERNAME', 'ea_fc_fifa_bot')
         self.webhook_url = os.environ.get('TELEGRAM_WEBHOOK_URL', 'https://ea-fc-fifa-5jbn.onrender.com/telegram-webhook')
+        
+        # محاولة الحصول على اسم البوت من API إذا كان التوكن موجوداً
+        if self.bot_token:
+            bot_info = self.get_bot_info_init()
+            if bot_info and bot_info.get('username'):
+                self.bot_username = bot_info.get('username')
+                print(f"✅ تم الحصول على اسم البوت من API: @{self.bot_username}")
         
         # 🔥 تشخيص فوري
         self.diagnose_telegram_config()
@@ -28,19 +36,34 @@ class TelegramManager:
         self.telegram_codes = {}
         self.users_data = {}
     
+    def get_bot_info_init(self):
+        """الحصول على معلومات البوت عند التهيئة بدون طباعة"""
+        if not self.bot_token:
+            return None
+        
+        try:
+            url = f"https://api.telegram.org/bot{self.bot_token}/getMe"
+            response = requests.get(url, timeout=10)
+            result = response.json()
+            
+            if result.get('ok'):
+                return result.get('result')
+            else:
+                return None
+                
+        except Exception:
+            return None
+    
     def diagnose_telegram_config(self):
         """تشخيص إعدادات التليجرام - جديد"""
         print("🔍 تشخيص إعدادات التليجرام:")
         print(f"   Bot Token: {'✅ موجود (' + self.bot_token[:10] + '...)' if self.bot_token else '❌ مفقود'}")
-        print(f"   Bot Username: {'✅ ' + self.bot_username if self.bot_username != 'YourBotName_bot' else '⚠️ افتراضي'}")
+        print(f"   Bot Username: {'✅ ' + self.bot_username if self.bot_username else '❌ مفقود'}")
         print(f"   Webhook URL: {'✅ ' + self.webhook_url if self.webhook_url else '❌ مفقود'}")
         
         if not self.bot_token:
             print("🚨 خطأ: TELEGRAM_BOT_TOKEN مفقود! التليجرام لن يعمل.")
             print("💡 الحل: أضف TELEGRAM_BOT_TOKEN في Render Environment Variables")
-        
-        if self.bot_username == 'YourBotName_bot':
-            print("⚠️ تحذير: TELEGRAM_BOT_USERNAME لم يتم تحديثه")
     
     def generate_telegram_code(self):
         """توليد كود فريد للتليجرام"""
@@ -74,6 +97,7 @@ class TelegramManager:
         telegram_link = f"https://t.me/{self.bot_username}?start={telegram_code}"
         
         print(f"🤖 Generated Telegram Code: {telegram_code} for {whatsapp_number}")
+        print(f"📎 Telegram Link: {telegram_link}")
         
         return {
             'success': True,
@@ -149,6 +173,10 @@ class TelegramManager:
             if result.get('ok'):
                 bot_info = result.get('result')
                 print(f"🤖 معلومات البوت: {bot_info.get('first_name')} (@{bot_info.get('username')})")
+                # تحديث اسم البوت إذا كان مختلفاً
+                if bot_info.get('username') and bot_info.get('username') != self.bot_username:
+                    self.bot_username = bot_info.get('username')
+                    print(f"✅ تم تحديث اسم البوت إلى: @{self.bot_username}")
                 return bot_info
             else:
                 print(f"❌ فشل الحصول على معلومات البوت: {result}")
@@ -234,11 +262,29 @@ class TelegramManager:
                         return {'success': False, 'message': 'كود غير صحيح'}
                 else:
                     # لا يوجد كود
-                    self.send_telegram_message(chat_id, "مرحباً! يرجى استخدام الرابط من الموقع للحصول على كود الربط.")
+                    welcome_msg = f"""مرحباً {first_name}! 👋
+
+أنا بوت FC 26 Profile System 🎮
+
+للبدء في استخدام خدماتنا:
+1️⃣ قم بزيارة موقعنا: https://ea-fc-fifa-5jbn.onrender.com
+2️⃣ أكمل تسجيل بياناتك
+3️⃣ احصل على رابط التفعيل الخاص بك
+4️⃣ اضغط على الرابط لربط حسابك
+
+نحن في انتظارك! 🚀"""
+                    self.send_telegram_message(chat_id, welcome_msg)
                     return {'success': False, 'message': 'لا يوجد كود'}
             else:
                 # رسالة عادية
-                self.send_telegram_message(chat_id, "مرحباً! يرجى استخدام الرابط من الموقع لربط حسابك.")
+                help_msg = """📌 تحتاج مساعدة؟
+
+يرجى استخدام الرابط من الموقع لربط حسابك.
+
+🔗 الموقع: https://ea-fc-fifa-5jbn.onrender.com
+
+للدعم الفني، تواصل معنا عبر الواتساب المسجل في الموقع."""
+                self.send_telegram_message(chat_id, help_msg)
                 return {'success': True, 'message': 'رسالة عادية'}
                 
         except Exception as e:

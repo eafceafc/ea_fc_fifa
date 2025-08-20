@@ -52,6 +52,17 @@ app = create_flask_app()
 print("🚀 FC 26 Profile System بدأ التشغيل مع البنية المعاد تنظيمها")
 print(f"📊 ملخص الإعدادات: {app_config.get_config_summary()}")
 
+# تعيين webhook للتليجرام تلقائياً عند بدء التشغيل
+if telegram_manager.bot_token:
+    print("🔄 محاولة تعيين Telegram Webhook...")
+    webhook_result = telegram_manager.set_webhook()
+    if webhook_result.get('success'):
+        print("✅ تم تعيين Telegram Webhook بنجاح")
+    else:
+        print(f"⚠️ فشل تعيين Webhook: {webhook_result.get('error')}")
+else:
+    print("⚠️ لا يمكن تعيين Webhook - TELEGRAM_BOT_TOKEN غير موجود")
+
 # ============================================================================
 # 🛡️ الخطوة 3: التحقق من الإعدادات (حارس البوابة)
 # ============================================================================

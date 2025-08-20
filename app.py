@@ -64,12 +64,6 @@ if not config_validation[0]:
         print(error)
     exit(1)
 
-# التحقق من صحة الإعدادات
-config_validation = app_config.validate_config()
-if config_validation["errors"]:
-    print("❌ أخطاء في الإعدادات:", config_validation["errors"])
-if config_validation["warnings"]:
-    print("⚠️ تحذيرات الإعدادات:", config_validation["warnings"])
 
 # ============================================================================
 # 🔑 الخطوة 4: إعداد الجلسات والأمان

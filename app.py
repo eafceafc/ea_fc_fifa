@@ -364,6 +364,29 @@ def set_telegram_webhook():
         print(f"خطأ في تعيين webhook: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
 
+@app.route("/setup-telegram", methods=["GET"])
+def setup_telegram():
+    """إعداد التليجرام تلقائياً - للاستخدام مرة واحدة"""
+    try:
+        # تعيين webhook
+        result = telegram_manager.set_webhook()
+        
+        # اختبار البوت
+        bot_info = telegram_manager.get_bot_info()
+        
+        setup_info = {
+            'webhook_result': result,
+            'bot_info': bot_info,
+            'config': telegram_manager.get_admin_data(),
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        return jsonify(setup_info)
+        
+    except Exception as e:
+        print(f"خطأ في إعداد التليجرام: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 
 @app.errorhandler(404)
 def not_found(error):

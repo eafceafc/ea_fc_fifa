@@ -1,176 +1,266 @@
-# app_config.py - إصلاح تحميل متغيرات البيئة
 """
-⚙️ وزارة الإعدادات - FC 26 Profile System - مُصححة لـ Render
-==========================================
+FC26 Profile System - App Configuration Module
+وزارة الإعدادات المركزية - معزولة ومتخصصة
 """
 
 import os
-import secrets
-from flask import Flask
+from typing import Dict, List, Tuple, Optional
+import logging
 
+# إعداد التسجيل
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class AppConfig:
-    """كلاس إدارة إعدادات التطبيق"""
+    """
+    فئة إعدادات التطبيق المركزية
+    تدير جميع متغيرات البيئة والإعدادات الأساسية بأمان كامل
+    """
     
     def __init__(self):
-        self.config = {}
-        self.load_environment_variables()
-        self.setup_security_config()
-        self.validate_render_environment()  # 🔥 جديد
+        """تهيئة إعدادات التطبيق مع قراءة متغيرات البيئة"""
+        # الإعدادات الأساسية المطلوبة
+        self.SECRET_KEY = os.environ.get('SECRET_KEY')
+        self.TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
+        
+        # إعدادات قاعدة البيانات
+        self.DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///fc26_profiles.db')
+        
+        # إعدادات التطبيق
+        self.DEBUG = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+        self.PORT = int(os.environ.get('PORT', 5000))
+        self.HOST = os.environ.get('HOST', '0.0.0.0')
+        
+        # إعدادات الأمان
+        self.MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
+        self.PERMANENT_SESSION_LIFETIME = 1800  # 30 minutes
+        
+        # إعدادات التحقق
+        self.VALIDATION_RULES = {
+            'whatsapp_min_length': 10,
+            'whatsapp_max_length': 15,
+            'name_min_length': 2,
+            'name_max_length': 50,
+            'position_max_length': 100,
+            'team_max_length': 50
+        }
+        
+        # إعدادات Telegram
+        self.TELEGRAM_CONFIG = {
+            'parse_mode': 'HTML',
+            'timeout': 30,
+            'read_timeout': 30,
+            'write_timeout': 30
+        }
+        
+        logger.info("✅ تم تحميل إعدادات التطبيق بنجاح")
     
-    def load_environment_variables(self):
-        """تحميل متغيرات البيئة - مُحسنة لـ Render"""
+    def validate_config(self) -> Tuple[bool, List[str]]:
+        """
+        التحقق من صحة جميع الإعدادات المطلوبة
         
-        # 🔥 التحقق من وجود متغيرات Render
-        telegram_token = os.environ.get('TELEGRAM_BOT_TOKEN')
-        telegram_username = os.environ.get('TELEGRAM_BOT_USERNAME') 
-        secret_key = os.environ.get('SECRET_KEY')
-        webhook_url = os.environ.get('TELEGRAM_WEBHOOK_URL')
+        Returns:
+            Tuple[bool, List[str]]: (هل الإعدادات صحيحة, قائمة الأخطاء)
+        """
+        errors = []
         
-        print(f"🔍 فحص متغيرات البيئة:")
-        print(f"   TELEGRAM_BOT_TOKEN: {'✅ موجود' if telegram_token else '❌ مفقود'}")
-        print(f"   TELEGRAM_BOT_USERNAME: {'✅ موجود' if telegram_username else '❌ مفقود'}")
-        print(f"   SECRET_KEY: {'✅ موجود' if secret_key else '❌ مفقود'}")
-        print(f"   TELEGRAM_WEBHOOK_URL: {'✅ موجود' if webhook_url else '❌ مفقود'}")
+        # التحقق من المتغيرات الأساسية المطلوبة
+        required_vars = {
+            'SECRET_KEY': self.SECRET_KEY,
+            'TELEGRAM_BOT_TOKEN': self.TELEGRAM_BOT_TOKEN
+        }
         
-        self.config.update({
-            # إعدادات Flask الأساسية
-            'SECRET_KEY': secret_key or secrets.token_urlsafe(32),
-            'DEBUG': os.environ.get('DEBUG', 'False').lower() == 'true',
-            'HOST': os.environ.get('HOST', '0.0.0.0'),
-            'PORT': int(os.environ.get('PORT', 10000)),  # 🔥 Render يستخدم PORT من البيئة
-            
-            # إعدادات قاعدة البيانات
-            'DATABASE_URL': os.environ.get('DATABASE_URL'),
-            'SQLALCHEMY_DATABASE_URI': os.environ.get('DATABASE_URL'),
-            'SQLALCHEMY_TRACK_MODIFICATIONS': False,
-            
-            # إعدادات التليجرام - مُحسنة
-            'TELEGRAM_BOT_TOKEN': telegram_token,
-            'TELEGRAM_BOT_USERNAME': telegram_username or 'YourBotName_bot',
-            'TELEGRAM_WEBHOOK_URL': webhook_url or 'https://ea-fc-fifa-5jbn.onrender.com/telegram-webhook',
-            
-            # إعدادات الأمان
-            'WTF_CSRF_ENABLED': True,
-            'WTF_CSRF_TIME_LIMIT': 3600,
-            
-            # إعدادات الجلسة - مُحسنة لـ Render
-            'PERMANENT_SESSION_LIFETIME': 3600,
-            'SESSION_COOKIE_SECURE': True,  # 🔥 Render يستخدم HTTPS
-            'SESSION_COOKIE_HTTPONLY': True,
-            'SESSION_COOKIE_SAMESITE': 'Lax',
-            
-            # إعدادات التطبيق
-            'MAX_CONTENT_LENGTH': 16 * 1024 * 1024,
-            'JSON_AS_ASCII': False,
-            'JSONIFY_PRETTYPRINT_REGULAR': True
-        })
-    
-    def validate_render_environment(self):
-        """التحقق من بيئة Render - جديد"""
-        is_render = os.environ.get('RENDER') or os.environ.get('RENDER_SERVICE_ID')
+        for var_name, var_value in required_vars.items():
+            if not var_value:
+                errors.append(f"❌ متغير البيئة المطلوب غير موجود: {var_name}")
+            elif len(var_value.strip()) == 0:
+                errors.append(f"❌ متغير البيئة فارغ: {var_name}")
         
-        if is_render:
-            print("🌐 تم اكتشاف بيئة Render")
-            
-            # التحقق من المتغيرات المطلوبة
-            required_vars = ['TELEGRAM_BOT_TOKEN', 'TELEGRAM_BOT_USERNAME']
-            missing_vars = [var for var in required_vars if not os.environ.get(var)]
-            
-            if missing_vars:
-                print(f"⚠️ متغيرات مفقودة في Render: {missing_vars}")
-                print("💡 يرجى إضافة هذه المتغيرات في Render Dashboard")
-            else:
-                print("✅ جميع المتغيرات المطلوبة موجودة")
+        # التحقق من صحة TELEGRAM_BOT_TOKEN
+        if self.TELEGRAM_BOT_TOKEN:
+            if not self._validate_telegram_token(self.TELEGRAM_BOT_TOKEN):
+                errors.append("❌ تنسيق TELEGRAM_BOT_TOKEN غير صحيح")
+        
+        # التحقق من إعدادات المنفذ
+        if not (1 <= self.PORT <= 65535):
+            errors.append(f"❌ رقم المنفذ غير صحيح: {self.PORT}")
+        
+        # التحقق من قواعد التحقق
+        if not self._validate_validation_rules():
+            errors.append("❌ قواعد التحقق غير صحيحة")
+        
+        is_valid = len(errors) == 0
+        
+        if is_valid:
+            logger.info("✅ جميع إعدادات التطبيق صحيحة")
         else:
-            print("💻 بيئة تطوير محلية")
+            logger.error(f"❌ وُجدت {len(errors)} أخطاء في الإعدادات")
+            for error in errors:
+                logger.error(error)
+        
+        return is_valid, errors
     
-    def setup_security_config(self):
-        """إعداد إعدادات الأمان"""
-        security_config = {
-            'CSRF_PROTECTION': True,
-            'SECURE_HEADERS': {
-                'X-Content-Type-Options': 'nosniff',
-                'X-Frame-Options': 'DENY',
-                'X-XSS-Protection': '1; mode=block',
-                'Referrer-Policy': 'strict-origin-when-cross-origin'
-            },
+    def _validate_telegram_token(self, token: str) -> bool:
+        """
+        التحقق من صحة تنسيق Telegram Bot Token
+        
+        Args:
+            token (str): رمز البوت
             
-            # إعدادات CORS - مُحسنة لـ Render
-            'CORS_ORIGINS': [
-                'https://ea-fc-fifa-5jbn.onrender.com',
-                'https://*.onrender.com'  # 🔥 دعم كل نطاقات Render
-            ],
-            'CORS_METHODS': ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-            'CORS_ALLOW_HEADERS': ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRFToken'],
-        }
+        Returns:
+            bool: صحة التنسيق
+        """
+        if not token:
+            return False
+            
+        # تنسيق Telegram Bot Token: XXXXXXXXX:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        parts = token.split(':')
+        if len(parts) != 2:
+            return False
+            
+        bot_id, auth_token = parts
         
-        self.config.update(security_config)
+        # التحقق من bot_id (يجب أن يكون رقماً)
+        if not bot_id.isdigit():
+            return False
+            
+        # التحقق من auth_token (يجب أن يكون 35 حرف)
+        if len(auth_token) != 35:
+            return False
+            
+        return True
     
-    def configure_flask_app(self, app):
-        """تطبيق الإعدادات على تطبيق Flask"""
-        # تطبيق الإعدادات الأساسية
-        for key, value in self.config.items():
-            app.config[key] = value
+    def _validate_validation_rules(self) -> bool:
+        """
+        التحقق من صحة قواعد التحقق المعرّفة
         
-        # إعداد الأمان المتقدم
-        self.setup_security_headers(app)
+        Returns:
+            bool: صحة القواعد
+        """
+        required_rules = [
+            'whatsapp_min_length', 'whatsapp_max_length',
+            'name_min_length', 'name_max_length',
+            'position_max_length', 'team_max_length'
+        ]
         
-        print("⚙️ تم تطبيق إعدادات التطبيق بنجاح")
-        return app
+        for rule in required_rules:
+            if rule not in self.VALIDATION_RULES:
+                return False
+            if not isinstance(self.VALIDATION_RULES[rule], int):
+                return False
+            if self.VALIDATION_RULES[rule] <= 0:
+                return False
+        
+        # التحقق من المنطق (min < max)
+        if (self.VALIDATION_RULES['whatsapp_min_length'] >= 
+            self.VALIDATION_RULES['whatsapp_max_length']):
+            return False
+            
+        if (self.VALIDATION_RULES['name_min_length'] >= 
+            self.VALIDATION_RULES['name_max_length']):
+            return False
+        
+        return True
     
-    def setup_security_headers(self, app):
-        """إعداد رؤوس الأمان"""
-        @app.after_request
-        def add_security_headers(response):
-            headers = self.config.get('SECURE_HEADERS', {})
-            for header, value in headers.items():
-                response.headers[header] = value
-            return response
+    def get_flask_config(self) -> Dict[str, any]:
+        """
+        إرجاع إعدادات Flask المطلوبة
         
-        return app
-    
-    def get_telegram_config(self):
-        """الحصول على إعدادات التليجرام"""
+        Returns:
+            Dict[str, any]: قاموس إعدادات Flask
+        """
         return {
-            'TELEGRAM_BOT_TOKEN': self.config.get('TELEGRAM_BOT_TOKEN'),
-            'TELEGRAM_BOT_USERNAME': self.config.get('TELEGRAM_BOT_USERNAME'),
-            'TELEGRAM_WEBHOOK_URL': self.config.get('TELEGRAM_WEBHOOK_URL')
+            'SECRET_KEY': self.SECRET_KEY,
+            'DEBUG': self.DEBUG,
+            'MAX_CONTENT_LENGTH': self.MAX_CONTENT_LENGTH,
+            'PERMANENT_SESSION_LIFETIME': self.PERMANENT_SESSION_LIFETIME,
+            'SQLALCHEMY_DATABASE_URI': self.DATABASE_URL,
+            'SQLALCHEMY_TRACK_MODIFICATIONS': False,
+            'SQLALCHEMY_ENGINE_OPTIONS': {
+                'pool_timeout': 20,
+                'pool_recycle': -1,
+                'pool_pre_ping': True
+            }
         }
     
-    def get_config_summary(self):
-        """الحصول على ملخص الإعدادات"""
-        telegram_config = self.get_telegram_config()
+    def get_telegram_config(self) -> Dict[str, any]:
+        """
+        إرجاع إعدادات Telegram
         
+        Returns:
+            Dict[str, any]: قاموس إعدادات Telegram
+        """
+        config = self.TELEGRAM_CONFIG.copy()
+        config['token'] = self.TELEGRAM_BOT_TOKEN
+        return config
+    
+    def get_validation_rules(self) -> Dict[str, int]:
+        """
+        إرجاع قواعد التحقق
+        
+        Returns:
+            Dict[str, int]: قاموس قواعد التحقق
+        """
+        return self.VALIDATION_RULES.copy()
+    
+    def is_production(self) -> bool:
+        """
+        التحقق من بيئة الإنتاج
+        
+        Returns:
+            bool: هل نحن في بيئة الإنتاج
+        """
+        return not self.DEBUG
+    
+    def get_database_config(self) -> Dict[str, str]:
+        """
+        إرجاع إعدادات قاعدة البيانات
+        
+        Returns:
+            Dict[str, str]: إعدادات قاعدة البيانات
+        """
         return {
-            'app_name': 'FC 26 Profile System',
-            'version': '2.0.0 - Render Ready',
-            'debug_mode': self.config.get('DEBUG'),
-            'database_connected': bool(self.config.get('DATABASE_URL')),
-            'telegram_configured': bool(telegram_config['TELEGRAM_BOT_TOKEN']),
-            'telegram_username': telegram_config['TELEGRAM_BOT_USERNAME'],
-            'webhook_url': telegram_config['TELEGRAM_WEBHOOK_URL'],
-            'security_enabled': self.config.get('WTF_CSRF_ENABLED'),
-            'host': self.config.get('HOST'),
-            'port': self.config.get('PORT'),
-            'environment': 'Render' if os.environ.get('RENDER') else 'Local'
+            'url': self.DATABASE_URL,
+            'track_modifications': False
         }
+    
+    def log_config_status(self) -> None:
+        """طباعة حالة الإعدادات في السجل"""
+        logger.info("=" * 50)
+        logger.info("📋 حالة إعدادات FC26 Profile System")
+        logger.info("=" * 50)
+        logger.info(f"🔐 SECRET_KEY: {'✅ محدد' if self.SECRET_KEY else '❌ غير محدد'}")
+        logger.info(f"🤖 TELEGRAM_BOT_TOKEN: {'✅ محدد' if self.TELEGRAM_BOT_TOKEN else '❌ غير محدد'}")
+        logger.info(f"🗄️ DATABASE_URL: {self.DATABASE_URL}")
+        logger.info(f"🐞 DEBUG Mode: {'✅ مفعل' if self.DEBUG else '❌ مُعطل'}")
+        logger.info(f"🌐 Server: {self.HOST}:{self.PORT}")
+        logger.info(f"🏗️ Environment: {'Development' if self.DEBUG else 'Production'}")
+        logger.info("=" * 50)
 
-
-# إنشاء instance عام للإعدادات
+# إنشاء مثيل عام للإعدادات
 app_config = AppConfig()
 
-# دوال مساعدة للتوافق
-def create_flask_app():
-    """إنشاء تطبيق Flask مع الإعدادات"""
-    app = Flask(__name__)
-    app = app_config.configure_flask_app(app)
-    return app
+# تصدير المتغيرات الأساسية للوصول السريع
+SECRET_KEY = app_config.SECRET_KEY
+TELEGRAM_BOT_TOKEN = app_config.TELEGRAM_BOT_TOKEN
+DEBUG = app_config.DEBUG
+PORT = app_config.PORT
+HOST = app_config.HOST
 
-def get_config(key, default=None):
-    """الحصول على إعداد محدد"""
-    return app_config.config.get(key, default)
+# التحقق الفوري من الإعدادات عند التحميل
+def verify_startup_config():
+    """التحقق من الإعدادات عند بدء التشغيل"""
+    is_valid, errors = app_config.validate_config()
+    
+    if not is_valid:
+        logger.critical("🚨 فشل في التحقق من إعدادات التطبيق!")
+        for error in errors:
+            logger.critical(error)
+        raise EnvironmentError("إعدادات التطبيق غير صحيحة")
+    
+    app_config.log_config_status()
+    logger.info("🚀 إعدادات التطبيق جاهزة للتشغيل")
 
-def generate_csrf_token():
-    """توليد رمز CSRF آمن"""
-    return secrets.token_urlsafe(32)
+if __name__ == "__main__":
+    # تشغيل التحقق عندما يتم تشغيل الملف مباشرة
+    verify_startup_config()

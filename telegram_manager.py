@@ -1,12 +1,7 @@
-# telegram_manager.py - وزارة التليجرام المستقلة
+# telegram_manager.py - وزارة التليجرام المستقلة - مُصححة لـ Render
 """
-🤖 وزارة التليجرام - FC 26 Profile System
+🤖 وزارة التليجرام - FC 26 Profile System - Render Ready
 ==========================================
-مسؤولة عن جميع عمليات التليجرام والربط
-- إدارة بوت التليجرام
-- توليد الأكواد وإدارة الـ webhooks
-- ربط الحسابات والإشعارات
-- معالجة الرسائل والردود
 """
 
 import os
@@ -21,13 +16,31 @@ class TelegramManager:
     """الكلاس الأساسي لإدارة التليجرام"""
     
     def __init__(self):
+        # 🔥 تحميل محسن من متغيرات البيئة
         self.bot_token = os.environ.get('TELEGRAM_BOT_TOKEN')
         self.bot_username = os.environ.get('TELEGRAM_BOT_USERNAME', 'YourBotName_bot')
-        self.webhook_url = os.environ.get('TELEGRAM_WEBHOOK_URL')
+        self.webhook_url = os.environ.get('TELEGRAM_WEBHOOK_URL', 'https://ea-fc-fifa-5jbn.onrender.com/telegram-webhook')
         
-        # قاعدة بيانات الأكواد في الذاكرة (يمكن تحويلها لقاعدة بيانات لاحقاً)
+        # 🔥 تشخيص فوري
+        self.diagnose_telegram_config()
+        
+        # قاعدة بيانات الأكواد في الذاكرة
         self.telegram_codes = {}
         self.users_data = {}
+    
+    def diagnose_telegram_config(self):
+        """تشخيص إعدادات التليجرام - جديد"""
+        print("🔍 تشخيص إعدادات التليجرام:")
+        print(f"   Bot Token: {'✅ موجود (' + self.bot_token[:10] + '...)' if self.bot_token else '❌ مفقود'}")
+        print(f"   Bot Username: {'✅ ' + self.bot_username if self.bot_username != 'YourBotName_bot' else '⚠️ افتراضي'}")
+        print(f"   Webhook URL: {'✅ ' + self.webhook_url if self.webhook_url else '❌ مفقود'}")
+        
+        if not self.bot_token:
+            print("🚨 خطأ: TELEGRAM_BOT_TOKEN مفقود! التليجرام لن يعمل.")
+            print("💡 الحل: أضف TELEGRAM_BOT_TOKEN في Render Environment Variables")
+        
+        if self.bot_username == 'YourBotName_bot':
+            print("⚠️ تحذير: TELEGRAM_BOT_USERNAME لم يتم تحديثه")
     
     def generate_telegram_code(self):
         """توليد كود فريد للتليجرام"""
@@ -35,6 +48,15 @@ class TelegramManager:
     
     def create_telegram_code(self, platform, whatsapp_number, payment_method, payment_details, telegram_username):
         """إنشاء كود تليجرام جديد مع البيانات"""
+        
+        # 🔥 التحقق من إعدادات التليجرام
+        if not self.bot_token:
+            return {
+                'success': False,
+                'error': 'telegram_not_configured',
+                'message': 'إعدادات التليجرام غير مكتملة - يرجى المحاولة لاحقاً'
+            }
+        
         telegram_code = self.generate_telegram_code()
         
         # حفظ البيانات في الذاكرة المؤقتة
@@ -57,65 +79,84 @@ class TelegramManager:
             'success': True,
             'code': telegram_code,
             'telegram_link': telegram_link,
+            'bot_username': self.bot_username,
             'message': f'تم إنشاء الكود: {telegram_code}'
         }
     
-    def notify_website_telegram_linked(self, code, profile_data, chat_id, first_name, username):
-        """إشعار الموقع بنجاح ربط التليجرام"""
+    def send_telegram_message(self, chat_id, message):
+        """إرسال رسالة عبر التليجرام"""
+        if not self.bot_token:
+            print("⚠️ لا يوجد توكن للبوت")
+            return False
+        
         try:
-            # تحديث بيانات المستخدم
-            user_id = hashlib.md5(f"{profile_data['whatsapp_number']}-telegram-{code}".encode()).hexdigest()[:12]
-            
-            updated_user_data = {
-                **profile_data,
-                'telegram_linked': True,
-                'telegram_chat_id': chat_id,
-                'telegram_first_name': first_name,
-                'telegram_username_actual': username,
-                'telegram_linked_at': datetime.now().isoformat(),
-                'user_id': user_id
+            url = f"https://api.telegram.org/bot{self.bot_token}/sendMessage"
+            data = {
+                'chat_id': chat_id,
+                'text': message,
+                'parse_mode': 'HTML'
             }
             
-            # حفظ في بيانات المستخدمين
-            self.users_data[user_id] = updated_user_data
+            response = requests.post(url, json=data, timeout=30)  # 🔥 زيادة timeout
             
-            print(f"🔗 Telegram Linked Successfully!")
-            print(f"   User: {first_name} (@{username})")
-            print(f"   WhatsApp: {profile_data['whatsapp_number']}")
-            print(f"   Platform: {profile_data['platform']}")
-            print(f"   Code: {code}")
-            print(f"   Chat ID: {chat_id}")
-            
-            return True, updated_user_data
-            
+            if response.status_code == 200:
+                print(f"✅ تم إرسال رسالة تليجرام بنجاح إلى {chat_id}")
+                return True
+            else:
+                print(f"❌ فشل إرسال رسالة تليجرام: {response.status_code}")
+                print(f"Response: {response.text}")
+                return False
+                
         except Exception as e:
-            print(f"خطأ في إشعار الموقع: {str(e)}")
-            return False, None
+            print(f"خطأ في إرسال رسالة تليجرام: {str(e)}")
+            return False
     
-    def get_payment_display_text(self, payment_method, payment_details):
-        """تنسيق نص عرض طريقة الدفع"""
-        if not payment_details:
-            return ""
+    def set_webhook(self, webhook_url=None):
+        """تعيين webhook للبوت"""
+        if not self.bot_token:
+            return {'success': False, 'error': 'لا يوجد توكن للبوت'}
         
-        payment_names = {
-            'vodafone_cash': 'فودافون كاش',
-            'etisalat_cash': 'اتصالات كاش',
-            'orange_cash': 'أورانج كاش',
-            'we_cash': 'وي كاش',
-            'bank_wallet': 'محفظة بنكية',
-            'tilda': 'بطاقة تيلدا',
-            'instapay': 'رابط إنستا باي'
-        }
+        webhook_url = webhook_url or self.webhook_url
         
-        method_name = payment_names.get(payment_method, payment_method)
+        try:
+            url = f"https://api.telegram.org/bot{self.bot_token}/setWebhook"
+            data = {'url': webhook_url}
+            
+            response = requests.post(url, json=data, timeout=30)
+            result = response.json()
+            
+            if result.get('ok'):
+                print(f"✅ تم تعيين webhook بنجاح: {webhook_url}")
+                return {'success': True, 'result': result}
+            else:
+                print(f"❌ فشل تعيين webhook: {result}")
+                return {'success': False, 'error': result.get('description')}
+                
+        except Exception as e:
+            print(f"خطأ في تعيين webhook: {str(e)}")
+            return {'success': False, 'error': str(e)}
+    
+    def get_bot_info(self):
+        """الحصول على معلومات البوت"""
+        if not self.bot_token:
+            return None
         
-        if payment_method == 'instapay':
-            return f"🔗 {method_name}: {payment_details}"
-        elif payment_method == 'tilda':
-            masked_card = f"**** **** **** {payment_details[-4:]}" if len(payment_details) >= 4 else payment_details
-            return f"💳 {method_name}: {masked_card}"
-        else:
-            return f"📱 {method_name}: {payment_details}"
+        try:
+            url = f"https://api.telegram.org/bot{self.bot_token}/getMe"
+            response = requests.get(url, timeout=30)
+            result = response.json()
+            
+            if result.get('ok'):
+                bot_info = result.get('result')
+                print(f"🤖 معلومات البوت: {bot_info.get('first_name')} (@{bot_info.get('username')})")
+                return bot_info
+            else:
+                print(f"❌ فشل الحصول على معلومات البوت: {result}")
+                return None
+                
+        except Exception as e:
+            print(f"خطأ في الحصول على معلومات البوت: {str(e)}")
+            return None
     
     def process_telegram_webhook(self, update_data):
         """معالجة webhook من التليجرام"""
@@ -204,75 +245,62 @@ class TelegramManager:
             print(f"خطأ في معالجة webhook: {str(e)}")
             return {'success': False, 'error': str(e)}
     
-    def send_telegram_message(self, chat_id, message):
-        """إرسال رسالة عبر التليجرام"""
-        if not self.bot_token:
-            print("⚠️ لا يوجد توكن للبوت")
-            return False
-        
+    def notify_website_telegram_linked(self, code, profile_data, chat_id, first_name, username):
+        """إشعار الموقع بنجاح ربط التليجرام"""
         try:
-            url = f"https://api.telegram.org/bot{self.bot_token}/sendMessage"
-            data = {
-                'chat_id': chat_id,
-                'text': message,
-                'parse_mode': 'HTML'
+            # تحديث بيانات المستخدم
+            user_id = hashlib.md5(f"{profile_data['whatsapp_number']}-telegram-{code}".encode()).hexdigest()[:12]
+            
+            updated_user_data = {
+                **profile_data,
+                'telegram_linked': True,
+                'telegram_chat_id': chat_id,
+                'telegram_first_name': first_name,
+                'telegram_username_actual': username,
+                'telegram_linked_at': datetime.now().isoformat(),
+                'user_id': user_id
             }
             
-            response = requests.post(url, json=data, timeout=10)
+            # حفظ في بيانات المستخدمين
+            self.users_data[user_id] = updated_user_data
             
-            if response.status_code == 200:
-                print(f"✅ تم إرسال رسالة تليجرام بنجاح إلى {chat_id}")
-                return True
-            else:
-                print(f"❌ فشل إرسال رسالة تليجرام: {response.status_code}")
-                print(f"Response: {response.text}")
-                return False
-                
+            print(f"🔗 Telegram Linked Successfully!")
+            print(f"   User: {first_name} (@{username})")
+            print(f"   WhatsApp: {profile_data['whatsapp_number']}")
+            print(f"   Platform: {profile_data['platform']}")
+            print(f"   Code: {code}")
+            print(f"   Chat ID: {chat_id}")
+            
+            return True, updated_user_data
+            
         except Exception as e:
-            print(f"خطأ في إرسال رسالة تليجرام: {str(e)}")
-            return False
+            print(f"خطأ في إشعار الموقع: {str(e)}")
+            return False, None
     
-    def set_webhook(self, webhook_url):
-        """تعيين webhook للبوت"""
-        if not self.bot_token:
-            return {'success': False, 'error': 'لا يوجد توكن للبوت'}
+    def get_payment_display_text(self, payment_method, payment_details):
+        """تنسيق نص عرض طريقة الدفع"""
+        if not payment_details:
+            return ""
         
-        try:
-            url = f"https://api.telegram.org/bot{self.bot_token}/setWebhook"
-            data = {'url': webhook_url}
-            
-            response = requests.post(url, json=data, timeout=10)
-            result = response.json()
-            
-            if result.get('ok'):
-                print(f"✅ تم تعيين webhook بنجاح: {webhook_url}")
-                return {'success': True, 'result': result}
-            else:
-                print(f"❌ فشل تعيين webhook: {result}")
-                return {'success': False, 'error': result.get('description')}
-                
-        except Exception as e:
-            print(f"خطأ في تعيين webhook: {str(e)}")
-            return {'success': False, 'error': str(e)}
-    
-    def get_bot_info(self):
-        """الحصول على معلومات البوت"""
-        if not self.bot_token:
-            return None
+        payment_names = {
+            'vodafone_cash': 'فودافون كاش',
+            'etisalat_cash': 'اتصالات كاش',
+            'orange_cash': 'أورانج كاش',
+            'we_cash': 'وي كاش',
+            'bank_wallet': 'محفظة بنكية',
+            'tilda': 'بطاقة تيلدا',
+            'instapay': 'رابط إنستا باي'
+        }
         
-        try:
-            url = f"https://api.telegram.org/bot{self.bot_token}/getMe"
-            response = requests.get(url, timeout=10)
-            result = response.json()
-            
-            if result.get('ok'):
-                return result.get('result')
-            else:
-                return None
-                
-        except Exception as e:
-            print(f"خطأ في الحصول على معلومات البوت: {str(e)}")
-            return None
+        method_name = payment_names.get(payment_method, payment_method)
+        
+        if payment_method == 'instapay':
+            return f"🔗 {method_name}: {payment_details}"
+        elif payment_method == 'tilda':
+            masked_card = f"**** **** **** {payment_details[-4:]}" if len(payment_details) >= 4 else payment_details
+            return f"💳 {method_name}: {masked_card}"
+        else:
+            return f"📱 {method_name}: {payment_details}"
     
     def check_telegram_status(self, code):
         """فحص حالة كود التليجرام"""
@@ -295,7 +323,9 @@ class TelegramManager:
             'users_data_count': len(self.users_data),
             'telegram_codes': self.telegram_codes,
             'users_data': self.users_data,
-            'bot_username': self.bot_username
+            'bot_username': self.bot_username,
+            'bot_configured': bool(self.bot_token),
+            'webhook_url': self.webhook_url
         }
 
 

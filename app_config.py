@@ -224,6 +224,23 @@ class AppConfig:
             'track_modifications': False
         }
     
+    def get_config_summary(self) -> Dict[str, any]:
+        """
+        إرجاع ملخص الإعدادات للعرض الإداري
+        
+        Returns:
+            Dict[str, any]: ملخص الإعدادات
+        """
+        return {
+            'secret_key_set': bool(self.SECRET_KEY),
+            'telegram_token_set': bool(self.TELEGRAM_BOT_TOKEN),
+            'debug_mode': self.DEBUG,
+            'port': self.PORT,
+            'host': self.HOST,
+            'database_type': 'PostgreSQL' if 'postgresql' in self.DATABASE_URL.lower() else 'SQLite',
+            'environment': 'Development' if self.DEBUG else 'Production'
+        }
+    
     def log_config_status(self) -> None:
         """طباعة حالة الإعدادات في السجل"""
         logger.info("=" * 50)
@@ -246,6 +263,62 @@ TELEGRAM_BOT_TOKEN = app_config.TELEGRAM_BOT_TOKEN
 DEBUG = app_config.DEBUG
 PORT = app_config.PORT
 HOST = app_config.HOST
+
+def create_flask_app():
+    """
+    إنشاء تطبيق Flask مع الإعدادات المطلوبة
+    
+    Returns:
+        Flask: مثيل تطبيق Flask مُعد بالكامل
+    """
+    from flask import Flask
+    from datetime import timedelta
+    
+    # إنشاء التطبيق
+    app = Flask(__name__)
+    
+    # تطبيق الإعدادات من app_config
+    flask_config = app_config.get_flask_config()
+    app.config.update(flask_config)
+    
+    # إعدادات إضافية للأمان
+    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
+    
+    logger.info("✅ تم إنشاء تطبيق Flask بنجاح")
+    
+    return app
+
+def generate_csrf_token():
+    """
+    توليد رمز CSRF للأمان
+    
+    Returns:
+        str: رمز CSRF فريد
+    """
+    import secrets
+    import string
+    
+    # توليد رمز عشوائي آمن
+    alphabet = string.ascii_letters + string.digits
+    token = ''.join(secrets.choice(alphabet) for _ in range(32))
+    
+    logger.debug("🔐 تم توليد رمز CSRF جديد")
+    
+    return token
+
+# تصدير الدوال للاستخدام الخارجي
+__all__ = [
+    'AppConfig', 
+    'app_config', 
+    'SECRET_KEY', 
+    'TELEGRAM_BOT_TOKEN', 
+    'DEBUG', 
+    'PORT', 
+    'HOST',
+    'create_flask_app',
+    'generate_csrf_token',
+    'verify_startup_config'
+]
 
 # التحقق الفوري من الإعدادات عند التحميل
 def verify_startup_config():

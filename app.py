@@ -275,7 +275,7 @@ def update_profile():
 
 @app.route("/generate-telegram-code", methods=["POST"])
 def generate_telegram_code_endpoint():
-    """API لتوليد كود التليجرام - محدثة مع الوزارة الجديدة"""
+    """API لتوليد كود التليجرام - مُصلحة"""
     try:
         data = request.get_json()
 
@@ -297,6 +297,11 @@ def generate_telegram_code_endpoint():
             data.get("telegram_username", ""),
         )
 
+        # 🔥 إضافة bot_username للاستجابة
+        if 'bot_username' not in result:
+            result['bot_username'] = telegram_manager.bot_username
+
+        print(f"🤖 Generated Telegram Code Response: {result}")
         return jsonify(result)
 
     except Exception as e:
@@ -322,23 +327,34 @@ def telegram_webhook():
 
 @app.route("/get-bot-username", methods=["GET"])
 def get_bot_username():
-    """الحصول على username البوت - محدثة مع الوزارة الجديدة"""
+    """الحصول على username البوت - مُصلحة"""
     try:
-        bot_info = telegram_manager.get_bot_info()
-
-        if bot_info:
-            return jsonify(
-                {
-                    "success": True,
-                    "username": bot_info.get("username", telegram_manager.bot_username),
-                }
-            )
-        else:
-            return jsonify({"success": True, "username": telegram_manager.bot_username})
+        # 🔥 إصلاح: إرجاع username البوت بشكل مضمون
+        username = telegram_manager.bot_username or 'ea_fc_fifa_bot'
+        
+        # محاولة الحصول على معلومات البوت الحقيقية
+        if telegram_manager.bot_token:
+            bot_info = telegram_manager.get_bot_info()
+            if bot_info and bot_info.get('username'):
+                username = bot_info.get('username')
+        
+        print(f"🤖 Returning bot username: @{username}")
+        
+        return jsonify({
+            "success": True,
+            "username": username,
+            "bot_username": username  # 🔥 إضافة للتوافق
+        })
 
     except Exception as e:
         print(f"خطأ في الحصول على username البوت: {str(e)}")
-        return jsonify({"success": False, "username": telegram_manager.bot_username})
+        # 🔥 إرجاع قيمة افتراضية حتى في حالة الخطأ
+        return jsonify({
+            "success": False,
+            "username": "ea_fc_fifa_bot",
+            "bot_username": "ea_fc_fifa_bot",
+            "error": str(e)
+        })
 
 
 @app.route("/admin-data")
@@ -453,8 +469,11 @@ if __name__ == "__main__":
     print("   ✅ وزارة الإعدادات (app_config.py)")
     print("   ✅ التطبيق الرئيسي المُحسن (app.py)")
 
-    app.run(
-        host=app_config.config.get("HOST", "0.0.0.0"),
-        port=app_config.config.get("PORT", 10000),
-        debug=app_config.config.get("DEBUG", False),
-    )
+    # 🔥 إصلاح: استخدام القيم مباشرة من app_config
+    host = app_config.HOST or "0.0.0.0"
+    port = app_config.PORT or 10000
+    debug = app_config.DEBUG or False
+    
+    print(f"\n🌐 Server starting on {host}:{port} (debug={debug})")
+    
+    app.run(host=host, port=port, debug=debug)

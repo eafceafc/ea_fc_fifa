@@ -439,62 +439,75 @@ def setup_telegram():
         return jsonify({'error': str(e)}), 500
 
 # ============================================================================
-# 💰 وزارة بيع الكوينز - Sell Coins Ministry Routes
+# 💰 القسم الجديد: وزارة بيع الكوينز (معزولة تماماً)
 # ============================================================================
 
 # استيراد وزارة بيع الكوينز
 try:
-    from sell_handler import sell_coins_ministry
+    from sell_handler import sell_handler, create_sell_request, calculate_price
+    SELL_MODULE_AVAILABLE = True
     print("💰 وزارة بيع الكوينز محملة بنجاح")
 except ImportError:
-    print("⚠️ تحذير: لم يتم العثور على وزارة بيع الكوينز")
-    sell_coins_ministry = None
+    SELL_MODULE_AVAILABLE = False
+    print("⚠️ وزارة بيع الكوينز غير متوفرة")
 
-@app.route('/sell-coins')
+@app.route("/sell-coins")
 def sell_coins_page():
-    """صفحة بيع الكوينز"""
-    return render_template('sell_coins.html')
+    """صفحة طلب بيع الكوينز - معزولة تماماً"""
+    try:
+        # محاولة الحصول على بيانات المستخدم من الجلسة
+        user_data = session.get('user_data', {})
+        
+        return render_template("sell_coins.html",
+                             user_id=user_data.get('user_id', ''),
+                             whatsapp_number=user_data.get('whatsapp_number', ''),
+                             platform=user_data.get('platform', ''))
+    except Exception as e:
+        print(f"خطأ في عرض صفحة البيع: {str(e)}")
+        # في حالة الخطأ، عرض الصفحة بدون بيانات
+        return render_template("sell_coins.html")
 
-@app.route('/api/calculate-price', methods=['POST'])
-def calculate_price():
-    """حساب سعر الكوينز"""
-    if not sell_coins_ministry:
-        return jsonify({'success': False, 'error': 'الخدمة غير متاحة حالياً'}), 503
+@app.route("/api/sell-coins", methods=["POST"])
+def api_sell_coins():
+    """API لإنشاء طلب بيع كوينز - معزول تماماً"""
+    if not SELL_MODULE_AVAILABLE:
+        return jsonify({"success": False, "error": "خدمة البيع غير متوفرة حالياً"}), 503
     
-    data = request.json
-    coins = data.get('coins', 0)
-    transfer_type = data.get('transferType', 'normal')
-    
-    result = sell_coins_ministry.calculate_price(coins, transfer_type)
-    return jsonify(result)
+    try:
+        data = request.get_json()
+        
+        # إنشاء طلب البيع
+        result = create_sell_request(data)
+        
+        if result['success']:
+            # حفظ معرف الطلب في الجلسة
+            session['last_sell_request'] = result['request_id']
+            
+            return jsonify(result)
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        print(f"خطأ في إنشاء طلب البيع: {str(e)}")
+        return jsonify({"success": False, "error": "خطأ في معالجة الطلب"}), 500
 
-@app.route('/api/sell-coins', methods=['POST'])
-def sell_coins():
-    """إنشاء طلب بيع كوينز"""
-    if not sell_coins_ministry:
-        return jsonify({'success': False, 'error': 'الخدمة غير متاحة حالياً'}), 503
+@app.route("/api/calculate-price", methods=["POST"])
+def api_calculate_price():
+    """API لحساب سعر الكوينز - معزول تماماً"""
+    if not SELL_MODULE_AVAILABLE:
+        return jsonify({"success": False, "error": "خدمة الحساب غير متوفرة"}), 503
     
-    data = request.json
-    
-    # استخراج البيانات
-    user_info = data.get('user_info', {})
-    coins = data.get('coins', 0)
-    transfer_type = data.get('transferType', 'normal')
-    payment_method = data.get('paymentMethod', '')
-    account_details = data.get('accountDetails', '')
-    notes = data.get('notes', '')
-    
-    # إنشاء طلب البيع
-    result = sell_coins_ministry.create_sell_request(
-        user_info=user_info,
-        coins=coins,
-        transfer_type=transfer_type,
-        payment_method=payment_method,
-        account_details=account_details,
-        notes=notes
-    )
-    
-    return jsonify(result)
+    try:
+        data = request.get_json()
+        coins_amount = data.get('coins_amount')
+        transfer_type = data.get('transfer_type', 'normal')
+        
+        result = calculate_price(coins_amount, transfer_type)
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"خطأ في حساب السعر: {str(e)}")
+        return jsonify({"success": False, "error": "خطأ في الحساب"}), 500
 
 # ============================================================================
 # 🚦 الخطوة 6: تعريف معالجات الأخطاء

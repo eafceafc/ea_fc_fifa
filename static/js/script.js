@@ -259,16 +259,7 @@ class WhatsAppVisualEnhancer {
         this.progressBar = document.createElement('div');
         this.progressBar.className = 'whatsapp-progress';
         this.progressBar.innerHTML = '<div class="whatsapp-progress-fill"></div>';
-        this.progressBar.style.cssText = `
-            width: 100%;
-            height: 4px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 2px;
-            margin-top: 8px;
-            overflow: hidden;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        `;
+        // CSS classes will handle styling
 
         container.appendChild(this.progressBar);
     }
@@ -279,15 +270,7 @@ class WhatsAppVisualEnhancer {
 
         this.statusDisplay = document.createElement('div');
         this.statusDisplay.className = 'whatsapp-status';
-        this.statusDisplay.style.cssText = `
-            font-size: 0.9rem;
-            margin-top: 5px;
-            font-weight: 600;
-            opacity: 0;
-            transform: translateY(-5px);
-            transition: all 0.3s ease;
-            min-height: 20px;
-        `;
+        // CSS classes will handle styling
 
         container.appendChild(this.statusDisplay);
     }
@@ -363,15 +346,16 @@ class WhatsAppVisualEnhancer {
 
         progressFill.style.width = percentage + '%';
 
-        // تغيير اللون حسب التقدم
+        // تغيير اللون حسب التقدم باستخدام CSS classes
+        progressFill.className = 'whatsapp-progress-fill';
         if (percentage < 27) { // أقل من 3 أرقام
-            progressFill.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+            progressFill.classList.add('stage-early');
         } else if (percentage < 64) { // 3-7 أرقام
-            progressFill.style.background = 'linear-gradient(90deg, #f97316, #ea580c)';
+            progressFill.classList.add('stage-partial');
         } else if (percentage < 100) { // 8-10 أرقام
-            progressFill.style.background = 'linear-gradient(90deg, #eab308, #ca8a04)';
+            progressFill.classList.add('stage-almost');
         } else { // 11 رقم كامل
-            progressFill.style.background = 'linear-gradient(90deg, #10b981, #059669)';
+            progressFill.classList.add('stage-complete');
         }
     }
 
@@ -436,30 +420,36 @@ class WhatsAppVisualEnhancer {
         if (!this.statusDisplay) return;
 
         this.statusDisplay.textContent = message;
-        this.statusDisplay.style.color = color;
-        this.statusDisplay.style.opacity = '1';
-        this.statusDisplay.style.transform = 'translateY(0)';
+        this.statusDisplay.className = 'whatsapp-status show';
+        
+        // إضافة الكلاس المناسب حسب اللون
+        if (color === '#10B981') {
+            this.statusDisplay.classList.add('success');
+        } else if (color === '#EF4444') {
+            this.statusDisplay.classList.add('error');
+        } else if (color === '#3B82F6') {
+            this.statusDisplay.classList.add('partial');
+        }
     }
 
     // إخفاء الحالة
     hideStatus() {
         if (!this.statusDisplay) return;
 
-        this.statusDisplay.style.opacity = '0';
-        this.statusDisplay.style.transform = 'translateY(-5px)';
+        this.statusDisplay.classList.remove('show');
     }
 
     // إظهار شريط التقدم
     showProgressBar() {
         if (this.progressBar) {
-            this.progressBar.style.opacity = '1';
+            this.progressBar.classList.add('show');
         }
     }
 
     // إخفاء شريط التقدم
     hideProgressBar() {
         if (this.progressBar) {
-            this.progressBar.style.opacity = '0';
+            this.progressBar.classList.remove('show');
         }
     }
 }
@@ -1318,30 +1308,13 @@ function showNotification(message, type = 'info') {
         </button>
     `;
 
-    // تطبيق الأنماط
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: ${type === 'error' ? '#DC2626' : type === 'success' ? '#10B981' : '#3B82F6'};
-        color: white;
-        padding: 15px 20px;
-        border-radius: 10px;
-        z-index: 10000;
-        font-weight: 600;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        max-width: 90%;
-        opacity: 0;
-        transition: all 0.3s ease;
-    `;
+    // تطبيق الأنماط باستخدام CSS classes
+    notification.className = `notification ${type}`;
+    notification.classList.add('show');
 
     document.body.appendChild(notification);
 
-    // إظهار الإشعار
-    setTimeout(() => {
-        notification.style.opacity = '1';
-    }, 100);
+    // إظهار الإشعار - تم بالفعل مع إضافة الكلاس
 
     // إخفاء تلقائي بعد 5 ثوان
     setTimeout(() => {
@@ -1356,7 +1329,7 @@ function showNotification(message, type = 'info') {
 
 // إخفاء الإشعار
 function hideNotification(notification) {
-    notification.style.opacity = '0';
+    notification.classList.remove('show');
     setTimeout(() => {
         if (notification.parentNode) {
             notification.parentNode.removeChild(notification);
@@ -1391,19 +1364,7 @@ function showTooltip(e) {
     const tooltip = document.createElement('div');
     tooltip.className = 'tooltip';
     tooltip.textContent = text;
-    tooltip.style.cssText = `
-        position: absolute;
-        background: #333;
-        color: white;
-        padding: 8px 12px;
-        border-radius: 6px;
-        font-size: 12px;
-        z-index: 10001;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        pointer-events: none;
-        white-space: nowrap;
-    `;
+    tooltip.className = 'tooltip';
 
     document.body.appendChild(tooltip);
 
@@ -1412,7 +1373,7 @@ function showTooltip(e) {
     tooltip.style.left = (rect.left + rect.width / 2 - tooltip.offsetWidth / 2) + 'px';
 
     setTimeout(() => {
-        tooltip.style.opacity = '1';
+        tooltip.classList.add('show');
     }, 100);
 
     e.target._tooltip = tooltip;
@@ -1422,7 +1383,7 @@ function showTooltip(e) {
 function hideTooltip(e) {
     const tooltip = e.target._tooltip;
     if (tooltip) {
-        tooltip.style.opacity = '0';
+        tooltip.classList.remove('show');
         setTimeout(() => {
             if (tooltip.parentNode) {
                 tooltip.parentNode.removeChild(tooltip);
@@ -2596,45 +2557,20 @@ function playSuccessSound() {
                 </button>
             `;
 
-            // الأنماط المباشرة
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: ${colors[type] || colors.info};
-                color: white;
-                padding: 15px 20px;
-                border-radius: 10px;
-                z-index: 10000;
-                font-weight: 600;
-                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-                max-width: 90%;
-                opacity: 0;
-                transition: all 0.3s ease;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-            `;
+            // استخدام CSS classes بدلاً من inline styles
+            notification.className = `email-notification ${type}`;
 
             document.body.appendChild(notification);
 
             // إظهار
             requestAnimationFrame(() => {
-                notification.style.opacity = '1';
+                notification.classList.add('show');
             });
 
             // زر الإغلاق
             const closeBtn = notification.querySelector('.notification-close');
             if (closeBtn) {
-                closeBtn.style.cssText = `
-                    background: none;
-                    border: none;
-                    color: white;
-                    cursor: pointer;
-                    padding: 0;
-                    margin-left: 10px;
-                `;
+                closeBtn.className = 'notification-close';
                 
                 closeBtn.addEventListener('click', () => {
                     this.hideNotification(notification);
@@ -2653,7 +2589,7 @@ function playSuccessSound() {
         hideNotification(notification) {
             if (!notification) return;
             
-            notification.style.opacity = '0';
+            notification.classList.remove('show');
             setTimeout(() => {
                 if (notification.parentNode) {
                     notification.parentNode.removeChild(notification);
@@ -3157,13 +3093,7 @@ function showWhatsAppSuccess(input, result) {
         <i class="fas fa-check-circle"></i>
         رقم صحيح ${result.carrier ? `- ${result.carrier}` : ''}
     `;
-    successMsg.style.cssText = `
-        color: #10B981;
-        font-size: 0.9rem;
-        margin-top: 5px;
-        font-weight: 600;
-        animation: fadeIn 0.3s ease;
-    `;
+    successMsg.className = 'whatsapp-validation-msg success';
     container.appendChild(successMsg);
 }
 
@@ -3179,13 +3109,7 @@ function showWhatsAppError(input, error) {
     const errorMsg = document.createElement('div');
     errorMsg.className = 'whatsapp-validation-msg error';
     errorMsg.innerHTML = `<i class="fas fa-times-circle"></i> ${error}`;
-    errorMsg.style.cssText = `
-        color: #EF4444;
-        font-size: 0.9rem;
-        margin-top: 5px;
-        font-weight: 600;
-        animation: fadeIn 0.3s ease;
-    `;
+    errorMsg.className = 'whatsapp-validation-msg error';
     container.appendChild(errorMsg);
 }
 
@@ -3452,41 +3376,30 @@ function updateTeldaProgress(input, length) {
         progressBar = document.createElement('div');
         progressBar.className = 'telda-progress';
         progressBar.innerHTML = '<div class="telda-progress-fill"></div>';
-        progressBar.style.cssText = `
-            width: 100%;
-            height: 4px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 2px;
-            margin-top: 8px;
-            overflow: hidden;
-        `;
+        // CSS classes will handle styling
         container.appendChild(progressBar);
     }
 
     const progressFill = progressBar.querySelector('.telda-progress-fill');
-    if (!progressFill.style.transition) {
-        progressFill.style.cssText = `
-            height: 100%;
-            background: linear-gradient(90deg, #10B981, #059669);
-            border-radius: 2px;
-            transition: all 0.3s ease;
-        `;
+    if (!progressFill.classList.contains('telda-progress-fill')) {
+        progressFill.className = 'telda-progress-fill';
     }
 
     const percentage = Math.min((length / 16) * 100, 100);
     progressFill.style.width = percentage + '%';
 
-    // ألوان مختلفة حسب التقدم
+    // ألوان مختلفة حسب التقدم باستخدام CSS classes
+    progressFill.className = 'telda-progress-fill';
     if (percentage < 25) {
-        progressFill.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+        progressFill.classList.add('stage-1');
     } else if (percentage < 50) {
-        progressFill.style.background = 'linear-gradient(90deg, #f97316, #ea580c)';
+        progressFill.classList.add('stage-2');
     } else if (percentage < 75) {
-        progressFill.style.background = 'linear-gradient(90deg, #eab308, #ca8a04)';
+        progressFill.classList.add('stage-3');
     } else if (percentage < 100) {
-        progressFill.style.background = 'linear-gradient(90deg, #22c55e, #16a34a)';
+        progressFill.classList.add('stage-4');
     } else {
-        progressFill.style.background = 'linear-gradient(90deg, #10b981, #059669)';
+        progressFill.classList.add('stage-complete');
     }
 }
 
@@ -3504,36 +3417,28 @@ function showTeldaStatus(input, message, type) {
     statusDiv = document.createElement('div');
     statusDiv.className = `telda-status telda-${type}`;
     statusDiv.textContent = message;
-    statusDiv.style.cssText = `
-        font-size: 0.9rem;
-        margin-top: 5px;
-        font-weight: 600;
-        opacity: 0;
-        transform: translateY(-5px);
-        transition: all 0.3s ease;
-    `;
+    statusDiv.className = `telda-status telda-${type}`;
 
-    // ألوان حسب النوع
+    // إضافة كلاس حسب النوع
     if (type === 'valid') {
-        statusDiv.style.color = '#10B981';
+        statusDiv.classList.add('telda-valid');
     } else if (type === 'invalid') {
-        statusDiv.style.color = '#EF4444';
+        statusDiv.classList.add('telda-invalid');
     } else {
-        statusDiv.style.color = '#F59E0B';
+        statusDiv.classList.add('telda-partial');
     }
 
     container.appendChild(statusDiv);
 
     setTimeout(() => {
-        statusDiv.style.opacity = '1';
-        statusDiv.style.transform = 'translateY(0)';
+        statusDiv.classList.add('show');
     }, 100);
 
     // إزالة تلقائية للرسائل الجزئية
     if (type === 'partial') {
         setTimeout(() => {
             if (statusDiv.parentNode) {
-                statusDiv.style.opacity = '0';
+                statusDiv.classList.remove('show');
                 setTimeout(() => statusDiv.remove(), 300);
             }
         }, 2000);
@@ -3666,7 +3571,7 @@ function showPaymentSuccess(input) {
     const successMsg = document.createElement('div');
     successMsg.className = 'payment-validation-msg success-msg';
     successMsg.innerHTML = '<i class="fas fa-check-circle"></i> البيانات صحيحة';
-    successMsg.style.cssText = `color: #10B981; font-size: 0.9rem; margin-top: 5px; font-weight: 600;`;
+    // CSS classes will handle styling
     container.appendChild(successMsg);
 }
 
@@ -3683,7 +3588,7 @@ function showPaymentError(input, message) {
     const errorMsg = document.createElement('div');
     errorMsg.className = 'payment-validation-msg error-msg';
     errorMsg.innerHTML = `<i class="fas fa-times-circle"></i> ${message}`;
-    errorMsg.style.cssText = `color: #EF4444; font-size: 0.9rem; margin-top: 5px; font-weight: 600;`;
+    // CSS classes will handle styling
     container.appendChild(errorMsg);
 }
 
@@ -3708,194 +3613,14 @@ function clearPaymentValidation(input) {
 // ✅✅✅ ستايل بداية من اول هنا ✅✅✅
 // ============================================================================
 
-// إضافة الأنماط المطلوبة للتحسينات الجديدة
-const enhancedPaymentStyles = document.createElement('style');
-enhancedPaymentStyles.textContent = `
-    /* تحسينات تيلدا */
-    .telda-focused {
-        transform: scale(1.02);
-        box-shadow: 0 0 15px rgba(255, 144, 0, 0.3);
-    }
-
-    .form-group.partial {
-        border-left: 4px solid #F59E0B;
-    }
-
-    .telda-progress {
-        width: 100%;
-        height: 4px;
-        background: rgba(255,255,255,0.1);
-        border-radius: 2px;
-        margin-top: 8px;
-        overflow: hidden;
-    }
-
-    .telda-progress-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #10B981, #059669);
-        border-radius: 2px;
-        transition: all 0.3s ease;
-        width: 0%;
-    }
-
-    .telda-status {
-        font-size: 0.9rem;
-        margin-top: 5px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-    }
-
-    /* تحسينات InstaPay */
-    .instapay-preview {
-        margin-top: 15px;
-        padding: 15px;
-        background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.15));
-        border: 2px solid #10B981;
-        border-radius: 12px;
-        backdrop-filter: blur(10px);
-        opacity: 0;
-        transform: translateY(20px);
-        transition: all 0.4s ease;
-    }
-
-    .instapay-preview.show {
-        opacity: 1;
-        transform: translateY(0);
-    }
-
-    .preview-header {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 15px;
-        color: #10B981;
-        font-weight: 700;
-        font-size: 1.1rem;
-    }
-
-    .link-url {
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 8px;
-        padding: 12px 15px;
-        color: #10B981;
-        font-family: 'Courier New', monospace;
-        font-size: 0.95rem;
-        font-weight: 600;
-        word-break: break-all;
-        direction: ltr;
-        text-align: left;
-        margin-top: 8px;
-    }
-
-    .preview-actions {
-        display: flex;
-        gap: 12px;
-        margin-top: 15px;
-    }
-
-    .test-link-btn, .copy-link-btn {
-        flex: 1;
-        padding: 12px 16px;
-        border: none;
-        border-radius: 10px;
-        font-weight: 700;
-        font-size: 0.9rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        font-family: 'Cairo', sans-serif;
-    }
-
-    .test-link-btn {
-        background: linear-gradient(135deg, #3B82F6, #2563EB);
-        color: white;
-        border: 2px solid #3B82F6;
-    }
-
-    .test-link-btn:hover {
-        background: linear-gradient(135deg, #2563EB, #1D4ED8);
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
-    }
-
-    .copy-link-btn {
-        background: rgba(255, 255, 255, 0.1);
-        color: var(--text-white);
-        border: 2px solid rgba(255, 255, 255, 0.3);
-    }
-
-    .copy-link-btn:hover {
-        background: rgba(255, 255, 255, 0.2);
-        border-color: rgba(255, 255, 255, 0.5);
-        transform: translateY(-2px);
-    }
-`;
-document.head.appendChild(enhancedPaymentStyles);
+// CSS styles moved to external CSS file - no longer needed here
 
 // ============================================================================
 // 2222222
 // ============================================================================
 
 
-// إضافة أنماط الواتساب المحسنة
-const whatsappEnhancedStyles = document.createElement('style');
-whatsappEnhancedStyles.textContent = `
-    /* تحسينات الواتساب البصرية */
-    .whatsapp-progress {
-        width: 100%;
-        height: 4px;
-        background: rgba(255,255,255,0.1);
-        border-radius: 2px;
-        margin-top: 8px;
-        overflow: hidden;
-        transition: opacity 0.3s ease;
-    }
-
-    .whatsapp-progress-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #10B981, #059669);
-        border-radius: 2px;
-        transition: all 0.3s ease;
-        width: 0%;
-    }
-
-    .whatsapp-status {
-        font-size: 0.9rem;
-        margin-top: 5px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        min-height: 20px;
-    }
-
-    #whatsapp {
-        font-family: 'Courier New', monospace;
-        letter-spacing: 1px;
-        font-size: 1.1rem;
-        font-weight: 600;
-    }
-
-    #whatsapp:focus {
-        transform: scale(1.02);
-        box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
-    }
-
-    .form-group.whatsapp-valid {
-        border-left: 4px solid #10B981;
-    }
-
-    .form-group.whatsapp-invalid {
-        border-left: 4px solid #EF4444;
-    }
-
-    .form-group.whatsapp-partial {
-        border-left: 4px solid #F59E0B;
-    }
-`;
-document.head.appendChild(whatsappEnhancedStyles);
+// WhatsApp enhanced styles moved to external CSS file - no longer needed here
 
 
 
@@ -3903,32 +3628,4 @@ document.head.appendChild(whatsappEnhancedStyles);
 // 111111111
 // ============================================================================
 
-// إضافة CSS للتأثيرات البصرية
-const validationStyles = document.createElement('style');
-validationStyles.textContent = `
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-5px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    .validating {
-        border-color: #F59E0B !important;
-        animation: pulse 1.5s infinite;
-    }
-
-    @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.7; }
-    }
-
-    .form-input.valid {
-        border-color: #10B981 !important;
-        background: rgba(16, 185, 129, 0.05) !important;
-    }
-
-    .form-input.invalid {
-        border-color: #EF4444 !important;
-        background: rgba(239, 68, 68, 0.05) !important;
-    }
-`;
-document.head.appendChild(validationStyles);
+// Validation styles moved to external CSS file - no longer needed here

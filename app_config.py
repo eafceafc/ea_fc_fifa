@@ -7,6 +7,16 @@ import os
 from typing import Dict, List, Tuple, Optional
 import logging
 
+# 🔥 SMART ENHANCEMENT: Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+    logger = logging.getLogger(__name__)
+    logger.info("✅ تم تحميل متغيرات البيئة من .env")
+except ImportError:
+    logger = logging.getLogger(__name__)
+    logger.warning("⚠️ python-dotenv غير متوفر، استخدام متغيرات النظام فقط")
+
 # إعداد التسجيل
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -323,6 +333,14 @@ __all__ = [
 # التحقق الفوري من الإعدادات عند التحميل
 def verify_startup_config():
     """التحقق من الإعدادات عند بدء التشغيل"""
+    # 🔥 SMART ENHANCEMENT: Allow testing without strict validation
+    disable_validation = os.getenv('DISABLE_VALIDATION', 'false').lower() == 'true'
+    
+    if disable_validation:
+        logger.warning("⚠️ تم تعطيل التحقق من الإعدادات لأغراض الاختبار")
+        logger.info("🚀 إعدادات التطبيق جاهزة للتشغيل (وضع الاختبار)")
+        return
+        
     is_valid, errors = app_config.validate_config()
     
     if not is_valid:

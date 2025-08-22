@@ -580,6 +580,104 @@
     margin-left: 8px;
 }
 
+/* 🔥 SMART ENHANCEMENTS: Email Validation Styles */
+.email-feedback {
+    font-size: 0.85rem;
+    margin-top: 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.feedback-success {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.feedback-warning {
+    background: rgba(255, 144, 0, 0.1);
+    color: #ff9000;
+    border: 1px solid rgba(255, 144, 0, 0.3);
+}
+
+.feedback-error {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.feedback-neutral {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Email Input Border Colors */
+.ea-input.email-success {
+    border-color: #22c55e !important;
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.2);
+}
+
+.ea-input.email-warning {
+    border-color: #ff9000 !important;
+    box-shadow: 0 0 10px rgba(255, 144, 0, 0.2);
+}
+
+.ea-input.email-error {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+}
+
+.ea-input.email-neutral {
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* 🔥 SMART ENHANCEMENTS: Smart Clipboard Button */
+.smart-paste-btn {
+    width: 100%;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, var(--accent-purple), #8b5cf6);
+    border: none;
+    border-radius: 8px;
+    color: var(--text-white);
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.smart-paste-btn:hover {
+    background: linear-gradient(135deg, #8b5cf6, var(--accent-purple));
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
+}
+
+.smart-paste-btn:active {
+    transform: translateY(0);
+}
+
+.smart-paste-btn i {
+    font-size: 1.1rem;
+}
+
+/* Clipboard Feedback */
+.clipboard-feedback {
+    font-size: 0.85rem;
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
 /* أزرار الإجراءات */
 .action-buttons {
     display: flex;
@@ -808,21 +906,53 @@
     font-weight: 600;
 }
 
-/* تحسينات للهواتف */
+/* 🔥 SMART ENHANCEMENTS: Mobile Optimizations */
 @media (max-width: 768px) {
     .recovery-codes-grid {
         grid-template-columns: repeat(2, 1fr);
     }
+    
+    /* Email feedback responsiveness */
+    .email-feedback {
+        font-size: 0.8rem;
+        padding: 5px 8px;
+    }
+    
+    /* Smart paste button mobile optimization */
+    .smart-paste-btn {
+        padding: 10px 16px;
+        font-size: 0.9rem;
+    }
+    
+    /* Better touch targets */
+    .transfer-card {
+        min-height: 120px;
+    }
 }
 
 @media (max-width: 480px) {
+    /* 🔥 SMART ENHANCEMENT: Keep transfer cards in same row on mobile */
     .transfer-options {
-        grid-template-columns: 1fr;
-        gap: 15px;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
     }
     
+    /* 🔥 SMART ENHANCEMENT: Optimized transfer cards for mobile */
     .transfer-card {
-        padding: 15px;
+        padding: 12px;
+        min-height: auto;
+    }
+    
+    .transfer-header h3 {
+        font-size: 0.95rem;
+    }
+    
+    .transfer-time, .rate-text {
+        font-size: 0.8rem;
+    }
+    
+    .price-amount {
+        font-size: 0.9rem;
     }
     
     .coins-input {

@@ -439,6 +439,64 @@ def setup_telegram():
         return jsonify({'error': str(e)}), 500
 
 # ============================================================================
+# 💰 وزارة بيع الكوينز - Sell Coins Ministry Routes
+# ============================================================================
+
+# استيراد وزارة بيع الكوينز
+try:
+    from sell_handler import sell_coins_ministry
+    print("💰 وزارة بيع الكوينز محملة بنجاح")
+except ImportError:
+    print("⚠️ تحذير: لم يتم العثور على وزارة بيع الكوينز")
+    sell_coins_ministry = None
+
+@app.route('/sell-coins')
+def sell_coins_page():
+    """صفحة بيع الكوينز"""
+    return render_template('sell_coins.html')
+
+@app.route('/api/calculate-price', methods=['POST'])
+def calculate_price():
+    """حساب سعر الكوينز"""
+    if not sell_coins_ministry:
+        return jsonify({'success': False, 'error': 'الخدمة غير متاحة حالياً'}), 503
+    
+    data = request.json
+    coins = data.get('coins', 0)
+    transfer_type = data.get('transferType', 'normal')
+    
+    result = sell_coins_ministry.calculate_price(coins, transfer_type)
+    return jsonify(result)
+
+@app.route('/api/sell-coins', methods=['POST'])
+def sell_coins():
+    """إنشاء طلب بيع كوينز"""
+    if not sell_coins_ministry:
+        return jsonify({'success': False, 'error': 'الخدمة غير متاحة حالياً'}), 503
+    
+    data = request.json
+    
+    # استخراج البيانات
+    user_info = data.get('user_info', {})
+    coins = data.get('coins', 0)
+    transfer_type = data.get('transferType', 'normal')
+    payment_method = data.get('paymentMethod', '')
+    account_details = data.get('accountDetails', '')
+    notes = data.get('notes', '')
+    
+    # إنشاء طلب البيع
+    result = sell_coins_ministry.create_sell_request(
+        user_info=user_info,
+        coins=coins,
+        transfer_type=transfer_type,
+        payment_method=payment_method,
+        account_details=account_details,
+        notes=notes
+    )
+    
+    return jsonify(result)
+
+# ============================================================================
 # 🚦 الخطوة 6: تعريف معالجات الأخطاء
 # ============================================================================
 

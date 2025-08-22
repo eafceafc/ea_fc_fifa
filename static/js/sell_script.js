@@ -1,293 +1,495 @@
+// sell_script.js - القلعة JavaScript المعزولة لصفحة بيع الكوينز
 /**
- * مدير صفحة بيع الكوينز - معزول تماماً عن الكود الأساسي
- * SellCoinsManager Class
+ * 🏰 قلعة بيع الكوينز - FC 26 Profile System
+ * =========================================
+ * نظام معزول تماماً للتفاعل مع صفحة البيع
+ * لا يؤثر على أي كود موجود في script.js
  */
+
+// ============================================================================
+// 💰 SellCoinsManager - كلاس إدارة البيع المعزول
+// ============================================================================
 
 class SellCoinsManager {
     constructor() {
-        this.form = document.getElementById('sellCoinsForm');
-        this.priceDisplay = document.getElementById('priceDisplay');
-        this.orderSummary = document.getElementById('orderSummary');
-        this.successOverlay = document.getElementById('successOverlay');
+        // الإعدادات الأساسية
+        this.minCoins = 100;
+        this.maxCoins = 1000000;
+        this.coinPrice = 0.10; // السعر الافتراضي بالجنيه
         
-        // الأسعار الأساسية
-        this.baseRate = 0.01; // 0.01 جنيه للكوين الواحد
-        this.instantMultiplier = 0.85;
-        this.normalMultiplier = 1.0;
+        // معدلات التحويل
+        this.rates = {
+            instant: 0.85,
+            normal: 1.0
+        };
         
-        // تهيئة الصفحة
+        // البيانات الحالية
+        this.currentData = {
+            coinsAmount: 0,
+            transferType: 'normal',
+            notes: '',
+            basePrice: 0,
+            finalPrice: 0,
+            discount: 0
+        };
+        
+        // العناصر DOM
+        this.elements = {};
+        
+        // التهيئة
         this.init();
     }
     
+    /**
+     * تهيئة النظام
+     */
     init() {
-        console.log('🚀 تهيئة مدير صفحة بيع الكوينز');
-        
-        // استرجاع بيانات المستخدم من localStorage
+        this.cacheElements();
+        this.setupEventListeners();
         this.loadUserData();
         
-        // ربط الأحداث
-        this.bindEvents();
-        
-        // حساب السعر الأولي
-        this.calculatePrice();
+        console.log('💰 SellCoinsManager initialized successfully');
     }
     
-    loadUserData() {
-        try {
-            // محاولة استرجاع البيانات من localStorage
-            const userEmail = localStorage.getItem('userEmail');
-            const userPlayerName = localStorage.getItem('playerName');
-            const userTelegram = localStorage.getItem('telegramUsername');
+    /**
+     * تخزين العناصر للأداء
+     */
+    cacheElements() {
+        this.elements = {
+            // الإدخالات
+            coinsAmount: document.getElementById('coinsAmount'),
+            sellNotes: document.getElementById('sellNotes'),
+            notesCount: document.getElementById('notesCount'),
             
-            // ملء الحقول المخفية
-            if (userEmail) {
-                document.getElementById('userEmail').value = userEmail;
-            }
-            if (userPlayerName) {
-                document.getElementById('userPlayerName').value = userPlayerName;
-            }
-            if (userTelegram) {
-                document.getElementById('userTelegram').value = userTelegram;
-            }
+            // عرض الأسعار
+            basePrice: document.getElementById('basePrice'),
+            pricePreview: document.getElementById('pricePreview'),
+            instantPrice: document.querySelector('#instantPrice .price-amount'),
+            normalPrice: document.querySelector('#normalPrice .price-amount'),
             
-            console.log('✅ تم تحميل بيانات المستخدم');
+            // بطاقات التحويل
+            transferCards: document.querySelectorAll('.transfer-card'),
             
-        } catch (error) {
-            console.error('❌ خطأ في تحميل بيانات المستخدم:', error);
-        }
-    }
-    
-    bindEvents() {
-        // تغيير نوع التحويل
-        const transferOptions = document.querySelectorAll('input[name="transferType"]');
-        transferOptions.forEach(option => {
-            option.addEventListener('change', () => this.calculatePrice());
-        });
-        
-        // تغيير عدد الكوينز
-        const coinsInput = document.getElementById('coinsAmount');
-        coinsInput.addEventListener('input', () => {
-            this.calculatePrice();
-            this.updateOrderSummary();
-        });
-        
-        // تغيير طريقة الدفع
-        const paymentMethod = document.getElementById('paymentMethod');
-        paymentMethod.addEventListener('change', () => this.updateOrderSummary());
-        
-        // إرسال النموذج
-        this.form.addEventListener('submit', (e) => this.handleSubmit(e));
-    }
-    
-    async calculatePrice() {
-        const coinsAmount = document.getElementById('coinsAmount').value;
-        const transferType = document.querySelector('input[name="transferType"]:checked').value;
-        
-        if (!coinsAmount || coinsAmount < 10000) {
-            this.priceDisplay.style.display = 'none';
-            return;
-        }
-        
-        try {
-            // حساب السعر محلياً أولاً
-            const multiplier = transferType === 'instant' ? this.instantMultiplier : this.normalMultiplier;
-            const price = coinsAmount * this.baseRate * multiplier;
+            // قسم الملخص
+            summarySection: document.getElementById('summarySection'),
+            summaryCoins: document.getElementById('summaryCoins'),
+            summaryType: document.getElementById('summaryType'),
+            summaryBase: document.getElementById('summaryBase'),
+            summaryDiscount: document.getElementById('summaryDiscount'),
+            summaryTotal: document.getElementById('summaryTotal'),
+            discountRow: document.getElementById('discountRow'),
             
-            // عرض السعر
-            this.displayPrice(price);
+            // الأزرار
+            confirmBtn: document.getElementById('confirmBtn'),
             
-            // طلب التحقق من الخادم
-            const response = await fetch('/api/calculate-price', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    coins: parseInt(coinsAmount),
-                    transferType: transferType
-                })
-            });
+            // الرسائل
+            successMessage: document.getElementById('successMessage'),
+            errorMessage: document.getElementById('errorMessage'),
+            errorText: document.getElementById('errorText'),
             
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    this.displayPrice(data.price);
-                }
-            }
+            // نافذة النجاح
+            successOverlay: document.getElementById('successOverlay'),
+            requestId: document.getElementById('requestId'),
             
-        } catch (error) {
-            console.error('❌ خطأ في حساب السعر:', error);
-        }
-    }
-    
-    displayPrice(price) {
-        const priceElement = document.getElementById('calculatedPrice');
-        priceElement.textContent = price.toFixed(2);
-        this.priceDisplay.style.display = 'block';
-        this.updateOrderSummary();
-    }
-    
-    updateOrderSummary() {
-        const coinsAmount = document.getElementById('coinsAmount').value;
-        const transferType = document.querySelector('input[name="transferType"]:checked').value;
-        const paymentMethod = document.getElementById('paymentMethod').value;
-        
-        if (!coinsAmount || coinsAmount < 10000 || !paymentMethod) {
-            this.orderSummary.style.display = 'none';
-            return;
-        }
-        
-        // حساب السعر
-        const multiplier = transferType === 'instant' ? this.instantMultiplier : this.normalMultiplier;
-        const price = coinsAmount * this.baseRate * multiplier;
-        
-        // تحديث عناصر الملخص
-        document.getElementById('summaryCoins').textContent = parseInt(coinsAmount).toLocaleString('ar-EG');
-        document.getElementById('summaryTransferType').textContent = 
-            transferType === 'instant' ? 'تحويل فوري' : 'تحويل عادي';
-        document.getElementById('summaryTotal').textContent = `${price.toFixed(2)} جنيه`;
-        
-        // عرض الملخص
-        this.orderSummary.style.display = 'block';
-    }
-    
-    async handleSubmit(event) {
-        event.preventDefault();
-        
-        // جمع البيانات
-        const formData = {
-            user_info: {
-                email: document.getElementById('userEmail').value || 'غير محدد',
-                player_name: document.getElementById('userPlayerName').value || 'غير محدد',
-                telegram_username: document.getElementById('userTelegram').value || 'غير محدد'
-            },
-            coins: parseInt(document.getElementById('coinsAmount').value),
-            transferType: document.querySelector('input[name="transferType"]:checked').value,
-            paymentMethod: document.getElementById('paymentMethod').value,
-            accountDetails: document.getElementById('accountDetails').value,
-            notes: document.getElementById('notes').value
+            // معلومات المستخدم
+            userId: document.getElementById('userId'),
+            userWhatsapp: document.getElementById('userWhatsapp'),
+            userPlatform: document.getElementById('userPlatform'),
+            
+            // شاشة التحميل
+            loading: document.getElementById('loading')
         };
+    }
+    
+    /**
+     * إعداد مستمعي الأحداث
+     */
+    setupEventListeners() {
+        // إدخال الكوينز
+        if (this.elements.coinsAmount) {
+            this.elements.coinsAmount.addEventListener('input', (e) => {
+                this.handleCoinsInput(e);
+            });
+        }
         
-        // التحقق من البيانات
-        if (!this.validateForm(formData)) {
+        // بطاقات التحويل
+        this.elements.transferCards.forEach(card => {
+            card.addEventListener('click', (e) => {
+                this.handleTransferSelection(e, card);
+            });
+        });
+        
+        // الملاحظات
+        if (this.elements.sellNotes) {
+            this.elements.sellNotes.addEventListener('input', (e) => {
+                this.handleNotesInput(e);
+            });
+        }
+        
+        // زر التأكيد
+        if (this.elements.confirmBtn) {
+            this.elements.confirmBtn.addEventListener('click', () => {
+                this.handleConfirmSell();
+            });
+        }
+    }
+    
+    /**
+     * تحميل بيانات المستخدم
+     */
+    loadUserData() {
+        // محاولة الحصول على البيانات من localStorage أو من الصفحة
+        const savedData = localStorage.getItem('userProfile');
+        
+        if (savedData) {
+            try {
+                const userData = JSON.parse(savedData);
+                console.log('📋 تم تحميل بيانات المستخدم:', userData);
+            } catch (e) {
+                console.log('⚠️ لا توجد بيانات مستخدم محفوظة');
+            }
+        }
+    }
+    
+    /**
+     * معالجة إدخال الكوينز
+     */
+    handleCoinsInput(event) {
+        const value = parseInt(event.target.value) || 0;
+        
+        // التحقق من الحدود
+        if (value > this.maxCoins) {
+            event.target.value = this.maxCoins;
+            this.showError(`الحد الأقصى ${this.maxCoins.toLocaleString('ar-EG')} كوين`);
             return;
         }
         
+        // تحديث البيانات
+        this.currentData.coinsAmount = value;
+        
+        // حساب وعرض الأسعار
+        if (value >= this.minCoins) {
+            this.calculatePrices();
+            this.showPricePreview();
+            this.updateSummary();
+            this.enableConfirmButton();
+        } else {
+            this.hidePricePreview();
+            this.disableConfirmButton();
+        }
+    }
+    
+    /**
+     * حساب الأسعار
+     */
+    calculatePrices() {
+        const coins = this.currentData.coinsAmount;
+        
+        // السعر الأساسي
+        this.currentData.basePrice = coins * this.coinPrice;
+        
+        // الأسعار حسب نوع التحويل
+        const instantPrice = this.currentData.basePrice * this.rates.instant;
+        const normalPrice = this.currentData.basePrice * this.rates.normal;
+        
+        // تحديث العرض
+        this.elements.basePrice.textContent = `${this.currentData.basePrice.toFixed(2)} جنيه`;
+        
+        if (this.elements.instantPrice) {
+            this.elements.instantPrice.textContent = `${instantPrice.toFixed(2)} جنيه`;
+        }
+        
+        if (this.elements.normalPrice) {
+            this.elements.normalPrice.textContent = `${normalPrice.toFixed(2)} جنيه`;
+        }
+        
+        // حساب السعر النهائي حسب الاختيار
+        const rate = this.rates[this.currentData.transferType];
+        this.currentData.finalPrice = this.currentData.basePrice * rate;
+        this.currentData.discount = this.currentData.basePrice - this.currentData.finalPrice;
+    }
+    
+    /**
+     * عرض معاينة السعر
+     */
+    showPricePreview() {
+        if (this.elements.pricePreview) {
+            this.elements.pricePreview.style.display = 'block';
+        }
+        
+        if (this.elements.summarySection) {
+            this.elements.summarySection.style.display = 'block';
+        }
+    }
+    
+    /**
+     * إخفاء معاينة السعر
+     */
+    hidePricePreview() {
+        if (this.elements.pricePreview) {
+            this.elements.pricePreview.style.display = 'none';
+        }
+        
+        if (this.elements.summarySection) {
+            this.elements.summarySection.style.display = 'none';
+        }
+    }
+    
+    /**
+     * معالجة اختيار نوع التحويل
+     */
+    handleTransferSelection(event, selectedCard) {
+        // إزالة التحديد من جميع البطاقات
+        this.elements.transferCards.forEach(card => {
+            card.classList.remove('selected');
+        });
+        
+        // تحديد البطاقة المختارة
+        selectedCard.classList.add('selected');
+        
+        // تحديث البيانات
+        this.currentData.transferType = selectedCard.dataset.type;
+        
+        // إعادة حساب الأسعار
+        if (this.currentData.coinsAmount >= this.minCoins) {
+            this.calculatePrices();
+            this.updateSummary();
+        }
+        
+        // اهتزاز للهواتف
+        if (navigator.vibrate) {
+            navigator.vibrate(30);
+        }
+    }
+    
+    /**
+     * معالجة إدخال الملاحظات
+     */
+    handleNotesInput(event) {
+        const value = event.target.value;
+        const length = value.length;
+        
+        // تحديث العداد
+        if (this.elements.notesCount) {
+            this.elements.notesCount.textContent = length;
+        }
+        
+        // حفظ الملاحظات
+        this.currentData.notes = value;
+    }
+    
+    /**
+     * تحديث الملخص
+     */
+    updateSummary() {
+        // عدد الكوينز
+        this.elements.summaryCoins.textContent = this.currentData.coinsAmount.toLocaleString('ar-EG');
+        
+        // نوع التحويل
+        const typeText = this.currentData.transferType === 'instant' ? 'فوري (خلال ساعة)' : 'عادي (خلال 24 ساعة)';
+        this.elements.summaryType.textContent = typeText;
+        
+        // السعر الأساسي
+        this.elements.summaryBase.textContent = `${this.currentData.basePrice.toFixed(2)} جنيه`;
+        
+        // الخصم (إذا وجد)
+        if (this.currentData.transferType === 'instant') {
+            this.elements.discountRow.style.display = 'flex';
+            this.elements.summaryDiscount.textContent = `-${this.currentData.discount.toFixed(2)} جنيه`;
+        } else {
+            this.elements.discountRow.style.display = 'none';
+        }
+        
+        // السعر النهائي
+        this.elements.summaryTotal.textContent = `${this.currentData.finalPrice.toFixed(2)} جنيه`;
+    }
+    
+    /**
+     * تفعيل زر التأكيد
+     */
+    enableConfirmButton() {
+        if (this.elements.confirmBtn) {
+            this.elements.confirmBtn.disabled = false;
+        }
+    }
+    
+    /**
+     * تعطيل زر التأكيد
+     */
+    disableConfirmButton() {
+        if (this.elements.confirmBtn) {
+            this.elements.confirmBtn.disabled = true;
+        }
+    }
+    
+    /**
+     * معالجة تأكيد البيع
+     */
+    async handleConfirmSell() {
+        // التحقق من البيانات
+        if (this.currentData.coinsAmount < this.minCoins) {
+            this.showError(`الحد الأدنى ${this.minCoins} كوين`);
+            return;
+        }
+        
+        // عرض شاشة التحميل
+        this.showLoading();
+        
         try {
-            // عرض حالة التحميل
-            this.showLoading();
+            // تحضير البيانات
+            const requestData = {
+                coins_amount: this.currentData.coinsAmount,
+                transfer_type: this.currentData.transferType,
+                notes: this.currentData.notes,
+                user_id: this.elements.userId?.value || 'guest',
+                whatsapp_number: this.elements.userWhatsapp?.value || '',
+                platform: this.elements.userPlatform?.value || ''
+            };
             
             // إرسال الطلب
             const response = await fetch('/api/sell-coins', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(requestData)
             });
             
-            const data = await response.json();
+            const result = await response.json();
             
-            if (data.success) {
-                // عرض رسالة النجاح
-                this.showSuccess(data.request_id);
+            // إخفاء شاشة التحميل
+            this.hideLoading();
+            
+            if (result.success) {
+                // عرض نافذة النجاح
+                this.showSuccessModal(result.request_id);
                 
-                // مسح البيانات المحلية
-                this.clearLocalData();
+                // اهتزاز نجاح
+                if (navigator.vibrate) {
+                    navigator.vibrate([200, 100, 200]);
+                }
             } else {
-                // عرض رسالة الخطأ
-                this.showError(data.error || 'حدث خطأ في إرسال الطلب');
+                this.showError(result.error || 'حدث خطأ في إرسال الطلب');
             }
             
         } catch (error) {
-            console.error('❌ خطأ في إرسال الطلب:', error);
-            this.showError('حدث خطأ في الاتصال بالخادم');
-        } finally {
+            console.error('خطأ في إرسال الطلب:', error);
             this.hideLoading();
+            this.showError('خطأ في الاتصال، يرجى المحاولة مرة أخرى');
         }
     }
     
-    validateForm(data) {
-        // التحقق من عدد الكوينز
-        if (!data.coins || data.coins < 10000) {
-            this.showError('الحد الأدنى للبيع هو 10,000 كوين');
-            return false;
-        }
-        
-        if (data.coins > 10000000) {
-            this.showError('الحد الأقصى للبيع هو 10,000,000 كوين');
-            return false;
-        }
-        
-        // التحقق من طريقة الدفع
-        if (!data.paymentMethod) {
-            this.showError('من فضلك اختر طريقة استلام المبلغ');
-            return false;
-        }
-        
-        // التحقق من تفاصيل الحساب
-        if (!data.accountDetails || data.accountDetails.trim().length < 5) {
-            this.showError('من فضلك أدخل رقم المحفظة أو الحساب بشكل صحيح');
-            return false;
-        }
-        
-        return true;
-    }
-    
+    /**
+     * عرض شاشة التحميل
+     */
     showLoading() {
-        const submitBtn = this.form.querySelector('button[type="submit"]');
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...';
+        if (this.elements.loading) {
+            this.elements.loading.classList.add('show');
+        }
     }
     
+    /**
+     * إخفاء شاشة التحميل
+     */
     hideLoading() {
-        const submitBtn = this.form.querySelector('button[type="submit"]');
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> إرسال طلب البيع';
+        if (this.elements.loading) {
+            this.elements.loading.classList.remove('show');
+        }
     }
     
-    showSuccess(requestId) {
-        document.getElementById('requestId').textContent = requestId;
-        this.successOverlay.style.display = 'flex';
+    /**
+     * عرض نافذة النجاح
+     */
+    showSuccessModal(requestId) {
+        if (this.elements.requestId) {
+            this.elements.requestId.textContent = requestId;
+        }
         
-        // إعادة تعيين النموذج
-        this.form.reset();
-        this.priceDisplay.style.display = 'none';
-        this.orderSummary.style.display = 'none';
+        if (this.elements.successOverlay) {
+            this.elements.successOverlay.style.display = 'flex';
+        }
     }
     
+    /**
+     * عرض رسالة خطأ
+     */
     showError(message) {
-        // إنشاء عنصر رسالة الخطأ
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'error-message';
-        errorDiv.innerHTML = `
-            <i class="fas fa-exclamation-circle"></i>
-            <span>${message}</span>
-        `;
+        if (this.elements.errorText) {
+            this.elements.errorText.textContent = message;
+        }
         
-        // إضافة الرسالة في بداية النموذج
-        this.form.insertBefore(errorDiv, this.form.firstChild);
+        if (this.elements.errorMessage) {
+            this.elements.errorMessage.style.display = 'block';
+            
+            // إخفاء بعد 5 ثواني
+            setTimeout(() => {
+                this.elements.errorMessage.style.display = 'none';
+            }, 5000);
+        }
         
-        // إزالة الرسالة بعد 5 ثواني
-        setTimeout(() => {
-            errorDiv.remove();
-        }, 5000);
-        
-        // التمرير لأعلى الصفحة
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-    
-    clearLocalData() {
-        try {
-            localStorage.removeItem('sellCoinsData');
-            console.log('✅ تم مسح البيانات المؤقتة');
-        } catch (error) {
-            console.error('❌ خطأ في مسح البيانات:', error);
+        // اهتزاز خطأ
+        if (navigator.vibrate) {
+            navigator.vibrate([300, 100, 300]);
         }
     }
 }
 
-// تهيئة الصفحة عند التحميل
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('📄 صفحة بيع الكوينز جاهزة');
+// ============================================================================
+// 🚀 التهيئة عند تحميل الصفحة
+// ============================================================================
+
+let sellCoinsManager = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // إنشاء مدير البيع
+    sellCoinsManager = new SellCoinsManager();
+    
+    // إنشاء الجسيمات المتحركة
+    createSellParticles();
+    
+    console.log('✅ Sell Coins page ready');
 });
+
+// ============================================================================
+// 🎨 دوال مساعدة
+// ============================================================================
+
+/**
+ * إنشاء الجسيمات المتحركة
+ */
+function createSellParticles() {
+    const container = document.getElementById('particlesBg');
+    if (!container) return;
+    
+    const particleCount = window.innerWidth <= 768 ? 10 : 20;
+    
+    for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 8 + 's';
+        particle.style.animationDuration = (Math.random() * 4 + 6) + 's';
+        container.appendChild(particle);
+    }
+}
+
+/**
+ * إغلاق نافذة النجاح
+ */
+function closeSuccessModal() {
+    const overlay = document.getElementById('successOverlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+    
+    // العودة للرئيسية
+    window.location.href = '/';
+}
+
+// ============================================================================
+// 🌐 تصدير للاستخدام الخارجي (إذا احتجنا)
+// ============================================================================
+
+window.SellCoinsManager = SellCoinsManager;
+window.closeSuccessModal = closeSuccessModal;

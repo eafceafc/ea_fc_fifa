@@ -37,38 +37,11 @@
             <input type="hidden" id="userPlatform" value="{{ platform }}">
         </div>
 
-        <!-- القسم الأول: كمية الكوينز -->
-        <div class="sell-section">
-            <h2 class="section-title">
-                <i class="fas fa-coins"></i>
-                كمية الكوينز المراد بيعها
-            </h2>
-            
-            <div class="coins-input-wrapper">
-                <input type="number" 
-                       id="coinsAmount" 
-                       class="coins-input" 
-                       placeholder="أدخل عدد الكوينز"
-                       min="100"
-                       max="1000000"
-                       step="100">
-                <div class="coins-hint">الحد الأدنى: 100 كوين | الحد الأقصى: 1,000,000 كوين</div>
-            </div>
-
-            <!-- عرض السعر المباشر -->
-            <div class="price-preview" id="pricePreview" style="display: none;">
-                <div class="price-card">
-                    <div class="price-label">السعر الأساسي:</div>
-                    <div class="price-value" id="basePrice">0 جنيه</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- القسم الثاني: نوع التحويل -->
-        <div class="sell-section">
+        <!-- 🏰 القسم الأول: خيارات وقت التحويل (قلعة معزولة) -->
+        <div class="sell-section transfer-options-fortress" data-fortress="transfer-time">
             <h2 class="section-title">
                 <i class="fas fa-clock"></i>
-                اختر سرعة التحويل
+                <span>1. اختر سرعة التحويل</span>
             </h2>
 
             <div class="transfer-options">
@@ -112,11 +85,134 @@
             </div>
         </div>
 
-        <!-- القسم الثالث: الملاحظات -->
-        <div class="sell-section">
+        <!-- 🏰 القسم الثاني: إدخال كمية الكوينز (قلعة معزولة) -->
+        <div class="sell-section coins-quantity-fortress" data-fortress="coins-input">
+            <h2 class="section-title">
+                <i class="fas fa-coins"></i>
+                <span>2. كمية الكوينز المراد بيعها</span>
+            </h2>
+            
+            <div class="coins-input-wrapper">
+                <input type="number" 
+                       id="coinsAmount" 
+                       class="coins-input" 
+                       placeholder="أدخل عدد الكوينز"
+                       min="100"
+                       max="1000000"
+                       step="100">
+                <div class="coins-hint">الحد الأدنى: 100 كوين | الحد الأقصى: 1,000,000 كوين</div>
+            </div>
+        </div>
+
+        <!-- 🏰 القسم الثالث: عرض السعر التقديري (قلعة معزولة) -->
+        <div class="sell-section price-display-fortress" data-fortress="price-display" style="display: none;">
+            <h2 class="section-title">
+                <i class="fas fa-calculator"></i>
+                <span>3. السعر التقديري</span>
+            </h2>
+            
+            <div class="price-preview" id="pricePreview">
+                <div class="price-card">
+                    <div class="price-label">السعر الأساسي:</div>
+                    <div class="price-value" id="basePrice">0 جنيه</div>
+                </div>
+                <div class="price-card discount-card" id="discountCard" style="display: none;">
+                    <div class="price-label">الخصم المطبق:</div>
+                    <div class="price-value discount" id="discountAmount">0 جنيه</div>
+                </div>
+                <div class="price-card final-card">
+                    <div class="price-label">السعر النهائي:</div>
+                    <div class="price-value final" id="finalPriceDisplay">0 جنيه</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🏰 القسم الرابع: بيانات حساب EA (قلعة معزولة) -->
+        <div class="sell-section ea-account-fortress" data-fortress="ea-account">
+            <h2 class="section-title">
+                <i class="fas fa-gamepad"></i>
+                <span>4. بيانات حساب EA</span>
+            </h2>
+
+            <!-- إدخال الإيميل -->
+            <div class="ea-field-group">
+                <label for="eaEmail" class="field-label">
+                    <i class="fas fa-envelope"></i>
+                    البريد الإلكتروني لحساب EA
+                </label>
+                <input type="email" 
+                       id="eaEmail" 
+                       class="ea-input" 
+                       placeholder="example@email.com"
+                       required>
+            </div>
+
+            <!-- إدخال كلمة المرور -->
+            <div class="ea-field-group">
+                <label for="eaPassword" class="field-label">
+                    <i class="fas fa-lock"></i>
+                    كلمة المرور
+                </label>
+                <div class="password-input-wrapper">
+                    <input type="password" 
+                           id="eaPassword" 
+                           class="ea-input" 
+                           placeholder="أدخل كلمة المرور"
+                           required>
+                    <button type="button" class="toggle-password" onclick="togglePasswordVisibility()">
+                        <i class="fas fa-eye" id="passwordToggleIcon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- أكواد الاسترداد الذكية -->
+            <div class="ea-field-group">
+                <label class="field-label">
+                    <i class="fas fa-shield-alt"></i>
+                    أكواد الاسترداد (Backup Codes)
+                </label>
+                
+                <!-- خيارات الإدخال -->
+                <div class="recovery-input-options">
+                    <button type="button" class="option-btn active" data-mode="separate" onclick="switchRecoveryMode('separate')">
+                        <i class="fas fa-th"></i>
+                        6 حقول منفصلة
+                    </button>
+                    <button type="button" class="option-btn" data-mode="bulk" onclick="switchRecoveryMode('bulk')">
+                        <i class="fas fa-paste"></i>
+                        لصق دفعة واحدة
+                    </button>
+                </div>
+
+                <!-- الحقول المنفصلة -->
+                <div id="separateCodesInput" class="recovery-codes-grid">
+                    <input type="text" class="recovery-code-input" placeholder="الكود 1" maxlength="8" pattern="[0-9]{8}">
+                    <input type="text" class="recovery-code-input" placeholder="الكود 2" maxlength="8" pattern="[0-9]{8}">
+                    <input type="text" class="recovery-code-input" placeholder="الكود 3" maxlength="8" pattern="[0-9]{8}">
+                    <input type="text" class="recovery-code-input" placeholder="الكود 4" maxlength="8" pattern="[0-9]{8}">
+                    <input type="text" class="recovery-code-input" placeholder="الكود 5" maxlength="8" pattern="[0-9]{8}">
+                    <input type="text" class="recovery-code-input" placeholder="الكود 6" maxlength="8" pattern="[0-9]{8}">
+                </div>
+
+                <!-- حقل اللصق الشامل -->
+                <div id="bulkCodesInput" style="display: none;">
+                    <textarea id="bulkCodesTextarea" 
+                              class="bulk-codes-textarea" 
+                              placeholder="الصق الأكواد الستة هنا (سيتم استخراجها تلقائياً)&#10;مثال:&#10;12345678&#10;87654321&#10;..." 
+                              rows="6"></textarea>
+                    <div class="codes-hint">
+                        <i class="fas fa-info-circle"></i>
+                        سيتم استخراج 6 أكواد من 8 أرقام تلقائياً
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🏰 القسم الخامس: الملاحظات (قلعة معزولة) -->
+        <div class="sell-section notes-fortress" data-fortress="notes">
             <h2 class="section-title">
                 <i class="fas fa-comment-alt"></i>
-                ملاحظات إضافية (اختياري)
+                <span>5. ملاحظات إضافية (اختياري)</span>
             </h2>
 
             <div class="notes-wrapper">
@@ -131,11 +227,11 @@
             </div>
         </div>
 
-        <!-- القسم الرابع: ملخص الطلب -->
-        <div class="sell-section summary-section" id="summarySection" style="display: none;">
+        <!-- 🏰 القسم السادس: تأكيد الطلب (قلعة معزولة) -->
+        <div class="sell-section confirmation-fortress" data-fortress="confirmation" id="summarySection" style="display: none;">
             <h2 class="section-title">
                 <i class="fas fa-clipboard-check"></i>
-                ملخص طلبك
+                <span>6. تأكيد طلب البيع</span>
             </h2>
 
             <div class="summary-card">
@@ -158,6 +254,18 @@
                 <div class="summary-row total-row">
                     <span class="summary-label">السعر النهائي:</span>
                     <span class="summary-value total" id="summaryTotal">0 جنيه</span>
+                </div>
+                
+                <!-- معلومات حساب EA -->
+                <div class="ea-summary" id="eaSummary" style="display: none;">
+                    <div class="summary-row">
+                        <span class="summary-label">حساب EA:</span>
+                        <span class="summary-value" id="summaryEaEmail">-</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">أكواد الاسترداد:</span>
+                        <span class="summary-value" id="summaryRecoveryCodes">غير مدخلة</span>
+                    </div>
                 </div>
             </div>
 

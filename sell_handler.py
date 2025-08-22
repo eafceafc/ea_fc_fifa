@@ -1,105 +1,118 @@
-# sell_handler.py - وزارة بيع الكوينز المعزولة تماماً
+# sell_handler.py - وزارة بيع الكوينز المعزولة مع دعم حساب EA
 """
 💰 وزارة بيع الكوينز - FC 26 Profile System
 ==========================================
 نظام معزول تماماً لإدارة طلبات بيع الكوينز
-- لا يؤثر على أي كود موجود
-- يعمل بشكل مستقل تماماً
-- يحفظ البيانات في الذاكرة مؤقتاً
+- دعم كامل لبيانات حساب EA
+- تشفير آمن للبيانات الحساسة
+- نظام أكواد الاسترداد الذكي
 """
 
 import os
 import json
 import hashlib
+import uuid
 from datetime import datetime
 import re
+import logging
+
+# إعداد نظام السجلات
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class SellCoinsHandler:
-    """كلاس معزول تماماً لإدارة طلبات بيع الكوينز"""
+    """كلاس معزول لإدارة طلبات بيع الكوينز مع دعم EA"""
     
     def __init__(self):
-        # قاعدة بيانات في الذاكرة لحفظ الطلبات
+        # قاعدة بيانات في الذاكرة
         self.sell_requests = {}
         
-        # معدلات التحويل الافتراضية
+        # معدلات التحويل
         self.conversion_rates = {
             'instant': 0.85,  # تحويل فوري - خصم 15%
             'normal': 1.0      # تحويل عادي - سعر كامل
         }
         
-        # سعر الكوين بالجنيه المصري (افتراضي)
+        # سعر الكوين بالجنيه المصري
         self.coin_price_egp = float(os.environ.get('COINS_CONVERSION_RATE', '0.10'))
         
-        # الحد الأدنى والأقصى للكوينز
+        # الحدود
         self.min_coins = 100
         self.max_coins = 1000000
         
-        print("💰 وزارة بيع الكوينز جاهزة للعمل")
-        print(f"   السعر الحالي: {self.coin_price_egp} جنيه للكوين")
+        logger.info("💰 وزارة بيع الكوينز جاهزة للعمل")
+        logger.info(f"   السعر الحالي: {self.coin_price_egp} جنيه للكوين")
     
     def generate_request_id(self):
         """توليد معرف فريد للطلب"""
-        timestamp = datetime.now().isoformat()
-        random_part = hashlib.md5(timestamp.encode()).hexdigest()[:8]
-        return f"SELL_{random_part.upper()}"
+        return f"SELL_{str(uuid.uuid4())[:8].upper()}"
     
-    def calculate_price(self, coins_amount, transfer_type):
+    def calculate_price(self, coins_amount, transfer_type='normal'):
         """حساب السعر المتوقع للكوينز"""
         try:
-            coins = int(coins_amount)
+            # التحويل للرقم
+            if isinstance(coins_amount, str):
+                coins_amount = int(coins_amount)
             
             # التحقق من الحدود
-            if coins < self.min_coins:
+            if coins_amount < self.min_coins:
                 return {
                     'success': False,
                     'error': f'الحد الأدنى {self.min_coins} كوين'
                 }
             
-            if coins > self.max_coins:
+            if coins_amount > self.max_coins:
                 return {
                     'success': False,
                     'error': f'الحد الأقصى {self.max_coins} كوين'
                 }
             
-            # حساب السعر الأساسي
-            base_price = coins * self.coin_price_egp
-            
-            # تطبيق معدل التحويل
+            # حساب السعر
+            base_price = coins_amount * self.coin_price_egp
             rate = self.conversion_rates.get(transfer_type, 1.0)
             final_price = base_price * rate
-            
-            # حساب الخصم
             discount = base_price - final_price
-            discount_percentage = (1 - rate) * 100
             
             return {
                 'success': True,
-                'coins_amount': coins,
+                'price': round(final_price, 2),
                 'base_price': round(base_price, 2),
-                'final_price': round(final_price, 2),
                 'discount': round(discount, 2),
-                'discount_percentage': discount_percentage,
-                'transfer_type': transfer_type,
                 'rate': rate,
-                'coin_price': self.coin_price_egp
+                'transfer_type': transfer_type,
+                'coins_amount': coins_amount
             }
             
-        except (ValueError, TypeError):
+        except (ValueError, TypeError) as e:
+            logger.error(f"خطأ في حساب السعر: {str(e)}")
             return {
                 'success': False,
                 'error': 'كمية الكوينز غير صحيحة'
             }
     
     def create_sell_request(self, request_data):
-        """إنشاء طلب بيع جديد"""
+        """إنشاء طلب بيع جديد مع بيانات EA"""
         try:
-            # استخراج البيانات
+            # استخراج البيانات الأساسية
             coins_amount = request_data.get('coins_amount')
             transfer_type = request_data.get('transfer_type', 'normal')
             notes = request_data.get('notes', '')
-            user_id = request_data.get('user_id')
-            whatsapp_number = request_data.get('whatsapp_number')
-            platform = request_data.get('platform')
+            
+            # بيانات المستخدم
+            user_info = {
+                'user_id': request_data.get('user_id', 'guest'),
+                'whatsapp_number': request_data.get('whatsapp_number', ''),
+                'platform': request_data.get('platform', '')
+            }
+            
+            # بيانات حساب EA
+            ea_account = request_data.get('ea_account', {})
+            ea_data = {
+                'email': self.sanitize_input(ea_account.get('email', '')),
+                'password_hash': self.hash_password(ea_account.get('password', '')),
+                'recovery_codes': self.process_recovery_codes(ea_account.get('recoveryCodes', [])),
+                'recovery_codes_count': len(ea_account.get('recoveryCodes', []))
+            }
             
             # التحقق من البيانات المطلوبة
             if not coins_amount:
@@ -109,10 +122,10 @@ class SellCoinsHandler:
                 }
             
             # حساب السعر
-            price_calculation = self.calculate_price(coins_amount, transfer_type)
+            price_info = self.calculate_price(coins_amount, transfer_type)
             
-            if not price_calculation['success']:
-                return price_calculation
+            if not price_info['success']:
+                return price_info
             
             # إنشاء معرف الطلب
             request_id = self.generate_request_id()
@@ -120,18 +133,19 @@ class SellCoinsHandler:
             # تنظيف الملاحظات
             clean_notes = self.sanitize_input(notes)[:500]
             
-            # إنشاء بيانات الطلب
+            # إنشاء بيانات الطلب الكاملة
             sell_request = {
                 'request_id': request_id,
-                'user_id': user_id,
-                'whatsapp_number': whatsapp_number,
-                'platform': platform,
-                'coins_amount': price_calculation['coins_amount'],
+                'user_info': user_info,
+                'coins_amount': price_info['coins_amount'],
                 'transfer_type': transfer_type,
-                'base_price': price_calculation['base_price'],
-                'final_price': price_calculation['final_price'],
-                'discount': price_calculation['discount'],
-                'discount_percentage': price_calculation['discount_percentage'],
+                'pricing': {
+                    'base_price': price_info['base_price'],
+                    'final_price': price_info['price'],
+                    'discount': price_info['discount'],
+                    'rate': price_info['rate']
+                },
+                'ea_account': ea_data,
                 'notes': clean_notes,
                 'status': 'pending',
                 'created_at': datetime.now().isoformat(),
@@ -141,20 +155,27 @@ class SellCoinsHandler:
             # حفظ في الذاكرة
             self.sell_requests[request_id] = sell_request
             
-            print(f"💰 طلب بيع جديد: {request_id}")
-            print(f"   الكمية: {coins_amount} كوين")
-            print(f"   النوع: {transfer_type}")
-            print(f"   السعر النهائي: {price_calculation['final_price']} جنيه")
+            logger.info(f"💰 طلب بيع جديد: {request_id}")
+            logger.info(f"   الكمية: {coins_amount} كوين")
+            logger.info(f"   النوع: {transfer_type}")
+            logger.info(f"   السعر النهائي: {price_info['price']} جنيه")
+            logger.info(f"   حساب EA: {ea_data['email']}")
+            logger.info(f"   أكواد الاسترداد: {ea_data['recovery_codes_count']} كود")
             
             return {
                 'success': True,
                 'request_id': request_id,
-                'sell_request': sell_request,
-                'message': 'تم إنشاء طلب البيع بنجاح'
+                'message': 'تم إنشاء طلب البيع بنجاح',
+                'details': {
+                    'request_id': request_id,
+                    'coins_amount': coins_amount,
+                    'final_price': price_info['price'],
+                    'status': 'pending'
+                }
             }
             
         except Exception as e:
-            print(f"خطأ في إنشاء طلب البيع: {str(e)}")
+            logger.error(f"خطأ في إنشاء طلب البيع: {str(e)}")
             return {
                 'success': False,
                 'error': 'حدث خطأ في إنشاء الطلب'
@@ -165,7 +186,7 @@ class SellCoinsHandler:
         if request_id in self.sell_requests:
             return {
                 'success': True,
-                'sell_request': self.sell_requests[request_id]
+                'request': self.sell_requests[request_id]
             }
         else:
             return {
@@ -178,7 +199,7 @@ class SellCoinsHandler:
         user_requests = []
         
         for request_id, request_data in self.sell_requests.items():
-            if request_data.get('user_id') == user_id:
+            if request_data.get('user_info', {}).get('user_id') == user_id:
                 user_requests.append(request_data)
         
         # ترتيب حسب التاريخ
@@ -209,6 +230,8 @@ class SellCoinsHandler:
         self.sell_requests[request_id]['status'] = new_status
         self.sell_requests[request_id]['updated_at'] = datetime.now().isoformat()
         
+        logger.info(f"📝 تحديث حالة الطلب {request_id} إلى {new_status}")
+        
         return {
             'success': True,
             'message': f'تم تحديث الحالة إلى {new_status}'
@@ -232,9 +255,11 @@ class SellCoinsHandler:
             'normal': 0
         }
         
+        ea_accounts_count = 0
+        
         for request in self.sell_requests.values():
             total_coins += request.get('coins_amount', 0)
-            total_value += request.get('final_price', 0)
+            total_value += request.get('pricing', {}).get('final_price', 0)
             
             status = request.get('status')
             if status in status_counts:
@@ -243,6 +268,10 @@ class SellCoinsHandler:
             transfer_type = request.get('transfer_type')
             if transfer_type in transfer_type_counts:
                 transfer_type_counts[transfer_type] += 1
+            
+            # عد الحسابات مع بيانات EA
+            if request.get('ea_account', {}).get('email'):
+                ea_accounts_count += 1
         
         return {
             'total_requests': total_requests,
@@ -250,6 +279,7 @@ class SellCoinsHandler:
             'total_value': round(total_value, 2),
             'status_counts': status_counts,
             'transfer_type_counts': transfer_type_counts,
+            'ea_accounts_count': ea_accounts_count,
             'coin_price': self.coin_price_egp
         }
     
@@ -263,6 +293,31 @@ class SellCoinsHandler:
         text = re.sub(r'[<>\"\'`;]', '', text)
         return text.strip()
     
+    def hash_password(self, password):
+        """تشفير كلمة المرور للحفظ الآمن"""
+        if not password:
+            return ""
+        # استخدام SHA256 للتشفير
+        salt = "FC26_SELL_COINS"
+        return hashlib.sha256(f"{salt}{password}".encode()).hexdigest()
+    
+    def process_recovery_codes(self, codes):
+        """معالجة وتشفير أكواد الاسترداد"""
+        if not codes:
+            return []
+        
+        processed_codes = []
+        for code in codes:
+            if code and len(str(code)) == 8:
+                # إخفاء الأرقام الوسطى للأمان
+                masked = f"{str(code)[:2]}****{str(code)[-2:]}"
+                processed_codes.append({
+                    'masked': masked,
+                    'hash': hashlib.md5(str(code).encode()).hexdigest()[:8]
+                })
+        
+        return processed_codes
+    
     def validate_coins_amount(self, coins_amount):
         """التحقق من صحة كمية الكوينز"""
         try:
@@ -274,6 +329,42 @@ class SellCoinsHandler:
             return True, 'صحيح'
         except:
             return False, 'كمية غير صحيحة'
+    
+    def validate_ea_account(self, ea_data):
+        """التحقق من صحة بيانات حساب EA"""
+        errors = []
+        
+        # التحقق من الإيميل
+        email = ea_data.get('email', '')
+        if not email:
+            errors.append('البريد الإلكتروني مطلوب')
+        elif '@' not in email:
+            errors.append('البريد الإلكتروني غير صحيح')
+        
+        # التحقق من كلمة المرور
+        password = ea_data.get('password', '')
+        if not password:
+            errors.append('كلمة المرور مطلوبة')
+        elif len(password) < 6:
+            errors.append('كلمة المرور قصيرة جداً')
+        
+        # التحقق من أكواد الاسترداد
+        codes = ea_data.get('recoveryCodes', [])
+        if len(codes) < 1:
+            errors.append('يجب إدخال كود استرداد واحد على الأقل')
+        
+        valid_codes = []
+        for code in codes:
+            if code and len(str(code)) == 8 and str(code).isdigit():
+                valid_codes.append(code)
+        
+        if len(valid_codes) != len(codes):
+            errors.append('بعض أكواد الاسترداد غير صحيحة (يجب أن تكون 8 أرقام)')
+        
+        if errors:
+            return False, errors
+        else:
+            return True, 'جميع البيانات صحيحة'
 
 # إنشاء instance عام للاستخدام
 sell_handler = SellCoinsHandler()
@@ -282,7 +373,7 @@ sell_handler = SellCoinsHandler()
 def create_sell_request(request_data):
     return sell_handler.create_sell_request(request_data)
 
-def calculate_price(coins_amount, transfer_type):
+def calculate_price(coins_amount, transfer_type='normal'):
     return sell_handler.calculate_price(coins_amount, transfer_type)
 
 def get_sell_request(request_id):
@@ -296,3 +387,6 @@ def get_statistics():
 
 def validate_coins_amount(coins_amount):
     return sell_handler.validate_coins_amount(coins_amount)
+
+def validate_ea_account(ea_data):
+    return sell_handler.validate_ea_account(ea_data)

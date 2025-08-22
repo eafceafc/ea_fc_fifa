@@ -1,8 +1,8 @@
-/* sell_coins.css - أنماط صفحة بيع الكوينز المعزولة */
+/* sell_coins.css - أنماط صفحة بيع الكوينز - 6 قلاع معزولة */
 
 /* تحسينات الحاوي الرئيسي */
 .sell-container {
-    max-width: 600px;
+    max-width: 700px;
     animation: fadeInUp 0.6s ease-out;
 }
 
@@ -17,7 +17,13 @@
     }
 }
 
-/* أقسام البيع */
+/* القلاع المعزولة - التصميم الأساسي */
+[data-fortress] {
+    position: relative;
+    isolation: isolate;
+}
+
+/* أقسام البيع - مع عزل القلاع */
 .sell-section {
     background: linear-gradient(145deg, rgba(25, 15, 44, 0.9), rgba(58, 45, 91, 0.8));
     border-radius: 15px;
@@ -26,11 +32,57 @@
     border: 2px solid rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
     transition: all 0.3s ease;
+    position: relative;
 }
 
 .sell-section:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 30px rgba(255, 144, 0, 0.2);
+}
+
+/* تمييز القلاع المعزولة */
+.transfer-options-fortress {
+    border-color: rgba(255, 144, 0, 0.2);
+}
+
+.coins-quantity-fortress {
+    border-color: rgba(147, 51, 234, 0.2);
+}
+
+.price-display-fortress {
+    border-color: rgba(34, 197, 94, 0.2);
+}
+
+.ea-account-fortress {
+    border-color: rgba(59, 130, 246, 0.2);
+}
+
+.notes-fortress {
+    border-color: rgba(236, 72, 153, 0.2);
+}
+
+.confirmation-fortress {
+    border-color: rgba(16, 185, 129, 0.2);
+}
+
+/* عناوين الأقسام مع الترقيم */
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-white);
+}
+
+.section-title i {
+    color: var(--accent-orange);
+    font-size: 1.3rem;
+}
+
+.section-title span {
+    font-weight: 700;
 }
 
 /* إدخال الكوينز */
@@ -63,14 +115,13 @@
     color: rgba(255, 255, 255, 0.5);
 }
 
-/* إزالة أسهم الأرقام في Chrome/Safari */
+/* إزالة أسهم الأرقام */
 .coins-input::-webkit-outer-spin-button,
 .coins-input::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
 
-/* Firefox */
 .coins-input[type=number] {
     -moz-appearance: textfield;
 }
@@ -85,7 +136,6 @@
 
 /* عرض السعر */
 .price-preview {
-    margin-top: 25px;
     animation: slideIn 0.4s ease-out;
 }
 
@@ -108,6 +158,17 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 10px;
+}
+
+.price-card.discount-card {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.15));
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.price-card.final-card {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(34, 197, 94, 0.15));
+    border-color: rgba(16, 185, 129, 0.3);
 }
 
 .price-label {
@@ -121,6 +182,15 @@
     font-weight: 800;
     color: var(--accent-orange);
     font-family: 'Orbitron', monospace;
+}
+
+.price-value.discount {
+    color: #ef4444;
+}
+
+.price-value.final {
+    color: #10b981;
+    font-size: 1.5rem;
 }
 
 /* خيارات التحويل */
@@ -246,6 +316,161 @@
     font-family: 'Orbitron', monospace;
 }
 
+/* بيانات حساب EA - القلعة الرابعة */
+.ea-field-group {
+    margin-bottom: 20px;
+}
+
+.field-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 10px;
+}
+
+.field-label i {
+    color: var(--accent-orange);
+}
+
+.ea-input {
+    width: 100%;
+    padding: 15px;
+    font-size: 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 144, 0, 0.3);
+    border-radius: 12px;
+    color: var(--text-white);
+    transition: all 0.3s ease;
+    font-family: 'Cairo', sans-serif;
+}
+
+.ea-input:focus {
+    outline: none;
+    border-color: var(--accent-orange);
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 20px rgba(255, 144, 0, 0.4);
+}
+
+.password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-input-wrapper .ea-input {
+    padding-left: 45px;
+}
+
+.toggle-password {
+    position: absolute;
+    left: 10px;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    padding: 8px;
+    transition: color 0.3s ease;
+}
+
+.toggle-password:hover {
+    color: var(--accent-orange);
+}
+
+/* أكواد الاسترداد */
+.recovery-input-options {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.option-btn {
+    flex: 1;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: 'Cairo', sans-serif;
+}
+
+.option-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 144, 0, 0.5);
+}
+
+.option-btn.active {
+    background: rgba(255, 144, 0, 0.2);
+    border-color: var(--accent-orange);
+    color: var(--text-white);
+}
+
+.recovery-codes-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.recovery-code-input {
+    padding: 12px;
+    text-align: center;
+    font-size: 0.95rem;
+    font-family: 'Orbitron', monospace;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 144, 0, 0.3);
+    border-radius: 8px;
+    color: var(--text-white);
+    transition: all 0.3s ease;
+}
+
+.recovery-code-input:focus {
+    outline: none;
+    border-color: var(--accent-orange);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.bulk-codes-textarea {
+    width: 100%;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 144, 0, 0.3);
+    border-radius: 12px;
+    color: var(--text-white);
+    font-family: 'Orbitron', monospace;
+    font-size: 0.95rem;
+    resize: vertical;
+    transition: all 0.3s ease;
+}
+
+.bulk-codes-textarea:focus {
+    outline: none;
+    border-color: var(--accent-orange);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.codes-hint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.codes-hint i {
+    color: var(--accent-orange);
+}
+
 /* قسم الملاحظات */
 .notes-wrapper {
     margin-top: 20px;
@@ -284,11 +509,6 @@
 }
 
 /* قسم الملخص */
-.summary-section {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(34, 197, 94, 0.15));
-    border-color: rgba(16, 185, 129, 0.3);
-}
-
 .summary-card {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 12px;
@@ -333,6 +553,13 @@
 .total-row {
     padding-top: 20px;
     margin-top: 10px;
+    border-top: 2px solid rgba(255, 144, 0, 0.3);
+}
+
+/* ملخص حساب EA */
+.ea-summary {
+    margin-top: 15px;
+    padding-top: 15px;
     border-top: 2px solid rgba(255, 144, 0, 0.3);
 }
 
@@ -412,6 +639,39 @@
     transform: translateY(-2px);
 }
 
+/* الرسائل */
+.message {
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 20px;
+    text-align: center;
+    font-weight: 600;
+    animation: slideInDown 0.4s ease-out;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.success-message {
+    background: rgba(16, 185, 129, 0.2);
+    border: 2px solid rgba(16, 185, 129, 0.4);
+    color: #10b981;
+}
+
+.error-message {
+    background: rgba(239, 68, 68, 0.2);
+    border: 2px solid rgba(239, 68, 68, 0.4);
+    color: #ef4444;
+}
+
 /* نافذة النجاح */
 .success-overlay {
     position: fixed;
@@ -426,6 +686,11 @@
     justify-content: center;
     z-index: 10000;
     animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .success-modal {
@@ -503,7 +768,53 @@
     box-shadow: 0 10px 25px rgba(255, 144, 0, 0.5);
 }
 
+/* شاشة التحميل */
+.loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(25, 15, 44, 0.95);
+    backdrop-filter: blur(10px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    flex-direction: column;
+}
+
+.loading.show {
+    display: flex;
+}
+
+.spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(255, 255, 255, 0.1);
+    border-top-color: var(--accent-orange);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-text {
+    margin-top: 20px;
+    color: var(--text-white);
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
 /* تحسينات للهواتف */
+@media (max-width: 768px) {
+    .recovery-codes-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 @media (max-width: 480px) {
     .transfer-options {
         grid-template-columns: 1fr;
@@ -517,6 +828,11 @@
     .coins-input {
         font-size: 1.3rem;
         padding: 15px;
+    }
+    
+    .recovery-codes-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
     }
     
     .action-buttons {

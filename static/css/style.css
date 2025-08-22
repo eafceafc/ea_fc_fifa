@@ -2037,3 +2037,427 @@ body {
         transition: transform 0.2s ease;
     }
 }
+
+/* =======================================================================
+   🚀 CSS Migrated from JavaScript - Enhanced Components
+   ======================================================================= */
+
+/* 📱 WhatsApp Progress Bar & Status Enhancement */
+.whatsapp-progress {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.whatsapp-progress.show {
+    opacity: 1;
+}
+
+.whatsapp-progress-fill {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #059669);
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+/* WhatsApp Progress Colors by Stage */
+.whatsapp-progress-fill.stage-early {
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.whatsapp-progress-fill.stage-partial {
+    background: linear-gradient(90deg, #f97316, #ea580c);
+}
+
+.whatsapp-progress-fill.stage-almost {
+    background: linear-gradient(90deg, #eab308, #ca8a04);
+}
+
+.whatsapp-progress-fill.stage-complete {
+    background: linear-gradient(90deg, #10b981, #059669);
+}
+
+.whatsapp-status {
+    font-size: 0.9rem;
+    margin-top: 5px;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(-5px);
+    transition: all 0.3s ease;
+    min-height: 20px;
+    color: #F59E0B;
+}
+
+.whatsapp-status.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.whatsapp-status.success {
+    color: #10B981;
+}
+
+.whatsapp-status.error {
+    color: #EF4444;
+}
+
+.whatsapp-status.partial {
+    color: #3B82F6;
+}
+
+/* 💳 Telda Progress Bar Enhancement */
+.telda-progress {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+}
+
+.telda-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10B981, #059669);
+    border-radius: 2px;
+    transition: all 0.3s ease;
+    width: 0%;
+}
+
+/* Telda Progress Colors by Completion */
+.telda-progress-fill.stage-1 {
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.telda-progress-fill.stage-2 {
+    background: linear-gradient(90deg, #f97316, #ea580c);
+}
+
+.telda-progress-fill.stage-3 {
+    background: linear-gradient(90deg, #eab308, #ca8a04);
+}
+
+.telda-progress-fill.stage-4 {
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+
+.telda-progress-fill.stage-complete {
+    background: linear-gradient(90deg, #10b981, #059669);
+}
+
+.telda-status {
+    font-size: 0.9rem;
+    margin-top: 5px;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(-5px);
+    transition: all 0.3s ease;
+}
+
+.telda-status.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.telda-status.telda-valid {
+    color: #10B981;
+}
+
+.telda-status.telda-invalid {
+    color: #EF4444;
+}
+
+.telda-status.telda-partial {
+    color: #F59E0B;
+}
+
+/* 🔔 Enhanced Notification System */
+.notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #3B82F6;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 10px;
+    z-index: 10000;
+    font-weight: 600;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    max-width: 90%;
+    opacity: 0;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.notification.show {
+    opacity: 1;
+}
+
+.notification.success {
+    background: #10B981;
+}
+
+.notification.error {
+    background: #DC2626;
+}
+
+.notification.info {
+    background: #3B82F6;
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.notification-close {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 10px;
+    font-size: 0.9rem;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+.notification-close:hover {
+    opacity: 1;
+}
+
+/* 📧 Email Manager Notifications */
+.email-notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #3B82F6;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 10px;
+    z-index: 10000;
+    font-weight: 600;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    max-width: 90%;
+    opacity: 0;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.email-notification.show {
+    opacity: 1;
+}
+
+.email-notification.success {
+    background: #10B981;
+}
+
+.email-notification.error {
+    background: #DC2626;
+}
+
+.email-notification.info {
+    background: #3B82F6;
+}
+
+/* 💡 Enhanced Tooltips */
+.tooltip {
+    position: absolute;
+    background: #333;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    z-index: 10001;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.tooltip.show {
+    opacity: 1;
+}
+
+/* 🎨 Enhanced Visual States */
+.form-input.validating {
+    border-color: #F59E0B !important;
+    animation: pulse-validation 1.5s infinite;
+}
+
+@keyframes pulse-validation {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.form-input.valid {
+    border-color: #10B981 !important;
+    background: rgba(16, 185, 129, 0.05) !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
+}
+
+.form-input.invalid {
+    border-color: #EF4444 !important;
+    background: rgba(239, 68, 68, 0.05) !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+}
+
+.form-input.error {
+    border-color: #EF4444 !important;
+}
+
+/* 🏆 Form Group Validation States */
+.form-group.valid {
+    border-left: 4px solid #10B981;
+}
+
+.form-group.invalid {
+    border-left: 4px solid #EF4444;
+}
+
+.form-group.partial {
+    border-left: 4px solid #F59E0B;
+}
+
+.form-group.success-info {
+    border-left: 4px solid #10B981;
+}
+
+/* 📝 Payment Validation Messages */
+.payment-validation-msg {
+    font-size: 0.9rem;
+    margin-top: 5px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.payment-validation-msg.success-msg {
+    color: #10B981;
+}
+
+.payment-validation-msg.error-msg {
+    color: #EF4444;
+}
+
+/* 🌟 WhatsApp Validation Messages */
+.whatsapp-validation-msg {
+    color: #10B981;
+    font-size: 0.9rem;
+    margin-top: 5px;
+    font-weight: 600;
+    animation: fadeInUp 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.whatsapp-validation-msg.success {
+    color: #10B981;
+}
+
+.whatsapp-validation-msg.error {
+    color: #EF4444;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 🎯 Focus Enhanced States */
+.telda-focused {
+    transform: scale(1.02);
+    box-shadow: 0 0 15px rgba(255, 144, 0, 0.3);
+}
+
+/* 🔄 Animation Extensions */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 📱 Mobile Optimizations for Enhanced Components */
+@media (max-width: 480px) {
+    .whatsapp-status,
+    .telda-status {
+        font-size: 0.85rem;
+    }
+    
+    .notification,
+    .email-notification {
+        max-width: 95%;
+        padding: 12px 16px;
+        font-size: 0.9rem;
+    }
+    
+    .tooltip {
+        font-size: 11px;
+        padding: 6px 10px;
+    }
+    
+    .payment-validation-msg,
+    .whatsapp-validation-msg {
+        font-size: 0.85rem;
+    }
+}
+
+/* 🎨 Keyboard Open State for Mobile */
+.keyboard-open {
+    padding-bottom: 150px;
+}
+
+.keyboard-open .container {
+    transform: translateY(-50px);
+}
+
+/* 🏃‍♂️ Touch Active States */
+.touch-active {
+    opacity: 0.8;
+    transform: scale(0.98);
+}
+
+/* 🎭 Animation Enhanced Classes */
+.animate-in {
+    animation: slideInUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes slideInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

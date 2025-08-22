@@ -1216,16 +1216,22 @@ async function handleFormSubmit(e) {
                 navigator.vibrate([200, 100, 200]);
             }
 
-            // إعادة تعيين النموذج بعد النجاح والتنقل لصفحة البيع
+            // إعادة تعيين النموذج بعد النجاح
             setTimeout(() => {
                 console.log('تم حفظ البيانات بنجاح:', result.data);
+                
+                // 💰 الانتقال التلقائي لصفحة بيع الكوينز
                 // حفظ البيانات في localStorage للاستخدام في صفحة البيع
                 if (result.data) {
-                    localStorage.setItem('userEmail', result.data.email || '');
-                    localStorage.setItem('playerName', result.data.player_name || '');
-                    localStorage.setItem('telegramUsername', result.data.telegram_username || '');
+                    localStorage.setItem('userProfile', JSON.stringify({
+                        user_id: result.user_id,
+                        whatsapp_number: result.data.whatsapp_number,
+                        platform: result.data.platform
+                    }));
                 }
-                // التنقل لصفحة بيع الكوينز
+                
+                // الانتقال لصفحة البيع
+                console.log('🚀 الانتقال لصفحة بيع الكوينز...');
                 window.location.href = '/sell-coins';
             }, 2000);
 
@@ -2039,8 +2045,10 @@ console.log('FC 26 Profile Setup - تم تهيئة JavaScript المدمج بن�
                     container.style.transform = 'scale(1)';
                 }
             }
-            // التنقل لصفحة بيع الكوينز بدلاً من إعادة التحميل
+            
+            // 💰 الانتقال لصفحة بيع الكوينز بدلاً من إعادة التحميل
             setTimeout(() => {
+                console.log('🚀 الانتقال لصفحة بيع الكوينز بعد ربط التليجرام...');
                 window.location.href = '/sell-coins';
             }, 500);
         }

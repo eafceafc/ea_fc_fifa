@@ -1,138 +1,323 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بيع كوينز FC 26</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>طلب بيع الكوينز - FC 26</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Orbitron:wght@400;700;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/sell_coins.css') }}">
 </head>
+
 <body>
-    <div class="container">
+    <!-- خلفية الجسيمات -->
+    <div class="particles-bg" id="particlesBg"></div>
+
+    <!-- شاشة التحميل -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <div class="loading-text">جاري معالجة طلبك...</div>
+    </div>
+
+    <div class="container sell-container">
+        <!-- الهيدر -->
         <div class="header">
-            <h1><i class="fas fa-coins"></i> بيع كوينز FC 26</h1>
-            <p class="subtitle">احصل على أموالك بسرعة وأمان</p>
+            <h1>💰 بيع الكوينز</h1>
+            <p>احصل على أفضل سعر لكوينزاتك</p>
         </div>
 
-        <form id="sellCoinsForm" class="sell-form">
-            <input type="hidden" id="userEmail" name="userEmail">
-            <input type="hidden" id="userPlayerName" name="userPlayerName">
-            <input type="hidden" id="userTelegram" name="userTelegram">
+        <!-- معلومات المستخدم (مخفية) -->
+        <div id="userInfo" style="display: none;">
+            <input type="hidden" id="userId" value="{{ user_id }}">
+            <input type="hidden" id="userWhatsapp" value="{{ whatsapp_number }}">
+            <input type="hidden" id="userPlatform" value="{{ platform }}">
+        </div>
 
-            <div class="form-section" id="transfer-type-section">
-                <h2 class="section-title"><i class="fas fa-exchange-alt"></i> اختر نوع التحويل</h2>
-                
-                <div class="transfer-options">
-                    <div class="transfer-option" data-type="instant">
-                        <input type="radio" id="instantTransfer" name="transferType" value="instant">
-                        <label for="instantTransfer">
-                            <div class="option-icon"><i class="fas fa-bolt"></i></div>
-                            <div class="option-content">
-                                <h3>تحويل فوري</h3>
-                                <p>احصل على أموالك خلال دقائق</p>
-                                <div class="price-tag instant">
-                                    <span class="rate">0.85x</span>
-                                    <span class="label">من السعر</span>
-                                </div>
-                            </div>
-                        </label>
+        <!-- 🏰 القسم الأول: خيارات وقت التحويل (قلعة معزولة) -->
+        <div class="sell-section transfer-options-fortress" data-fortress="transfer-time">
+            <h2 class="section-title">
+                <i class="fas fa-clock"></i>
+                <span>1. اختر سرعة التحويل</span>
+            </h2>
+
+            <div class="transfer-options">
+                <!-- خيار التحويل الفوري -->
+                <div class="transfer-card" data-type="instant">
+                    <div class="transfer-header">
+                        <i class="fas fa-bolt"></i>
+                        <h3>تحويل فوري</h3>
                     </div>
-                    
-                    <div class="transfer-option" data-type="normal">
-                        <input type="radio" id="normalTransfer" name="transferType" value="normal" checked>
-                        <label for="normalTransfer">
-                            <div class="option-icon"><i class="fas fa-clock"></i></div>
-                            <div class="option-content">
-                                <h3>تحويل عادي</h3>
-                                <p>احصل على أموالك خلال 24 ساعة</p>
-                                <div class="price-tag normal">
-                                    <span class="rate">1.0x</span>
-                                    <span class="label">السعر الكامل</span>
-                                </div>
-                            </div>
-                        </label>
+                    <div class="transfer-details">
+                        <div class="transfer-time">⏱️ خلال ساعة واحدة</div>
+                        <div class="transfer-rate">
+                            <span class="discount-badge">خصم 15%</span>
+                            <span class="rate-text">معدل 0.85x</span>
+                        </div>
+                    </div>
+                    <div class="transfer-price" id="instantPrice">
+                        <span class="price-label">السعر النهائي:</span>
+                        <span class="price-amount">0 جنيه</span>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="coinsAmount"><i class="fas fa-coins"></i> عدد الكوينز للبيع</label>
-                    <input type="number" id="coinsAmount" name="coinsAmount" placeholder="مثال: 100000" min="10000" max="10000000" required>
-                    <span class="input-hint">الحد الأدنى: 10,000 - الحد الأقصى: 10,000,000</span>
-                </div>
-
-                <div class="price-display" id="priceDisplay" style="display: none;">
-                    <div class="price-info">
-                        <span class="price-label">السعر المتوقع:</span>
-                        <span class="price-value" id="calculatedPrice">0</span>
-                        <span class="price-currency">جنيه مصري</span>
+                <!-- خيار التحويل العادي -->
+                <div class="transfer-card selected" data-type="normal">
+                    <div class="transfer-header">
+                        <i class="fas fa-hourglass-half"></i>
+                        <h3>تحويل عادي</h3>
+                    </div>
+                    <div class="transfer-details">
+                        <div class="transfer-time">📅 خلال 24 ساعة</div>
+                        <div class="transfer-rate">
+                            <span class="full-price-badge">السعر الكامل</span>
+                            <span class="rate-text">معدل 1.0x</span>
+                        </div>
+                    </div>
+                    <div class="transfer-price" id="normalPrice">
+                        <span class="price-label">السعر النهائي:</span>
+                        <span class="price-amount">0 جنيه</span>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="form-section" id="notes-section">
-                <h2 class="section-title"><i class="fas fa-sticky-note"></i> ملاحظات إضافية</h2>
-                <div class="form-group">
-                    <textarea id="notes" name="notes" placeholder="أي ملاحظات إضافية..." rows="4"></textarea>
+        <!-- 🏰 القسم الثاني: إدخال كمية الكوينز (قلعة معزولة) -->
+        <div class="sell-section coins-quantity-fortress" data-fortress="coins-input">
+            <h2 class="section-title">
+                <i class="fas fa-coins"></i>
+                <span>2. كمية الكوينز المراد بيعها</span>
+            </h2>
+            
+            <div class="coins-input-wrapper">
+                <input type="number" 
+                       id="coinsAmount" 
+                       class="coins-input" 
+                       placeholder="أدخل عدد الكوينز"
+                       min="100"
+                       max="1000000"
+                       step="100">
+                <div class="coins-hint">الحد الأدنى: 100 كوين | الحد الأقصى: 1,000,000 كوين</div>
+            </div>
+        </div>
+
+        <!-- 🏰 القسم الثالث: عرض السعر التقديري (قلعة معزولة) -->
+        <div class="sell-section price-display-fortress" data-fortress="price-display" style="display: none;">
+            <h2 class="section-title">
+                <i class="fas fa-calculator"></i>
+                <span>3. السعر التقديري</span>
+            </h2>
+            
+            <div class="price-preview" id="pricePreview">
+                <div class="price-card">
+                    <div class="price-label">السعر الأساسي:</div>
+                    <div class="price-value" id="basePrice">0 جنيه</div>
+                </div>
+                <div class="price-card discount-card" id="discountCard" style="display: none;">
+                    <div class="price-label">الخصم المطبق:</div>
+                    <div class="price-value discount" id="discountAmount">0 جنيه</div>
+                </div>
+                <div class="price-card final-card">
+                    <div class="price-label">السعر النهائي:</div>
+                    <div class="price-value final" id="finalPriceDisplay">0 جنيه</div>
                 </div>
             </div>
+        </div>
 
-            <div class="form-section" id="confirmation-section">
-                <h2 class="section-title"><i class="fas fa-check-circle"></i> تأكيد البيانات</h2>
+        <!-- 🏰 القسم الرابع: بيانات حساب EA (قلعة معزولة) -->
+        <div class="sell-section ea-account-fortress" data-fortress="ea-account">
+            <h2 class="section-title">
+                <i class="fas fa-gamepad"></i>
+                <span>4. بيانات حساب EA</span>
+            </h2>
 
-                <div class="form-group">
-                    <label for="paymentMethod"><i class="fas fa-wallet"></i> طريقة استلام المبلغ</label>
-                    <select id="paymentMethod" name="paymentMethod" required>
-                        <option value="">اختر طريقة الدفع...</option>
-                        <option value="instapay">InstaPay</option>
-                        <option value="vodafone">فودافون كاش</option>
-                        <option value="etisalat">اتصالات كاش</option>
-                        <option value="orange">أورانج كاش</option>
-                        <option value="bank">تحويل بنكي</option>
-                    </select>
-                </div>
+            <!-- إدخال الإيميل -->
+            <div class="ea-field-group">
+                <label for="eaEmail" class="field-label">
+                    <i class="fas fa-envelope"></i>
+                    البريد الإلكتروني لحساب EA
+                </label>
+                <input type="email" 
+                       id="eaEmail" 
+                       class="ea-input" 
+                       placeholder="example@email.com"
+                       required>
+            </div>
 
-                <div class="form-group">
-                    <label for="accountDetails"><i class="fas fa-id-card"></i> رقم المحفظة أو الحساب</label>
-                    <input type="text" id="accountDetails" name="accountDetails" placeholder="أدخل رقم المحفظة" required>
-                </div>
-
-                <div class="order-summary" id="orderSummary" style="display: none;">
-                    <h3>ملخص الطلب</h3>
-                    <div class="summary-item">
-                        <span>عدد الكوينز:</span>
-                        <span id="summaryCoins">0</span>
-                    </div>
-                    <div class="summary-item">
-                        <span>نوع التحويل:</span>
-                        <span id="summaryTransferType">عادي</span>
-                    </div>
-                    <div class="summary-item total">
-                        <span>المبلغ الإجمالي:</span>
-                        <span id="summaryTotal">0 جنيه</span>
-                    </div>
-                </div>
-
-                <div class="form-actions">
-                    <button type="submit" class="btn-primary">
-                        <i class="fas fa-paper-plane"></i> إرسال طلب البيع
+            <!-- إدخال كلمة المرور -->
+            <div class="ea-field-group">
+                <label for="eaPassword" class="field-label">
+                    <i class="fas fa-lock"></i>
+                    كلمة المرور
+                </label>
+                <div class="password-input-wrapper">
+                    <input type="password" 
+                           id="eaPassword" 
+                           class="ea-input" 
+                           placeholder="أدخل كلمة المرور"
+                           required>
+                    <button type="button" class="toggle-password" onclick="togglePasswordVisibility()">
+                        <i class="fas fa-eye" id="passwordToggleIcon"></i>
                     </button>
                 </div>
             </div>
-        </form>
 
-        <div class="success-overlay" id="successOverlay" style="display: none;">
-            <div class="success-modal">
-                <div class="success-icon"><i class="fas fa-check-circle"></i></div>
-                <h2>تم إرسال طلب البيع بنجاح!</h2>
-                <p>سيتم التواصل معك قريباً</p>
-                <p class="request-id">رقم الطلب: <span id="requestId"></span></p>
-                <button class="btn-primary" onclick="window.location.href='/'">العودة للصفحة الرئيسية</button>
+            <!-- أكواد الاسترداد الذكية -->
+            <div class="ea-field-group">
+                <label class="field-label">
+                    <i class="fas fa-shield-alt"></i>
+                    أكواد الاسترداد (Backup Codes)
+                </label>
+                
+                <!-- خيارات الإدخال -->
+                <div class="recovery-input-options">
+                    <button type="button" class="option-btn active" data-mode="separate" onclick="switchRecoveryMode('separate')">
+                        <i class="fas fa-th"></i>
+                        6 حقول منفصلة
+                    </button>
+                    <button type="button" class="option-btn" data-mode="bulk" onclick="switchRecoveryMode('bulk')">
+                        <i class="fas fa-paste"></i>
+                        لصق دفعة واحدة
+                    </button>
+                </div>
+
+                <!-- الحقول المنفصلة -->
+                <div id="separateCodesInput" class="recovery-codes-grid">
+                    <input type="text" class="recovery-code-input" placeholder="الكود 1" maxlength="8" pattern="[0-9]{8}">
+                    <input type="text" class="recovery-code-input" placeholder="الكود 2" maxlength="8" pattern="[0-9]{8}">
+                    <input type="text" class="recovery-code-input" placeholder="الكود 3" maxlength="8" pattern="[0-9]{8}">
+                    <input type="text" class="recovery-code-input" placeholder="الكود 4" maxlength="8" pattern="[0-9]{8}">
+                    <input type="text" class="recovery-code-input" placeholder="الكود 5" maxlength="8" pattern="[0-9]{8}">
+                    <input type="text" class="recovery-code-input" placeholder="الكود 6" maxlength="8" pattern="[0-9]{8}">
+                </div>
+
+                <!-- حقل اللصق الشامل -->
+                <div id="bulkCodesInput" style="display: none;">
+                    <textarea id="bulkCodesTextarea" 
+                              class="bulk-codes-textarea" 
+                              placeholder="الصق الأكواد الستة هنا (سيتم استخراجها تلقائياً)&#10;مثال:&#10;12345678&#10;87654321&#10;..." 
+                              rows="6"></textarea>
+                    <div class="codes-hint">
+                        <i class="fas fa-info-circle"></i>
+                        سيتم استخراج 6 أكواد من 8 أرقام تلقائياً
+                    </div>
+                </div>
             </div>
+        </div>
+
+        <!-- 🏰 القسم الخامس: الملاحظات (قلعة معزولة) -->
+        <div class="sell-section notes-fortress" data-fortress="notes">
+            <h2 class="section-title">
+                <i class="fas fa-comment-alt"></i>
+                <span>5. ملاحظات إضافية (اختياري)</span>
+            </h2>
+
+            <div class="notes-wrapper">
+                <textarea id="sellNotes" 
+                          class="notes-input"
+                          placeholder="أي ملاحظات أو تفاصيل إضافية تريد إضافتها..."
+                          maxlength="500"
+                          rows="4"></textarea>
+                <div class="notes-counter">
+                    <span id="notesCount">0</span> / 500 حرف
+                </div>
+            </div>
+        </div>
+
+        <!-- 🏰 القسم السادس: تأكيد الطلب (قلعة معزولة) -->
+        <div class="sell-section confirmation-fortress" data-fortress="confirmation" id="summarySection" style="display: none;">
+            <h2 class="section-title">
+                <i class="fas fa-clipboard-check"></i>
+                <span>6. تأكيد طلب البيع</span>
+            </h2>
+
+            <div class="summary-card">
+                <div class="summary-row">
+                    <span class="summary-label">عدد الكوينز:</span>
+                    <span class="summary-value" id="summaryCoins">0</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">نوع التحويل:</span>
+                    <span class="summary-value" id="summaryType">عادي</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">السعر الأساسي:</span>
+                    <span class="summary-value" id="summaryBase">0 جنيه</span>
+                </div>
+                <div class="summary-row discount-row" id="discountRow" style="display: none;">
+                    <span class="summary-label">الخصم:</span>
+                    <span class="summary-value discount" id="summaryDiscount">0 جنيه</span>
+                </div>
+                <div class="summary-row total-row">
+                    <span class="summary-label">السعر النهائي:</span>
+                    <span class="summary-value total" id="summaryTotal">0 جنيه</span>
+                </div>
+                
+                <!-- معلومات حساب EA -->
+                <div class="ea-summary" id="eaSummary" style="display: none;">
+                    <div class="summary-row">
+                        <span class="summary-label">حساب EA:</span>
+                        <span class="summary-value" id="summaryEaEmail">-</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">أكواد الاسترداد:</span>
+                        <span class="summary-value" id="summaryRecoveryCodes">غير مدخلة</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-message">
+                <i class="fas fa-info-circle"></i>
+                سيتم مراجعة طلبك والتواصل معك خلال المدة المحددة
+            </div>
+        </div>
+
+        <!-- أزرار الإجراءات -->
+        <div class="action-buttons">
+            <button type="button" class="btn-confirm" id="confirmBtn" disabled>
+                <i class="fas fa-check-circle"></i>
+                تأكيد طلب البيع
+            </button>
+
+            <button type="button" class="btn-back" onclick="window.location.href='/'">
+                <i class="fas fa-arrow-right"></i>
+                العودة للرئيسية
+            </button>
+        </div>
+
+        <!-- رسائل النجاح والخطأ -->
+        <div class="message success-message" id="successMessage" style="display: none;">
+            <i class="fas fa-check-circle"></i>
+            تم إرسال طلب البيع بنجاح! سيتم التواصل معك قريباً
+        </div>
+
+        <div class="message error-message" id="errorMessage" style="display: none;">
+            <i class="fas fa-times-circle"></i>
+            <span id="errorText">حدث خطأ، يرجى المحاولة مرة أخرى</span>
         </div>
     </div>
 
+    <!-- نافذة النجاح المنبثقة -->
+    <div class="success-overlay" id="successOverlay" style="display: none;">
+        <div class="success-modal">
+            <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2>تم إرسال طلبك بنجاح!</h2>
+            <p>رقم الطلب: <strong id="requestId">SELL_XXXXX</strong></p>
+            <p>سيتم التواصل معك عبر الواتساب خلال المدة المحددة</p>
+            <button class="btn-close-modal" onclick="closeSuccessModal()">
+                <i class="fas fa-home"></i>
+                العودة للرئيسية
+            </button>
+        </div>
+    </div>
+
+    <!-- JavaScript Files -->
     <script src="{{ url_for('static', filename='js/sell_script.js') }}"></script>
-    <script>const sellManager = new SellCoinsManager();</script>
 </body>
+
 </html>

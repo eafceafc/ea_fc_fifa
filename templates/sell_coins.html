@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بيع كوينز FC 26</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/sell_coins.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-coins"></i> بيع كوينز FC 26</h1>
+            <p class="subtitle">احصل على أموالك بسرعة وأمان</p>
+        </div>
+
+        <form id="sellCoinsForm" class="sell-form">
+            <input type="hidden" id="userEmail" name="userEmail">
+            <input type="hidden" id="userPlayerName" name="userPlayerName">
+            <input type="hidden" id="userTelegram" name="userTelegram">
+
+            <div class="form-section" id="transfer-type-section">
+                <h2 class="section-title"><i class="fas fa-exchange-alt"></i> اختر نوع التحويل</h2>
+                
+                <div class="transfer-options">
+                    <div class="transfer-option" data-type="instant">
+                        <input type="radio" id="instantTransfer" name="transferType" value="instant">
+                        <label for="instantTransfer">
+                            <div class="option-icon"><i class="fas fa-bolt"></i></div>
+                            <div class="option-content">
+                                <h3>تحويل فوري</h3>
+                                <p>احصل على أموالك خلال دقائق</p>
+                                <div class="price-tag instant">
+                                    <span class="rate">0.85x</span>
+                                    <span class="label">من السعر</span>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                    
+                    <div class="transfer-option" data-type="normal">
+                        <input type="radio" id="normalTransfer" name="transferType" value="normal" checked>
+                        <label for="normalTransfer">
+                            <div class="option-icon"><i class="fas fa-clock"></i></div>
+                            <div class="option-content">
+                                <h3>تحويل عادي</h3>
+                                <p>احصل على أموالك خلال 24 ساعة</p>
+                                <div class="price-tag normal">
+                                    <span class="rate">1.0x</span>
+                                    <span class="label">السعر الكامل</span>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="coinsAmount"><i class="fas fa-coins"></i> عدد الكوينز للبيع</label>
+                    <input type="number" id="coinsAmount" name="coinsAmount" placeholder="مثال: 100000" min="10000" max="10000000" required>
+                    <span class="input-hint">الحد الأدنى: 10,000 - الحد الأقصى: 10,000,000</span>
+                </div>
+
+                <div class="price-display" id="priceDisplay" style="display: none;">
+                    <div class="price-info">
+                        <span class="price-label">السعر المتوقع:</span>
+                        <span class="price-value" id="calculatedPrice">0</span>
+                        <span class="price-currency">جنيه مصري</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section" id="notes-section">
+                <h2 class="section-title"><i class="fas fa-sticky-note"></i> ملاحظات إضافية</h2>
+                <div class="form-group">
+                    <textarea id="notes" name="notes" placeholder="أي ملاحظات إضافية..." rows="4"></textarea>
+                </div>
+            </div>
+
+            <div class="form-section" id="confirmation-section">
+                <h2 class="section-title"><i class="fas fa-check-circle"></i> تأكيد البيانات</h2>
+
+                <div class="form-group">
+                    <label for="paymentMethod"><i class="fas fa-wallet"></i> طريقة استلام المبلغ</label>
+                    <select id="paymentMethod" name="paymentMethod" required>
+                        <option value="">اختر طريقة الدفع...</option>
+                        <option value="instapay">InstaPay</option>
+                        <option value="vodafone">فودافون كاش</option>
+                        <option value="etisalat">اتصالات كاش</option>
+                        <option value="orange">أورانج كاش</option>
+                        <option value="bank">تحويل بنكي</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="accountDetails"><i class="fas fa-id-card"></i> رقم المحفظة أو الحساب</label>
+                    <input type="text" id="accountDetails" name="accountDetails" placeholder="أدخل رقم المحفظة" required>
+                </div>
+
+                <div class="order-summary" id="orderSummary" style="display: none;">
+                    <h3>ملخص الطلب</h3>
+                    <div class="summary-item">
+                        <span>عدد الكوينز:</span>
+                        <span id="summaryCoins">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>نوع التحويل:</span>
+                        <span id="summaryTransferType">عادي</span>
+                    </div>
+                    <div class="summary-item total">
+                        <span>المبلغ الإجمالي:</span>
+                        <span id="summaryTotal">0 جنيه</span>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-paper-plane"></i> إرسال طلب البيع
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <div class="success-overlay" id="successOverlay" style="display: none;">
+            <div class="success-modal">
+                <div class="success-icon"><i class="fas fa-check-circle"></i></div>
+                <h2>تم إرسال طلب البيع بنجاح!</h2>
+                <p>سيتم التواصل معك قريباً</p>
+                <p class="request-id">رقم الطلب: <span id="requestId"></span></p>
+                <button class="btn-primary" onclick="window.location.href='/'">العودة للصفحة الرئيسية</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/sell_script.js') }}"></script>
+    <script>const sellManager = new SellCoinsManager();</script>
+</body>
+</html>

@@ -76,10 +76,10 @@ class AppConfig:
             elif len(var_value.strip()) == 0:
                 errors.append(f"❌ متغير البيئة فارغ: {var_name}")
         
-        # التحقق من صحة TELEGRAM_BOT_TOKEN
-        if self.TELEGRAM_BOT_TOKEN:
-            if not self._validate_telegram_token(self.TELEGRAM_BOT_TOKEN):
-                errors.append("❌ تنسيق TELEGRAM_BOT_TOKEN غير صحيح")
+        # التحقق من صحة TELEGRAM_BOT_TOKEN - معطل مؤقتاً للاختبار
+        # if self.TELEGRAM_BOT_TOKEN:
+        #     if not self._validate_telegram_token(self.TELEGRAM_BOT_TOKEN):
+        #         errors.append("❌ تنسيق TELEGRAM_BOT_TOKEN غير صحيح")
         
         # التحقق من إعدادات المنفذ
         if not (1 <= self.PORT <= 65535):

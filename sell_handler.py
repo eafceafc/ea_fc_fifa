@@ -387,6 +387,3 @@ def get_statistics():
 
 def validate_coins_amount(coins_amount):
     return sell_handler.validate_coins_amount(coins_amount)
-
-def validate_ea_account(ea_data):
-    return sell_handler.validate_ea_account(ea_data)

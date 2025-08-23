@@ -205,7 +205,7 @@
 
 .price-value.final {
     color: #10b981;
-    font-size: 1.5rem;
+    font-size: 1.8rem;
 }
 
 /* خيارات التحويل */
@@ -1035,4 +1035,16 @@
     .success-icon {
         font-size: 3rem;
     }
+}
+
+/* ... كل الكود الموجود حالياً ... */
+
+/* === إصلاح لون السعر النهائي (عرض السعر) === */
+.price-card.final-card .price-value.final {
+    color: #10b981; /* استعادة اللون الأخضر المميز */
+}
+
+/* === إصلاح لون السعر النهائي (الملخص) === */
+.summary-card .summary-value.total {
+    color: var(--accent-orange) !important; /* استعادة اللون البرتقالي وإجباره */
 }

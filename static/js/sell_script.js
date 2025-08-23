@@ -277,11 +277,17 @@ class EAAccountHandler {
     }
 
     setupListeners() {
-        // Email و Password
+        // Email و Password with Real-time Validation
         if (this.elements.email) {
             this.elements.email.addEventListener('input', (e) => {
                 this.data.email = e.target.value;
+                this.performRealtimeEmailValidation(e.target.value, e.target);
                 this.validateAndNotify();
+            });
+            
+            // إضافة مستمع blur للتحقق النهائي
+            this.elements.email.addEventListener('blur', (e) => {
+                this.performAdvancedEmailValidation(e.target.value, e.target);
             });
         }
 
@@ -307,11 +313,14 @@ class EAAccountHandler {
             });
         });
 
-        // حقل اللصق الشامل
+        // حقل اللصق الشامل مع Smart Clipboard
         if (this.elements.bulkTextarea) {
             this.elements.bulkTextarea.addEventListener('input', (e) => {
                 this.extractCodesFromBulk(e.target.value);
             });
+            
+            // 🔥 SMART ENHANCEMENT: Smart Clipboard Paste Button
+            this.addSmartClipboardButton();
         }
     }
 
@@ -385,6 +394,89 @@ class EAAccountHandler {
             }
         }));
     }
+    
+    // 🔥 SMART ENHANCEMENT: Real-time Email Validation
+    performRealtimeEmailValidation(email, inputElement) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const commonProviders = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'live.com'];
+        
+        // إزالة الرسائل السابقة
+        this.clearEmailFeedback(inputElement);
+        
+        if (email.length === 0) {
+            this.setEmailFeedback(inputElement, '', 'neutral');
+            return;
+        }
+        
+        if (email.length < 5) {
+            this.setEmailFeedback(inputElement, 'البريد الإلكتروني قصير جداً', 'warning');
+            return;
+        }
+        
+        if (!email.includes('@')) {
+            this.setEmailFeedback(inputElement, 'يجب أن يحتوي على @', 'error');
+            return;
+        }
+        
+        if (emailRegex.test(email)) {
+            const domain = email.split('@')[1].toLowerCase();
+            if (commonProviders.includes(domain)) {
+                this.setEmailFeedback(inputElement, '✅ بريد إلكتروني صحيح', 'success');
+            } else {
+                this.setEmailFeedback(inputElement, '⚠️ نطاق غير مألوف - تأكد من صحته', 'warning');
+            }
+        } else {
+            this.setEmailFeedback(inputElement, '❌ تنسيق البريد الإلكتروني غير صحيح', 'error');
+        }
+    }
+    
+    // 🔥 SMART ENHANCEMENT: Advanced Email Validation
+    performAdvancedEmailValidation(email, inputElement) {
+        if (!email || email.length === 0) return;
+        
+        const eaProviders = ['hotmail.com', 'outlook.com', 'live.com', 'xbox.com', 'ea.com'];
+        const domain = email.includes('@') ? email.split('@')[1].toLowerCase() : '';
+        
+        if (eaProviders.includes(domain)) {
+            this.setEmailFeedback(inputElement, '🎮 مزود خدمة متوافق مع EA', 'success');
+        } else if (domain) {
+            this.setEmailFeedback(inputElement, '⚠️ تأكد من أن هذا البريد مربوط بحساب EA', 'warning');
+        }
+    }
+    
+    // 🔥 SMART ENHANCEMENT: Email Feedback System
+    setEmailFeedback(inputElement, message, type) {
+        // تحديث لون الحدود
+        inputElement.classList.remove('email-success', 'email-warning', 'email-error', 'email-neutral');
+        inputElement.classList.add(`email-${type}`);
+        
+        // إنشاء أو تحديث رسالة التغذية الراجعة
+        let feedbackElement = inputElement.parentNode.querySelector('.email-feedback');
+        if (!feedbackElement) {
+            feedbackElement = document.createElement('div');
+            feedbackElement.className = 'email-feedback';
+            inputElement.parentNode.appendChild(feedbackElement);
+        }
+        
+        feedbackElement.textContent = message;
+        feedbackElement.className = `email-feedback feedback-${type}`;
+        
+        // إضافة تأثير بصري
+        if (type === 'success' && navigator.vibrate) {
+            navigator.vibrate(50);
+        } else if (type === 'error' && navigator.vibrate) {
+            navigator.vibrate([100, 50, 100]);
+        }
+    }
+    
+    // 🔥 SMART ENHANCEMENT: Clear Email Feedback
+    clearEmailFeedback(inputElement) {
+        const feedbackElement = inputElement.parentNode.querySelector('.email-feedback');
+        if (feedbackElement) {
+            feedbackElement.textContent = '';
+        }
+        inputElement.classList.remove('email-success', 'email-warning', 'email-error', 'email-neutral');
+    }
 
     isValid() {
         return this.data.email.includes('@') && 
@@ -394,6 +486,121 @@ class EAAccountHandler {
 
     getData() {
         return this.data;
+    }
+    
+    // 🔥 SMART ENHANCEMENT: Smart Clipboard Functionality
+    addSmartClipboardButton() {
+        const bulkContainer = this.elements.bulkInput;
+        if (!bulkContainer || bulkContainer.querySelector('.smart-paste-btn')) return;
+        
+        const pasteButton = document.createElement('button');
+        pasteButton.type = 'button';
+        pasteButton.className = 'smart-paste-btn';
+        pasteButton.innerHTML = '<i class="fas fa-paste"></i> لصق ذكي من الحافظة';
+        
+        pasteButton.addEventListener('click', async () => {
+            await this.performSmartClipboardPaste();
+        });
+        
+        // إدراج الزر قبل textarea
+        bulkContainer.insertBefore(pasteButton, this.elements.bulkTextarea);
+    }
+    
+    // 🔥 SMART ENHANCEMENT: Smart Clipboard Paste Implementation
+    async performSmartClipboardPaste() {
+        try {
+            // التحقق من دعم Clipboard API
+            if (!navigator.clipboard || !navigator.clipboard.readText) {
+                this.showClipboardError('متصفحك لا يدعم الوصول للحافظة');
+                return;
+            }
+            
+            // قراءة النص من الحافظة
+            const clipboardText = await navigator.clipboard.readText();
+            
+            if (!clipboardText || clipboardText.trim().length === 0) {
+                this.showClipboardError('الحافظة فارغة');
+                return;
+            }
+            
+            // استخراج الأكواد بذكاء
+            const extractedCodes = this.intelligentCodeExtraction(clipboardText);
+            
+            if (extractedCodes.length === 0) {
+                this.showClipboardError('لم يتم العثور على أكواد صالحة (8 أرقام)');
+                return;
+            }
+            
+            // تطبيق الأكواد
+            this.elements.bulkTextarea.value = extractedCodes.join('\n');
+            this.extractCodesFromBulk(this.elements.bulkTextarea.value);
+            
+            // إظهار رسالة نجاح
+            this.showClipboardSuccess(`تم استخراج ${extractedCodes.length} كود بنجاح`);
+            
+            // اهتزاز نجاح
+            if (navigator.vibrate) {
+                navigator.vibrate([50, 100, 50]);
+            }
+            
+        } catch (error) {
+            console.error('Clipboard paste error:', error);
+            this.showClipboardError('فشل في قراءة الحافظة - تأكد من الأذونات');
+        }
+    }
+    
+    // 🔥 SMART ENHANCEMENT: Intelligent Code Extraction
+    intelligentCodeExtraction(text) {
+        // البحث عن أكواد 8 أرقام مع دعم التنسيقات المختلفة
+        const patterns = [
+            /\b\d{8}\b/g,                    // 8 أرقام منفصلة
+            /\d{4}[\s-]\d{4}/g,             // 4-4 format
+            /\d{2}[\s-]\d{2}[\s-]\d{2}[\s-]\d{2}/g, // 2-2-2-2 format
+        ];
+        
+        let allCodes = [];
+        
+        patterns.forEach(pattern => {
+            const matches = text.match(pattern) || [];
+            matches.forEach(match => {
+                // تنظيف الكود (إزالة المسافات والشرطات)
+                const cleanCode = match.replace(/[^\d]/g, '');
+                if (cleanCode.length === 8 && !allCodes.includes(cleanCode)) {
+                    allCodes.push(cleanCode);
+                }
+            });
+        });
+        
+        // إرجاع أول 6 أكواد
+        return allCodes.slice(0, 6);
+    }
+    
+    // 🔥 SMART ENHANCEMENT: Clipboard Feedback
+    showClipboardSuccess(message) {
+        this.showClipboardFeedback(message, 'success');
+    }
+    
+    showClipboardError(message) {
+        this.showClipboardFeedback(message, 'error');
+    }
+    
+    showClipboardFeedback(message, type) {
+        let feedbackElement = this.elements.bulkInput.querySelector('.clipboard-feedback');
+        if (!feedbackElement) {
+            feedbackElement = document.createElement('div');
+            feedbackElement.className = 'clipboard-feedback';
+            this.elements.bulkInput.appendChild(feedbackElement);
+        }
+        
+        feedbackElement.textContent = message;
+        feedbackElement.className = `clipboard-feedback feedback-${type}`;
+        
+        // إزالة الرسالة بعد 3 ثواني
+        setTimeout(() => {
+            if (feedbackElement.parentNode) {
+                feedbackElement.textContent = '';
+            }
+        }, 3000);
     }
 }
 
@@ -783,6 +990,7 @@ function closeSuccessModal() {
 // ============================================================================
 // 🌐 تصدير للاستخدام الخارجي
 // ============================================================================
+
 
 window.togglePasswordVisibility = togglePasswordVisibility;
 window.switchRecoveryMode = switchRecoveryMode;

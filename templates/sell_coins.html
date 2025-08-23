@@ -53,14 +53,6 @@
                     </div>
                     <div class="transfer-details">
                         <div class="transfer-time">⏱️ خلال ساعة واحدة</div>
-                        <div class="transfer-rate">
-                            <span class="discount-badge">خصم 15%</span>
-                            <span class="rate-text">معدل 0.85x</span>
-                        </div>
-                    </div>
-                    <div class="transfer-price" id="instantPrice">
-                        <span class="price-label">السعر النهائي:</span>
-                        <span class="price-amount">0 جنيه</span>
                     </div>
                 </div>
 
@@ -72,14 +64,6 @@
                     </div>
                     <div class="transfer-details">
                         <div class="transfer-time">📅 خلال 24 ساعة</div>
-                        <div class="transfer-rate">
-                            <span class="full-price-badge">السعر الكامل</span>
-                            <span class="rate-text">معدل 1.0x</span>
-                        </div>
-                    </div>
-                    <div class="transfer-price" id="normalPrice">
-                        <span class="price-label">السعر النهائي:</span>
-                        <span class="price-amount">0 جنيه</span>
                     </div>
                 </div>
             </div>
@@ -172,15 +156,11 @@
                     أكواد الاسترداد (Backup Codes)
                 </label>
                 
-                <!-- خيارات الإدخال -->
+                <!-- زر لصق ذكي واحد -->
                 <div class="recovery-input-options">
-                    <button type="button" class="option-btn active" data-mode="separate" onclick="switchRecoveryMode('separate')">
-                        <i class="fas fa-th"></i>
-                        6 حقول منفصلة
-                    </button>
-                    <button type="button" class="option-btn" data-mode="bulk" onclick="switchRecoveryMode('bulk')">
-                        <i class="fas fa-paste"></i>
-                        لصق دفعة واحدة
+                    <button type="button" class="option-btn active smart-paste-unified" data-mode="smart" onclick="performSmartPaste()">
+                        <i class="fas fa-magic"></i>
+                        لصق ذكي من الحافظة
                     </button>
                 </div>
 

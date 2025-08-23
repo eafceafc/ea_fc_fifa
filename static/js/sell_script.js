@@ -987,6 +987,125 @@ function closeSuccessModal() {
     window.location.href = '/';
 }
 
+/**
+ * 🔥 NEW: Perform Smart Paste - دالة اللصق الذكي الموحدة
+ */
+async function performSmartPaste() {
+    try {
+        // التحقق من دعم Clipboard API
+        if (!navigator.clipboard || !navigator.clipboard.readText) {
+            showSmartPasteError('متصفحك لا يدعم الوصول للحافظة');
+            return;
+        }
+        
+        // قراءة النص من الحافظة
+        const clipboardText = await navigator.clipboard.readText();
+        
+        if (!clipboardText || clipboardText.trim().length === 0) {
+            showSmartPasteError('الحافظة فارغة');
+            return;
+        }
+        
+        // استخراج الأكواد بذكاء
+        const extractedCodes = intelligentCodeExtraction(clipboardText);
+        
+        if (extractedCodes.length === 0) {
+            showSmartPasteError('لم يتم العثور على أكواد صالحة (8 أرقام)');
+            return;
+        }
+        
+        // تطبيق الأكواد على الحقول المنفصلة
+        const codeInputs = document.querySelectorAll('.recovery-code-input');
+        codeInputs.forEach((input, index) => {
+            input.value = extractedCodes[index] || '';
+        });
+        
+        // تحديث البيانات في EAAccountHandler
+        if (window.eaAccountHandler) {
+            window.eaAccountHandler.data.recoveryCodes = extractedCodes;
+            window.eaAccountHandler.validateAndNotify();
+        }
+        
+        // إظهار رسالة نجاح
+        showSmartPasteSuccess(`تم استخراج ${extractedCodes.length} كود بنجاح`);
+        
+        // اهتزاز نجاح
+        if (navigator.vibrate) {
+            navigator.vibrate([50, 100, 50]);
+        }
+        
+    } catch (error) {
+        console.error('Smart paste error:', error);
+        showSmartPasteError('فشل في قراءة الحافظة - تأكد من الأذونات');
+    }
+}
+
+/**
+ * استخراج ذكي للأكواد من النص
+ */
+function intelligentCodeExtraction(text) {
+    // البحث عن أكواد 8 أرقام مع دعم التنسيقات المختلفة
+    const patterns = [
+        /\b\d{8}\b/g,                    // 8 أرقام منفصلة
+        /\d{4}[\s-]\d{4}/g,             // 4-4 format
+        /\d{2}[\s-]\d{2}[\s-]\d{2}[\s-]\d{2}/g, // 2-2-2-2 format
+    ];
+    
+    let allCodes = [];
+    
+    patterns.forEach(pattern => {
+        const matches = text.match(pattern) || [];
+        matches.forEach(match => {
+            // تنظيف الكود (إزالة المسافات والشرطات)
+            const cleanCode = match.replace(/[^\d]/g, '');
+            if (cleanCode.length === 8 && !allCodes.includes(cleanCode)) {
+                allCodes.push(cleanCode);
+            }
+        });
+    });
+    
+    // إرجاع أول 6 أكواد
+    return allCodes.slice(0, 6);
+}
+
+/**
+ * إظهار رسالة نجاح اللصق الذكي
+ */
+function showSmartPasteSuccess(message) {
+    showSmartPasteFeedback(message, 'success');
+}
+
+/**
+ * إظهار رسالة خطأ اللصق الذكي
+ */
+function showSmartPasteError(message) {
+    showSmartPasteFeedback(message, 'error');
+}
+
+/**
+ * إظهار رسالة تغذية راجعة للصق الذكي
+ */
+function showSmartPasteFeedback(message, type) {
+    const container = document.querySelector('.recovery-input-options').parentNode;
+    
+    let feedbackElement = container.querySelector('.smart-paste-feedback');
+    if (!feedbackElement) {
+        feedbackElement = document.createElement('div');
+        feedbackElement.className = 'smart-paste-feedback';
+        container.appendChild(feedbackElement);
+    }
+    
+    feedbackElement.textContent = message;
+    feedbackElement.className = `smart-paste-feedback feedback-${type}`;
+    
+    // إزالة الرسالة بعد 3 ثواني
+    setTimeout(() => {
+        if (feedbackElement.parentNode) {
+            feedbackElement.textContent = '';
+        }
+    }, 3000);
+}
+
 // ============================================================================
 // 🌐 تصدير للاستخدام الخارجي
 // ============================================================================
@@ -995,3 +1114,4 @@ function closeSuccessModal() {
 window.togglePasswordVisibility = togglePasswordVisibility;
 window.switchRecoveryMode = switchRecoveryMode;
 window.closeSuccessModal = closeSuccessModal;
+window.performSmartPaste = performSmartPaste;

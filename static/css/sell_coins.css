@@ -210,6 +210,11 @@
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    min-height: 100px;
 }
 
 .transfer-card::before {
@@ -273,48 +278,7 @@
     gap: 10px;
 }
 
-.discount-badge {
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-    color: white;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 700;
-}
-
-.full-price-badge {
-    background: linear-gradient(135deg, #10b981, #059669);
-    color: white;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 700;
-}
-
-.rate-text {
-    font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.7);
-}
-
-.transfer-price {
-    padding-top: 15px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.transfer-price .price-label {
-    font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.8);
-}
-
-.transfer-price .price-amount {
-    font-size: 1.2rem;
-    font-weight: 800;
-    color: var(--accent-orange);
-    font-family: 'Orbitron', monospace;
-}
+/* الأنماط المحذوفة غير المستخدمة بعد التبسيط */
 
 /* بيانات حساب EA - القلعة الرابعة */
 .ea-field-group {
@@ -667,6 +631,34 @@
     font-size: 1.1rem;
 }
 
+/* 🔥 NEW: Smart Paste Unified Button */
+.smart-paste-unified {
+    width: 100%;
+    background: linear-gradient(135deg, var(--accent-orange), var(--hover-orange));
+    border: none;
+    border-radius: 12px;
+    color: #1F2937;
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+}
+
+.smart-paste-unified:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(255, 144, 0, 0.4);
+}
+
+.smart-paste-unified i {
+    font-size: 1.2rem;
+}
+
 /* Clipboard Feedback */
 .clipboard-feedback {
     font-size: 0.85rem;
@@ -676,6 +668,29 @@
     font-weight: 600;
     text-align: center;
     transition: all 0.3s ease;
+}
+
+/* 🔥 NEW: Smart Paste Feedback */
+.smart-paste-feedback {
+    font-size: 0.85rem;
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.smart-paste-feedback.feedback-success {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.smart-paste-feedback.feedback-error {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 /* أزرار الإجراءات */
@@ -937,22 +952,33 @@
         gap: 10px;
     }
     
-    /* 🔥 SMART ENHANCEMENT: Optimized transfer cards for mobile */
+    /* 🔥 SMART ENHANCEMENT: Square transfer cards for mobile */
     .transfer-card {
-        padding: 12px;
-        min-height: auto;
+        padding: 15px 12px;
+        min-height: 120px;
+        aspect-ratio: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    
+    .transfer-header {
+        margin-bottom: 8px;
     }
     
     .transfer-header h3 {
-        font-size: 0.95rem;
-    }
-    
-    .transfer-time, .rate-text {
-        font-size: 0.8rem;
-    }
-    
-    .price-amount {
         font-size: 0.9rem;
+        line-height: 1.2;
+    }
+    
+    .transfer-header i {
+        font-size: 1.2rem;
+    }
+    
+    .transfer-time {
+        font-size: 0.75rem;
+        text-align: center;
+        margin-top: auto;
     }
     
     .coins-input {

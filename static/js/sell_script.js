@@ -62,15 +62,16 @@ class TransferTypeHandler {
 }
 
 // ============================================================================
-// 🏰 القلعة الثانية: CoinsQuantityHandler - معالج كمية الكوينز
+// 🏰 القلعة الثانية: CoinsQuantityHandler - معالج كمية الكوينز مع تنسيق ذكي
 // ============================================================================
 
 class CoinsQuantityHandler {
     constructor() {
         this.minCoins = 100;
-        this.maxCoins = 1000000;
+        this.maxCoins = 5000000; // زيادة الحد الأقصى إلى 5 ملايين
         this.currentAmount = 0;
         this.input = null;
+        this.lastValidValue = '';
         this.init();
     }
 
@@ -84,23 +85,48 @@ class CoinsQuantityHandler {
 
     setupListener() {
         this.input.addEventListener('input', (e) => this.handleInput(e));
+        this.input.addEventListener('blur', (e) => this.handleBlur(e));
+        this.input.addEventListener('focus', (e) => this.handleFocus(e));
+        
+        // منع الأحرف غير المرغوب فيها
+        this.input.addEventListener('keypress', (e) => this.handleKeyPress(e));
     }
 
     handleInput(event) {
-        const value = parseInt(event.target.value) || 0;
+        const inputValue = event.target.value;
         
-        // التحقق من الحدود
-        if (value > this.maxCoins) {
-            event.target.value = this.maxCoins;
-            this.showError(`الحد الأقصى ${this.maxCoins.toLocaleString('ar-EG')} كوين`);
+        // تحليل وتنظيف القيمة
+        const cleanValue = this.parseSmartInput(inputValue);
+        
+        if (cleanValue === null) {
+            // قيمة غير صحيحة - عرض رسالة خطأ مؤقتة
+            this.showTemporaryError('تنسيق غير صحيح - استخدم أرقام فقط أو k/m');
             return;
         }
         
-        this.currentAmount = value;
+        // التحقق من الحدود
+        if (cleanValue > this.maxCoins) {
+            this.showError(`الحد الأقصى ${this.formatNumberDisplay(this.maxCoins)} كوين`);
+            event.target.value = this.lastValidValue;
+            return;
+        }
+        
+        if (cleanValue > 0 && cleanValue < this.minCoins) {
+            this.showError(`الحد الأدنى ${this.formatNumberDisplay(this.minCoins)} كوين`);
+            return;
+        }
+        
+        // حفظ القيمة الصحيحة
+        this.currentAmount = cleanValue;
+        this.lastValidValue = inputValue;
         
         // إرسال حدث للقلاع الأخرى
         window.dispatchEvent(new CustomEvent('coinsAmountChanged', {
-            detail: { amount: this.currentAmount, isValid: value >= this.minCoins }
+            detail: { 
+                amount: this.currentAmount, 
+                isValid: cleanValue >= this.minCoins,
+                formattedDisplay: this.formatNumberDisplay(cleanValue)
+            }
         }));
     }
 
@@ -115,6 +141,86 @@ class CoinsQuantityHandler {
             setTimeout(() => {
                 errorMessage.style.display = 'none';
             }, 3000);
+        }
+    }
+
+    handleBlur(event) {
+        // تنسيق القيمة عند فقدان التركيز
+        if (this.currentAmount > 0) {
+            event.target.value = this.formatNumberDisplay(this.currentAmount);
+        }
+    }
+    
+    handleFocus(event) {
+        // إظهار القيمة الخام عند التركيز
+        if (this.currentAmount > 0) {
+            event.target.value = this.currentAmount.toString();
+        }
+    }
+    
+    handleKeyPress(event) {
+        const char = event.key;
+        const isNumber = /[0-9]/.test(char);
+        const isKM = /[kmKM]/.test(char);
+        const isDot = char === '.';
+        const isComma = char === ',';
+        const isBackspace = char === 'Backspace';
+        const isDelete = char === 'Delete';
+        const isArrow = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(char);
+        const isTab = char === 'Tab';
+        
+        if (!isNumber && !isKM && !isDot && !isComma && !isBackspace && !isDelete && !isArrow && !isTab && char !== 'Enter') {
+            event.preventDefault();
+        }
+    }
+    
+    parseSmartInput(input) {
+        if (!input || input.trim() === '') return 0;
+        
+        // تنظيف المدخلات
+        let clean = input.toString().toLowerCase().trim();
+        
+        // إزالة الفواصل والمسافات
+        clean = clean.replace(/[,\s]/g, '');
+        
+        // معالجة تنسيق K/M
+        if (clean.includes('k')) {
+            const num = parseFloat(clean.replace('k', ''));
+            if (isNaN(num)) return null;
+            return Math.floor(num * 1000);
+        }
+        
+        if (clean.includes('m')) {
+            const num = parseFloat(clean.replace('m', ''));
+            if (isNaN(num)) return null;
+            return Math.floor(num * 1000000);
+        }
+        
+        // رقم عادي
+        const num = parseFloat(clean);
+        if (isNaN(num)) return null;
+        return Math.floor(num);
+    }
+    
+    formatNumberDisplay(number) {
+        if (number === 0) return '0';
+        
+        // تنسيق بالفواصل الإنجليزية
+        return number.toLocaleString('en-US');
+    }
+    
+    showTemporaryError(message) {
+        // عرض رسالة خطأ مؤقتة لمدة ثانية واحدة
+        const errorElement = document.getElementById('errorText');
+        const errorMessage = document.getElementById('errorMessage');
+        
+        if (errorElement && errorMessage) {
+            errorElement.textContent = message;
+            errorMessage.style.display = 'block';
+            
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 1000);
         }
     }
 
@@ -179,18 +285,18 @@ class PriceDisplayHandler {
         const instantPrice = basePrice * 0.85;
         const normalPrice = basePrice * 1.0;
         
-        // تحديث الأسعار الأساسية
+        // تحديث الأسعار الأساسية مع تنسيق إنجليزي
         if (this.elements.basePrice) {
-            this.elements.basePrice.textContent = `${basePrice.toFixed(2)} جنيه`;
+            this.elements.basePrice.textContent = `${this.formatCurrency(basePrice)} جنيه`;
         }
         
         // تحديث أسعار البطاقات
         if (this.elements.instantPrice) {
-            this.elements.instantPrice.textContent = `${instantPrice.toFixed(2)} جنيه`;
+            this.elements.instantPrice.textContent = `${this.formatCurrency(instantPrice)} جنيه`;
         }
         
         if (this.elements.normalPrice) {
-            this.elements.normalPrice.textContent = `${normalPrice.toFixed(2)} جنيه`;
+            this.elements.normalPrice.textContent = `${this.formatCurrency(normalPrice)} جنيه`;
         }
         
         // إظهار القسم
@@ -211,14 +317,14 @@ class PriceDisplayHandler {
         if (type === 'instant' && this.elements.discountCard) {
             this.elements.discountCard.style.display = 'block';
             if (this.elements.discountAmount) {
-                this.elements.discountAmount.textContent = `-${discount.toFixed(2)} جنيه`;
+                this.elements.discountAmount.textContent = `-${this.formatCurrency(discount)} جنيه`;
             }
         } else if (this.elements.discountCard) {
             this.elements.discountCard.style.display = 'none';
         }
         
         if (this.elements.finalPrice) {
-            this.elements.finalPrice.textContent = `${finalPrice.toFixed(2)} جنيه`;
+            this.elements.finalPrice.textContent = `${this.formatCurrency(finalPrice)} جنيه`;
         }
     }
 
@@ -232,6 +338,14 @@ class PriceDisplayHandler {
         if (this.container) {
             this.container.style.display = 'block';
         }
+    }
+
+    formatCurrency(amount) {
+        // تنسيق العملة بالأرقام الإنجليزية مع فواصل الآلاف
+        return amount.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
     }
 
     hide() {
@@ -725,9 +839,9 @@ class OrderConfirmationHandler {
         const finalPrice = basePrice * rate;
         const discount = basePrice - finalPrice;
         
-        // تحديث العناصر
+        // تحديث العناصر مع تنسيق إنجليزي
         if (this.elements.summaryCoins) {
-            this.elements.summaryCoins.textContent = coinsAmount.toLocaleString('ar-EG');
+            this.elements.summaryCoins.textContent = this.formatNumber(coinsAmount);
         }
         
         if (this.elements.summaryType) {
@@ -736,21 +850,21 @@ class OrderConfirmationHandler {
         }
         
         if (this.elements.summaryBase) {
-            this.elements.summaryBase.textContent = `${basePrice.toFixed(2)} جنيه`;
+            this.elements.summaryBase.textContent = `${this.formatCurrency(basePrice)} جنيه`;
         }
         
-        // الخصم
+        // الخصم مع تنسيق محسّن
         if (transferType === 'instant' && this.elements.discountRow) {
             this.elements.discountRow.style.display = 'flex';
             if (this.elements.summaryDiscount) {
-                this.elements.summaryDiscount.textContent = `-${discount.toFixed(2)} جنيه`;
+                this.elements.summaryDiscount.textContent = `-${this.formatCurrency(discount)} جنيه`;
             }
         } else if (this.elements.discountRow) {
             this.elements.discountRow.style.display = 'none';
         }
         
         if (this.elements.summaryTotal) {
-            this.elements.summaryTotal.textContent = `${finalPrice.toFixed(2)} جنيه`;
+            this.elements.summaryTotal.textContent = `${this.formatCurrency(finalPrice)} جنيه`;
         }
         
         this.show();
@@ -895,6 +1009,19 @@ class OrderConfirmationHandler {
         if (this.elements.section) {
             this.elements.section.style.display = 'block';
         }
+    }
+
+    formatNumber(number) {
+        // تنسيق الأرقام بالإنجليزية مع فواصل الآلاف
+        return number.toLocaleString('en-US');
+    }
+    
+    formatCurrency(amount) {
+        // تنسيق العملة بالأرقام الإنجليزية
+        return amount.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
     }
 
     hide() {

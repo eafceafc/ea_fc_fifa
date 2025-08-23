@@ -309,24 +309,26 @@ class PriceDisplayHandler {
         const instantPrice = basePrice * 0.85;
         const normalPrice = basePrice * 1.0;
         
-        // تحديث الأسعار الأساسية مع تنسيق إنجليزي
+        // === التعديل المطلوب هنا: تقريب جميع المبالغ قبل عرضها ===
+
+        // تحديث الأسعار الأساسية مع تنسيق إنجليزي (بعد التقريب)
         if (this.elements.basePrice) {
-            this.elements.basePrice.textContent = `${this.formatCurrency(basePrice)} جنيه`;
+            this.elements.basePrice.textContent = `${this.formatCurrency(Math.round(basePrice))} جنيه`;
         }
         
-        // تحديث أسعار البطاقات
+        // تحديث أسعار البطاقات (بعد التقريب)
         if (this.elements.instantPrice) {
-            this.elements.instantPrice.textContent = `${this.formatCurrency(instantPrice)} جنيه`;
+            this.elements.instantPrice.textContent = `${this.formatCurrency(Math.round(instantPrice))} جنيه`;
         }
         
         if (this.elements.normalPrice) {
-            this.elements.normalPrice.textContent = `${this.formatCurrency(normalPrice)} جنيه`;
+            this.elements.normalPrice.textContent = `${this.formatCurrency(Math.round(normalPrice))} جنيه`;
         }
         
         // إظهار القسم
         this.show();
         
-        // تحديث السعر النهائي
+        // تحديث السعر النهائي (سيتم تقريبه أيضاً داخل هذه الدالة)
         this.updateFinalPrice();
     }
 
@@ -846,50 +848,28 @@ class OrderConfirmationHandler {
 
     updateSummary() {
         const coinsAmount = window.coinsQuantityHandler?.getAmount() || 0;
-        const transferType = window.transferTypeHandler?.getSelectedType() || 'normal';
-        const rate = window.transferTypeHandler?.getRate() || 1.0;
-        
-        if (coinsAmount < 100) {
+        const isValid = window.coinsQuantityHandler?.isValid() || false;
+
+        if (!isValid) {
             this.hide();
             return;
         }
-        
+
+        const transferType = window.transferTypeHandler?.getSelectedType() || 'normal';
+        const rate = window.transferTypeHandler?.getRate() || 1.0;
         const coinPrice = 0.10;
         const basePrice = coinsAmount * coinPrice;
         const finalPrice = basePrice * rate;
-        const discount = basePrice - finalPrice;
-        
-        // تحديث العناصر مع تنسيق إنجليزي
-        if (this.elements.summaryCoins) {
-            this.elements.summaryCoins.textContent = this.formatNumber(coinsAmount);
-        }
-        
-        if (this.elements.summaryType) {
-            const typeText = transferType === 'instant' ? 'فوري (خلال ساعة)' : 'عادي (خلال 24 ساعة)';
-            this.elements.summaryType.textContent = typeText;
-        }
-        
-        if (this.elements.summaryBase) {
-            this.elements.summaryBase.textContent = `${this.formatCurrency(basePrice)} جنيه`;
-        }
-        
-        // الخصم مع تنسيق محسّن
-        if (transferType === 'instant' && this.elements.discountRow) {
-            this.elements.discountRow.style.display = 'flex';
-            if (this.elements.summaryDiscount) {
-                this.elements.summaryDiscount.textContent = `-${this.formatCurrency(discount)} جنيه`;
-            }
-        } else if (this.elements.discountRow) {
-            this.elements.discountRow.style.display = 'none';
-        }
-        
-        if (this.elements.summaryTotal) {
-            this.elements.summaryTotal.textContent = `${this.formatCurrency(finalPrice)} جنيه`;
-        }
+
+        this.elements.summaryCoins.textContent = coinsAmount.toLocaleString('en-US');
+        this.elements.summaryType.textContent = transferType === 'instant' ? 'فوري (خلال ساعة)' : 'عادي (خلال 24 ساعة)';
+        this.elements.summaryBase.textContent = `${this.formatCurrency(basePrice)} جنيه`;
+        this.elements.summaryTotal.textContent = `${this.formatCurrency(finalPrice)} جنيه`;
         
         this.show();
         this.checkReadiness();
     }
+
 
     updateEaSummary(detail) {
         if (!detail.isValid) {
@@ -1037,12 +1017,15 @@ class OrderConfirmationHandler {
     }
     
     formatCurrency(amount) {
-        // تنسيق العملة بالأرقام الإنجليزية
-        return amount.toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
+        // *** الحل النهائي والمثالي هنا ***
+        // 1. نقوم بتقريب الرقم إلى أقرب عدد صحيح
+        const roundedAmount = Math.round(amount);
+        
+        // 2. نستخدم 'en-US' لعرض الأرقام بالشكل الإنجليزي مع فواصل الآلاف
+        return roundedAmount.toLocaleString('en-US');
     }
+
+
 
     hide() {
         if (this.elements.section) {

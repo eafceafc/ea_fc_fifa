@@ -36,9 +36,9 @@ class SellCoinsHandler:
         # سعر الكوين بالجنيه المصري
         self.coin_price_egp = float(os.environ.get('COINS_CONVERSION_RATE', '0.10'))
         
-        # الحدود
+        # الحدود - زيادة الحد الأقصى إلى 5 ملايين
         self.min_coins = 100
-        self.max_coins = 1000000
+        self.max_coins = 5000000
         
         logger.info("💰 وزارة بيع الكوينز جاهزة للعمل")
         logger.info(f"   السعر الحالي: {self.coin_price_egp} جنيه للكوين")

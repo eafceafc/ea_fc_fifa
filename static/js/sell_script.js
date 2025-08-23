@@ -62,15 +62,16 @@ class TransferTypeHandler {
 }
 
 // ============================================================================
-// 🏰 القلعة الثانية: CoinsQuantityHandler - معالج كمية الكوينز
+// 🏰 القلعة الثانية: CoinsQuantityHandler - معالج كمية الكوينز مع تنسيق ذكي
 // ============================================================================
 
 class CoinsQuantityHandler {
     constructor() {
         this.minCoins = 100;
-        this.maxCoins = 1000000;
+        this.maxCoins = 5000000; // زيادة الحد الأقصى إلى 5 ملايين
         this.currentAmount = 0;
         this.input = null;
+        this.lastValidValue = '';
         this.init();
     }
 
@@ -84,33 +85,49 @@ class CoinsQuantityHandler {
 
     setupListener() {
         this.input.addEventListener('input', (e) => this.handleInput(e));
-        this.input.addEventListener('input', (e) => this.addThousandSeparators(e));
+        this.input.addEventListener('blur', (e) => this.handleBlur(e));
+        this.input.addEventListener('focus', (e) => this.handleFocus(e));
+        
+        // منع الأحرف غير المرغوب فيها
+        this.input.addEventListener('keypress', (e) => this.handleKeyPress(e));
     }
 
     handleInput(event) {
-        const value = parseInt(event.target.value.replace(/,/g, '')) || 0;
+        const inputValue = event.target.value;
         
-        // التحقق من الحدود
-        if (value > this.maxCoins) {
-            event.target.value = this.maxCoins.toLocaleString('ar-EG');
-            this.showError(`الحد الأقصى ${this.maxCoins.toLocaleString('ar-EG')} كوين`);
+        // تحليل وتنظيف القيمة
+        const cleanValue = this.parseSmartInput(inputValue);
+        
+        if (cleanValue === null) {
+            // قيمة غير صحيحة - عرض رسالة خطأ مؤقتة
+            this.showTemporaryError('تنسيق غير صحيح - استخدم أرقام فقط أو k/m');
             return;
         }
         
-        this.currentAmount = value;
+        // التحقق من الحدود
+        if (cleanValue > this.maxCoins) {
+            this.showError(`الحد الأقصى ${this.formatNumberDisplay(this.maxCoins)} كوين`);
+            event.target.value = this.lastValidValue;
+            return;
+        }
+        
+        if (cleanValue > 0 && cleanValue < this.minCoins) {
+            this.showError(`الحد الأدنى ${this.formatNumberDisplay(this.minCoins)} كوين`);
+            return;
+        }
+        
+        // حفظ القيمة الصحيحة
+        this.currentAmount = cleanValue;
+        this.lastValidValue = inputValue;
         
         // إرسال حدث للقلاع الأخرى
         window.dispatchEvent(new CustomEvent('coinsAmountChanged', {
-            detail: { amount: this.currentAmount, isValid: value >= this.minCoins }
+            detail: { 
+                amount: this.currentAmount, 
+                isValid: cleanValue >= this.minCoins,
+                formattedDisplay: this.formatNumberDisplay(cleanValue)
+            }
         }));
-    }
-
-    addThousandSeparators(event) {
-        let value = event.target.value.replace(/[^0-9]/g, '');
-        if (value) {
-            const numericValue = parseInt(value);
-            event.target.value = numericValue.toLocaleString('ar-EG');
-        }
     }
 
     showError(message) {
@@ -124,6 +141,86 @@ class CoinsQuantityHandler {
             setTimeout(() => {
                 errorMessage.style.display = 'none';
             }, 3000);
+        }
+    }
+
+    handleBlur(event) {
+        // تنسيق القيمة عند فقدان التركيز
+        if (this.currentAmount > 0) {
+            event.target.value = this.formatNumberDisplay(this.currentAmount);
+        }
+    }
+    
+    handleFocus(event) {
+        // إظهار القيمة الخام عند التركيز
+        if (this.currentAmount > 0) {
+            event.target.value = this.currentAmount.toString();
+        }
+    }
+    
+    handleKeyPress(event) {
+        const char = event.key;
+        const isNumber = /[0-9]/.test(char);
+        const isKM = /[kmKM]/.test(char);
+        const isDot = char === '.';
+        const isComma = char === ',';
+        const isBackspace = char === 'Backspace';
+        const isDelete = char === 'Delete';
+        const isArrow = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(char);
+        const isTab = char === 'Tab';
+        
+        if (!isNumber && !isKM && !isDot && !isComma && !isBackspace && !isDelete && !isArrow && !isTab && char !== 'Enter') {
+            event.preventDefault();
+        }
+    }
+    
+    parseSmartInput(input) {
+        if (!input || input.trim() === '') return 0;
+        
+        // تنظيف المدخلات
+        let clean = input.toString().toLowerCase().trim();
+        
+        // إزالة الفواصل والمسافات
+        clean = clean.replace(/[,\s]/g, '');
+        
+        // معالجة تنسيق K/M
+        if (clean.includes('k')) {
+            const num = parseFloat(clean.replace('k', ''));
+            if (isNaN(num)) return null;
+            return Math.floor(num * 1000);
+        }
+        
+        if (clean.includes('m')) {
+            const num = parseFloat(clean.replace('m', ''));
+            if (isNaN(num)) return null;
+            return Math.floor(num * 1000000);
+        }
+        
+        // رقم عادي
+        const num = parseFloat(clean);
+        if (isNaN(num)) return null;
+        return Math.floor(num);
+    }
+    
+    formatNumberDisplay(number) {
+        if (number === 0) return '0';
+        
+        // تنسيق بالفواصل الإنجليزية
+        return number.toLocaleString('en-US');
+    }
+    
+    showTemporaryError(message) {
+        // عرض رسالة خطأ مؤقتة لمدة ثانية واحدة
+        const errorElement = document.getElementById('errorText');
+        const errorMessage = document.getElementById('errorMessage');
+        
+        if (errorElement && errorMessage) {
+            errorElement.textContent = message;
+            errorMessage.style.display = 'block';
+            
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 1000);
         }
     }
 
@@ -188,18 +285,18 @@ class PriceDisplayHandler {
         const instantPrice = basePrice * 0.85;
         const normalPrice = basePrice * 1.0;
         
-        // تحديث الأسعار الأساسية (بدون كسور عشرية)
+        // تحديث الأسعار الأساسية مع تنسيق إنجليزي
         if (this.elements.basePrice) {
-            this.elements.basePrice.textContent = `${Math.round(basePrice).toLocaleString('ar-EG')} جنيه`;
+            this.elements.basePrice.textContent = `${this.formatCurrency(basePrice)} جنيه`;
         }
         
-        // تحديث أسعار البطاقات (بدون كسور عشرية)
+        // تحديث أسعار البطاقات
         if (this.elements.instantPrice) {
-            this.elements.instantPrice.textContent = `${Math.round(instantPrice).toLocaleString('ar-EG')} جنيه`;
+            this.elements.instantPrice.textContent = `${this.formatCurrency(instantPrice)} جنيه`;
         }
         
         if (this.elements.normalPrice) {
-            this.elements.normalPrice.textContent = `${Math.round(normalPrice).toLocaleString('ar-EG')} جنيه`;
+            this.elements.normalPrice.textContent = `${this.formatCurrency(normalPrice)} جنيه`;
         }
         
         // إظهار القسم
@@ -217,13 +314,17 @@ class PriceDisplayHandler {
         const finalPrice = basePrice * rate;
         const discount = basePrice - finalPrice;
         
-        // إخفاء عروض الخصم نهائياً
-        if (this.elements.discountCard) {
+        if (type === 'instant' && this.elements.discountCard) {
+            this.elements.discountCard.style.display = 'block';
+            if (this.elements.discountAmount) {
+                this.elements.discountAmount.textContent = `-${this.formatCurrency(discount)} جنيه`;
+            }
+        } else if (this.elements.discountCard) {
             this.elements.discountCard.style.display = 'none';
         }
         
         if (this.elements.finalPrice) {
-            this.elements.finalPrice.textContent = `${Math.round(finalPrice).toLocaleString('ar-EG')} جنيه`;
+            this.elements.finalPrice.textContent = `${this.formatCurrency(finalPrice)} جنيه`;
         }
     }
 
@@ -237,6 +338,14 @@ class PriceDisplayHandler {
         if (this.container) {
             this.container.style.display = 'block';
         }
+    }
+
+    formatCurrency(amount) {
+        // تنسيق العملة بالأرقام الإنجليزية مع فواصل الآلاف
+        return amount.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
     }
 
     hide() {
@@ -730,9 +839,9 @@ class OrderConfirmationHandler {
         const finalPrice = basePrice * rate;
         const discount = basePrice - finalPrice;
         
-        // تحديث العناصر
+        // تحديث العناصر مع تنسيق إنجليزي
         if (this.elements.summaryCoins) {
-            this.elements.summaryCoins.textContent = coinsAmount.toLocaleString('ar-EG');
+            this.elements.summaryCoins.textContent = this.formatNumber(coinsAmount);
         }
         
         if (this.elements.summaryType) {
@@ -741,16 +850,21 @@ class OrderConfirmationHandler {
         }
         
         if (this.elements.summaryBase) {
-            this.elements.summaryBase.textContent = `${Math.round(basePrice).toLocaleString('ar-EG')} جنيه`;
+            this.elements.summaryBase.textContent = `${this.formatCurrency(basePrice)} جنيه`;
         }
         
-        // إخفاء صف الخصم نهائياً
-        if (this.elements.discountRow) {
+        // الخصم مع تنسيق محسّن
+        if (transferType === 'instant' && this.elements.discountRow) {
+            this.elements.discountRow.style.display = 'flex';
+            if (this.elements.summaryDiscount) {
+                this.elements.summaryDiscount.textContent = `-${this.formatCurrency(discount)} جنيه`;
+            }
+        } else if (this.elements.discountRow) {
             this.elements.discountRow.style.display = 'none';
         }
         
         if (this.elements.summaryTotal) {
-            this.elements.summaryTotal.textContent = `${Math.round(finalPrice).toLocaleString('ar-EG')} جنيه`;
+            this.elements.summaryTotal.textContent = `${this.formatCurrency(finalPrice)} جنيه`;
         }
         
         this.show();
@@ -897,6 +1011,19 @@ class OrderConfirmationHandler {
         }
     }
 
+    formatNumber(number) {
+        // تنسيق الأرقام بالإنجليزية مع فواصل الآلاف
+        return number.toLocaleString('en-US');
+    }
+    
+    formatCurrency(amount) {
+        // تنسيق العملة بالأرقام الإنجليزية
+        return amount.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+
     hide() {
         if (this.elements.section) {
             this.elements.section.style.display = 'none';
@@ -987,10 +1114,131 @@ function closeSuccessModal() {
     window.location.href = '/';
 }
 
+/**
+ * 🔥 NEW: Perform Smart Paste - دالة اللصق الذكي الموحدة
+ */
+async function performSmartPaste() {
+    try {
+        // التحقق من دعم Clipboard API
+        if (!navigator.clipboard || !navigator.clipboard.readText) {
+            showSmartPasteError('متصفحك لا يدعم الوصول للحافظة');
+            return;
+        }
+        
+        // قراءة النص من الحافظة
+        const clipboardText = await navigator.clipboard.readText();
+        
+        if (!clipboardText || clipboardText.trim().length === 0) {
+            showSmartPasteError('الحافظة فارغة');
+            return;
+        }
+        
+        // استخراج الأكواد بذكاء
+        const extractedCodes = intelligentCodeExtraction(clipboardText);
+        
+        if (extractedCodes.length === 0) {
+            showSmartPasteError('لم يتم العثور على أكواد صالحة (8 أرقام)');
+            return;
+        }
+        
+        // تطبيق الأكواد على الحقول المنفصلة
+        const codeInputs = document.querySelectorAll('.recovery-code-input');
+        codeInputs.forEach((input, index) => {
+            input.value = extractedCodes[index] || '';
+        });
+        
+        // تحديث البيانات في EAAccountHandler
+        if (window.eaAccountHandler) {
+            window.eaAccountHandler.data.recoveryCodes = extractedCodes;
+            window.eaAccountHandler.validateAndNotify();
+        }
+        
+        // إظهار رسالة نجاح
+        showSmartPasteSuccess(`تم استخراج ${extractedCodes.length} كود بنجاح`);
+        
+        // اهتزاز نجاح
+        if (navigator.vibrate) {
+            navigator.vibrate([50, 100, 50]);
+        }
+        
+    } catch (error) {
+        console.error('Smart paste error:', error);
+        showSmartPasteError('فشل في قراءة الحافظة - تأكد من الأذونات');
+    }
+}
+
+/**
+ * استخراج ذكي للأكواد من النص
+ */
+function intelligentCodeExtraction(text) {
+    // البحث عن أكواد 8 أرقام مع دعم التنسيقات المختلفة
+    const patterns = [
+        /\b\d{8}\b/g,                    // 8 أرقام منفصلة
+        /\d{4}[\s-]\d{4}/g,             // 4-4 format
+        /\d{2}[\s-]\d{2}[\s-]\d{2}[\s-]\d{2}/g, // 2-2-2-2 format
+    ];
+    
+    let allCodes = [];
+    
+    patterns.forEach(pattern => {
+        const matches = text.match(pattern) || [];
+        matches.forEach(match => {
+            // تنظيف الكود (إزالة المسافات والشرطات)
+            const cleanCode = match.replace(/[^\d]/g, '');
+            if (cleanCode.length === 8 && !allCodes.includes(cleanCode)) {
+                allCodes.push(cleanCode);
+            }
+        });
+    });
+    
+    // إرجاع أول 6 أكواد
+    return allCodes.slice(0, 6);
+}
+
+/**
+ * إظهار رسالة نجاح اللصق الذكي
+ */
+function showSmartPasteSuccess(message) {
+    showSmartPasteFeedback(message, 'success');
+}
+
+/**
+ * إظهار رسالة خطأ اللصق الذكي
+ */
+function showSmartPasteError(message) {
+    showSmartPasteFeedback(message, 'error');
+}
+
+/**
+ * إظهار رسالة تغذية راجعة للصق الذكي
+ */
+function showSmartPasteFeedback(message, type) {
+    const container = document.querySelector('.recovery-input-options').parentNode;
+    
+    let feedbackElement = container.querySelector('.smart-paste-feedback');
+    if (!feedbackElement) {
+        feedbackElement = document.createElement('div');
+        feedbackElement.className = 'smart-paste-feedback';
+        container.appendChild(feedbackElement);
+    }
+    
+    feedbackElement.textContent = message;
+    feedbackElement.className = `smart-paste-feedback feedback-${type}`;
+    
+    // إزالة الرسالة بعد 3 ثواني
+    setTimeout(() => {
+        if (feedbackElement.parentNode) {
+            feedbackElement.textContent = '';
+        }
+    }, 3000);
+}
+
 // ============================================================================
 // 🌐 تصدير للاستخدام الخارجي
 // ============================================================================
 
+
 window.togglePasswordVisibility = togglePasswordVisibility;
 window.switchRecoveryMode = switchRecoveryMode;
 window.closeSuccessModal = closeSuccessModal;
+window.performSmartPaste = performSmartPaste;

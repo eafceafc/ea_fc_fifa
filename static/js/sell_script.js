@@ -95,8 +95,20 @@ class CoinsQuantityHandler {
     handleInput(event) {
         const inputValue = event.target.value;
         
-        // تحليل وتنظيف القيمة
+        // تحسين 4: تطبيق فواصل الآلاف في الوقت الفعلي
         const cleanValue = this.parseSmartInput(inputValue);
+        
+        if (cleanValue !== null && cleanValue > 0) {
+            // تطبيق فواصل الآلاف تلقائياً أثناء الكتابة
+            const formattedValue = this.formatNumberWithCommas(cleanValue);
+            if (formattedValue !== inputValue) {
+                const cursorPos = event.target.selectionStart;
+                event.target.value = formattedValue;
+                // إعادة وضع المؤشر في الموضع الصحيح
+                const newPos = this.adjustCursorPosition(inputValue, formattedValue, cursorPos);
+                event.target.setSelectionRange(newPos, newPos);
+            }
+        }
         
         if (cleanValue === null) {
             // قيمة غير صحيحة - عرض رسالة خطأ مؤقتة
@@ -118,7 +130,7 @@ class CoinsQuantityHandler {
         
         // حفظ القيمة الصحيحة
         this.currentAmount = cleanValue;
-        this.lastValidValue = inputValue;
+        this.lastValidValue = event.target.value; // حفظ القيمة المنسقة
         
         // إرسال حدث للقلاع الأخرى
         window.dispatchEvent(new CustomEvent('coinsAmountChanged', {
@@ -177,10 +189,10 @@ class CoinsQuantityHandler {
     parseSmartInput(input) {
         if (!input || input.trim() === '') return 0;
         
-        // تنظيف المدخلات
+        // تنظيف المدخلات - تحسين 4: قبول فواصل الآلاف
         let clean = input.toString().toLowerCase().trim();
         
-        // إزالة الفواصل والمسافات
+        // إزالة الفواصل والمسافات (مع الاحتفاظ بالرقم)
         clean = clean.replace(/[,\s]/g, '');
         
         // معالجة تنسيق K/M
@@ -205,8 +217,20 @@ class CoinsQuantityHandler {
     formatNumberDisplay(number) {
         if (number === 0) return '0';
         
-        // تنسيق بالفواصل الإنجليزية
-        return number.toLocaleString('en-US');
+        // تحسين 4: تنسيق بالفواصل الإنجليزية مع فواصل آلاف تلقائية
+        return Math.round(number).toLocaleString('en-US');
+    }
+    
+    formatNumberWithCommas(number) {
+        // تحسين 4: تطبيق فواصل الآلاف تلقائياً
+        return Math.round(number).toLocaleString('en-US');
+    }
+    
+    adjustCursorPosition(oldValue, newValue, oldPos) {
+        // حساب الموضع الجديد للمؤشر بعد تطبيق فواصل الآلاف
+        const commasBefore = (oldValue.substring(0, oldPos).match(/,/g) || []).length;
+        const commasAfter = (newValue.substring(0, oldPos).match(/,/g) || []).length;
+        return oldPos + (commasAfter - commasBefore);
     }
     
     showTemporaryError(message) {
@@ -314,12 +338,8 @@ class PriceDisplayHandler {
         const finalPrice = basePrice * rate;
         const discount = basePrice - finalPrice;
         
-        if (type === 'instant' && this.elements.discountCard) {
-            this.elements.discountCard.style.display = 'block';
-            if (this.elements.discountAmount) {
-                this.elements.discountAmount.textContent = `-${this.formatCurrency(discount)} جنيه`;
-            }
-        } else if (this.elements.discountCard) {
+        // تحسين 2: إخفاء بطاقة الخصم نهائياً
+        if (this.elements.discountCard) {
             this.elements.discountCard.style.display = 'none';
         }
         
@@ -341,10 +361,10 @@ class PriceDisplayHandler {
     }
 
     formatCurrency(amount) {
-        // تنسيق العملة بالأرقام الإنجليزية مع فواصل الآلاف
-        return amount.toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
+        // تحسين 1: تنسيق العملة بدون كسور عشرية + تحسين 4: فواصل آلاف تلقائية
+        return Math.round(amount).toLocaleString('en-US', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
         });
     }
 

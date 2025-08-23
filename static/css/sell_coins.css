@@ -101,7 +101,8 @@
     border-radius: 12px;
     color: var(--text-white);
     transition: all 0.3s ease;
-    font-family: 'Orbitron', monospace;
+    /* تحسين 3: توحيد خط Arial لجميع الأرقام */
+    font-family: Arial, sans-serif;
     letter-spacing: 1px;
     /* تحسين قابلية القراءة للأرقام الإنجليزية */
     font-variant-numeric: tabular-nums;
@@ -170,9 +171,9 @@
     margin-bottom: 10px;
 }
 
+/* تحسين 2: إخفاء بطاقة الخصم نهائياً */
 .price-card.discount-card {
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.15));
-    border-color: rgba(239, 68, 68, 0.3);
+    display: none !important;
 }
 
 .price-card.final-card {
@@ -190,14 +191,16 @@
     font-size: 1.3rem;
     font-weight: 800;
     color: var(--accent-orange);
-    font-family: 'Orbitron', monospace;
+    /* تحسين 3: توحيد خط Arial لجميع الأرقام */
+    font-family: Arial, sans-serif;
     /* تحسين عرض الأرقام بفواصل الآلاف */
     letter-spacing: 0.5px;
     font-variant-numeric: tabular-nums;
 }
 
+/* تحسين 2: إخفاء قيم الخصم في الأسعار */
 .price-value.discount {
-    color: #ef4444;
+    display: none !important;
 }
 
 .price-value.final {
@@ -401,7 +404,8 @@
     padding: 12px;
     text-align: center;
     font-size: 0.95rem;
-    font-family: 'Orbitron', monospace;
+    /* تحسين 3: توحيد خط Arial لجميع الأرقام */
+    font-family: Arial, sans-serif;
     background: rgba(255, 255, 255, 0.1);
     border: 2px solid rgba(255, 144, 0, 0.3);
     border-radius: 8px;
@@ -422,7 +426,8 @@
     border: 2px solid rgba(255, 144, 0, 0.3);
     border-radius: 12px;
     color: var(--text-white);
-    font-family: 'Orbitron', monospace;
+    /* تحسين 3: توحيد خط Arial لجميع الأرقام */
+    font-family: Arial, sans-serif;
     font-size: 0.95rem;
     resize: vertical;
     transition: all 0.3s ease;
@@ -516,14 +521,23 @@
     color: var(--text-white);
 }
 
+/* تحسين 2: إخفاء جميع عناصر الخصم */
 .summary-value.discount {
-    color: #ef4444;
+    display: none !important;
+}
+
+#discountCard,
+#discountRow,
+.discount-row {
+    display: none !important;
+}
 }
 
 .summary-value.total {
     font-size: 1.3rem;
     color: var(--accent-orange);
-    font-family: 'Orbitron', monospace;
+    /* تحسين 3: توحيد خط Arial لجميع الأرقام */
+    font-family: Arial, sans-serif;
     /* تنسيق موحّد للأرقام */
     letter-spacing: 0.5px;
     font-variant-numeric: tabular-nums;

@@ -101,10 +101,7 @@
     border-radius: 12px;
     color: var(--text-white);
     transition: all 0.3s ease;
-    font-family: 'Orbitron', monospace;
-    letter-spacing: 1px;
-    /* تحسين قابلية القراءة للأرقام الإنجليزية */
-    font-variant-numeric: tabular-nums;
+    font-family: Arial, sans-serif;
 }
 
 .coins-input:focus {
@@ -135,12 +132,6 @@
     font-size: 0.9rem;
     color: rgba(255, 255, 255, 0.7);
     font-weight: 600;
-    line-height: 1.4;
-    /* تحسين عرض النصائح الذكية */
-    background: rgba(255, 144, 0, 0.05);
-    padding: 8px 12px;
-    border-radius: 8px;
-    border: 1px solid rgba(255, 144, 0, 0.2);
 }
 
 /* عرض السعر */
@@ -170,10 +161,7 @@
     margin-bottom: 10px;
 }
 
-.price-card.discount-card {
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.15));
-    border-color: rgba(239, 68, 68, 0.3);
-}
+
 
 .price-card.final-card {
     background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(34, 197, 94, 0.15));
@@ -190,15 +178,10 @@
     font-size: 1.3rem;
     font-weight: 800;
     color: var(--accent-orange);
-    font-family: 'Orbitron', monospace;
-    /* تحسين عرض الأرقام بفواصل الآلاف */
-    letter-spacing: 0.5px;
-    font-variant-numeric: tabular-nums;
+    font-family: Arial, sans-serif;
 }
 
-.price-value.discount {
-    color: #ef4444;
-}
+
 
 .price-value.final {
     color: #10b981;
@@ -222,11 +205,6 @@
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    text-align: center;
-    min-height: 100px;
 }
 
 .transfer-card::before {
@@ -290,7 +268,34 @@
     gap: 10px;
 }
 
-/* الأنماط المحذوفة غير المستخدمة بعد التبسيط */
+
+
+
+
+.rate-text {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.transfer-price {
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.transfer-price .price-label {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.transfer-price .price-amount {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--accent-orange);
+    font-family: Arial, sans-serif;
+}
 
 /* بيانات حساب EA - القلعة الرابعة */
 .ea-field-group {
@@ -401,7 +406,7 @@
     padding: 12px;
     text-align: center;
     font-size: 0.95rem;
-    font-family: 'Orbitron', monospace;
+    font-family: Arial, sans-serif;
     background: rgba(255, 255, 255, 0.1);
     border: 2px solid rgba(255, 144, 0, 0.3);
     border-radius: 8px;
@@ -422,7 +427,7 @@
     border: 2px solid rgba(255, 144, 0, 0.3);
     border-radius: 12px;
     color: var(--text-white);
-    font-family: 'Orbitron', monospace;
+    font-family: Arial, sans-serif;
     font-size: 0.95rem;
     resize: vertical;
     transition: all 0.3s ease;
@@ -516,17 +521,12 @@
     color: var(--text-white);
 }
 
-.summary-value.discount {
-    color: #ef4444;
-}
+
 
 .summary-value.total {
     font-size: 1.3rem;
     color: var(--accent-orange);
-    font-family: 'Orbitron', monospace;
-    /* تنسيق موحّد للأرقام */
-    letter-spacing: 0.5px;
-    font-variant-numeric: tabular-nums;
+    font-family: Arial, sans-serif;
 }
 
 .total-row {
@@ -646,34 +646,6 @@
     font-size: 1.1rem;
 }
 
-/* 🔥 NEW: Smart Paste Unified Button */
-.smart-paste-unified {
-    width: 100%;
-    background: linear-gradient(135deg, var(--accent-orange), var(--hover-orange));
-    border: none;
-    border-radius: 12px;
-    color: #1F2937;
-    font-size: 1rem;
-    font-weight: 800;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 15px 20px;
-    margin-bottom: 20px;
-}
-
-.smart-paste-unified:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 25px rgba(255, 144, 0, 0.4);
-}
-
-.smart-paste-unified i {
-    font-size: 1.2rem;
-}
-
 /* Clipboard Feedback */
 .clipboard-feedback {
     font-size: 0.85rem;
@@ -683,29 +655,6 @@
     font-weight: 600;
     text-align: center;
     transition: all 0.3s ease;
-}
-
-/* 🔥 NEW: Smart Paste Feedback */
-.smart-paste-feedback {
-    font-size: 0.85rem;
-    margin-top: 10px;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-weight: 600;
-    text-align: center;
-    transition: all 0.3s ease;
-}
-
-.smart-paste-feedback.feedback-success {
-    background: rgba(34, 197, 94, 0.1);
-    color: #22c55e;
-    border: 1px solid rgba(34, 197, 94, 0.3);
-}
-
-.smart-paste-feedback.feedback-error {
-    background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
-    border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 /* أزرار الإجراءات */
@@ -872,7 +821,7 @@
 
 .success-modal strong {
     color: var(--accent-orange);
-    font-family: 'Orbitron', monospace;
+    font-family: Arial, sans-serif;
 }
 
 .btn-close-modal {
@@ -967,33 +916,22 @@
         gap: 10px;
     }
     
-    /* 🔥 SMART ENHANCEMENT: Square transfer cards for mobile */
+    /* 🔥 SMART ENHANCEMENT: Optimized transfer cards for mobile */
     .transfer-card {
-        padding: 15px 12px;
-        min-height: 120px;
-        aspect-ratio: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-    }
-    
-    .transfer-header {
-        margin-bottom: 8px;
+        padding: 12px;
+        min-height: auto;
     }
     
     .transfer-header h3 {
+        font-size: 0.95rem;
+    }
+    
+    .transfer-time, .rate-text {
+        font-size: 0.8rem;
+    }
+    
+    .price-amount {
         font-size: 0.9rem;
-        line-height: 1.2;
-    }
-    
-    .transfer-header i {
-        font-size: 1.2rem;
-    }
-    
-    .transfer-time {
-        font-size: 0.75rem;
-        text-align: center;
-        margin-top: auto;
     }
     
     .coins-input {

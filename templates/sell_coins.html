@@ -53,13 +53,6 @@
                     </div>
                     <div class="transfer-details">
                         <div class="transfer-time">⏱️ خلال ساعة واحدة</div>
-                        <div class="transfer-rate">
-                            <span class="rate-text">تحويل سريع</span>
-                        </div>
-                    </div>
-                    <div class="transfer-price" id="instantPrice">
-                        <span class="price-label">السعر النهائي:</span>
-                        <span class="price-amount">0 جنيه</span>
                     </div>
                 </div>
 
@@ -71,13 +64,6 @@
                     </div>
                     <div class="transfer-details">
                         <div class="transfer-time">📅 خلال 24 ساعة</div>
-                        <div class="transfer-rate">
-                            <span class="rate-text">تحويل عادي</span>
-                        </div>
-                    </div>
-                    <div class="transfer-price" id="normalPrice">
-                        <span class="price-label">السعر النهائي:</span>
-                        <span class="price-amount">0 جنيه</span>
                     </div>
                 </div>
             </div>
@@ -91,15 +77,13 @@
             </h2>
             
             <div class="coins-input-wrapper">
-                <input type="number" 
+                <input type="text" 
                        id="coinsAmount" 
                        class="coins-input" 
-                       placeholder="أدخل عدد الكوينز"
-                       min="100"
-                       max="1000000"
-                       step="100"
-                       style="font-family: Arial, sans-serif;">
-                <div class="coins-hint">الحد الأدنى: 100 كوين | الحد الأقصى: 1,000,000 كوين</div>
+                       placeholder="أدخل الكمية (مثال: 300k أو 1.5m أو 500,000)"
+                       autocomplete="off"
+                       inputmode="numeric">
+                <div class="coins-hint">الحد الأدنى: 100 كوين | الحد الأقصى: 5,000,000 كوين | يدعم: k للآلاف، m للملايين</div>
             </div>
         </div>
 
@@ -112,8 +96,12 @@
             
             <div class="price-preview" id="pricePreview">
                 <div class="price-card">
-                    <div class="price-label">سعر المليون:</div>
+                    <div class="price-label">السعر الأساسي:</div>
                     <div class="price-value" id="basePrice">0 جنيه</div>
+                </div>
+                <div class="price-card discount-card" id="discountCard" style="display: none;">
+                    <div class="price-label">الخصم المطبق:</div>
+                    <div class="price-value discount" id="discountAmount">0 جنيه</div>
                 </div>
                 <div class="price-card final-card">
                     <div class="price-label">السعر النهائي:</div>
@@ -167,15 +155,11 @@
                     أكواد الاسترداد (Backup Codes)
                 </label>
                 
-                <!-- خيارات الإدخال -->
+                <!-- زر لصق ذكي واحد -->
                 <div class="recovery-input-options">
-                    <button type="button" class="option-btn active" data-mode="separate" onclick="switchRecoveryMode('separate')">
-                        <i class="fas fa-th"></i>
-                        6 حقول منفصلة
-                    </button>
-                    <button type="button" class="option-btn" data-mode="bulk" onclick="switchRecoveryMode('bulk')">
-                        <i class="fas fa-paste"></i>
-                        لصق دفعة واحدة
+                    <button type="button" class="option-btn active smart-paste-unified" data-mode="smart" onclick="performSmartPaste()">
+                        <i class="fas fa-magic"></i>
+                        لصق ذكي من الحافظة
                     </button>
                 </div>
 
@@ -239,8 +223,12 @@
                     <span class="summary-value" id="summaryType">عادي</span>
                 </div>
                 <div class="summary-row">
-                    <span class="summary-label">سعر المليون:</span>
+                    <span class="summary-label">السعر الأساسي:</span>
                     <span class="summary-value" id="summaryBase">0 جنيه</span>
+                </div>
+                <div class="summary-row discount-row" id="discountRow" style="display: none;">
+                    <span class="summary-label">الخصم:</span>
+                    <span class="summary-value discount" id="summaryDiscount">0 جنيه</span>
                 </div>
                 <div class="summary-row total-row">
                     <span class="summary-label">السعر النهائي:</span>

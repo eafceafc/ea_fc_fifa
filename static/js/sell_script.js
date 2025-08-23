@@ -68,7 +68,7 @@ class TransferTypeHandler {
 class CoinsQuantityHandler {
     constructor() {
         this.minCoins = 100;
-        this.maxCoins = 5000000; // زيادة الحد الأقصى إلى 5 ملايين
+        this.maxCoins = 20000; // زيادة الحد الأقصى إلى 5 ملايين
         this.currentAmount = 0;
         this.input = null;
         this.lastValidValue = '';

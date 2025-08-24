@@ -1056,7 +1056,7 @@
 
 /* تكبير السعر النهائي في قسم التأكيد */
 .confirmation-fortress .summary-value.total {
-    font-size: 1.9rem !important; /* تكبير من 1.3rem إلى 2.5rem */
+    font-size: 1.7rem !important; /* تكبير من 1.3rem إلى 2.5rem */
     font-weight: 900 !important;
     color: var(--accent-orange) !important;
     text-shadow: 0 2px 10px rgba(255, 144, 0, 0.3);

@@ -75,22 +75,6 @@ class CoinsQuantityHandler {
         this.init();
     }
 
-        /**
-     * 🔥🔥 دالة جديدة لتنسيق الأرقام بنظام K/M الذكي 🔥🔥
-     * (أضف هذه الدالة هنا)
-     */
-    formatSmartDisplay(number) {
-        if (number === 0) return ''; // لا تعرض أي شيء إذا كان الرقم صفراً
-
-        if (number < 1000) {
-            return `${number} K`;
-        } else {
-            const millionsValue = number / 1000;
-            return `${millionsValue.toLocaleString('en-US')} M`;
-        }
-    }
-
-
     init() {
         this.input = document.getElementById('coinsAmount');
         if (this.input) {
@@ -109,53 +93,54 @@ class CoinsQuantityHandler {
     }
 
     handleInput(event) {
-        const inputElement = event.target;
-        let value = inputElement.value;
-
-        // 1. تنظيف المدخلات للحصول على الرقم الخام
-        const rawNumber = this.parseSmartInput(value);
-
-        // 2. التحقق من المدخلات غير الصحيحة
-        if (rawNumber === null) {
-            this.showTemporaryError('تنسيق غير صحيح');
-            inputElement.value = this.formatSmartDisplay(this.currentAmount); // أعد القيمة القديمة
+        const inputValue = event.target.value;
+        
+        // تحسين 4: تطبيق فواصل الآلاف في الوقت الفعلي
+        const cleanValue = this.parseSmartInput(inputValue);
+        
+        if (cleanValue !== null && cleanValue > 0) {
+            // تطبيق فواصل الآلاف تلقائياً أثناء الكتابة
+            const formattedValue = this.formatNumberWithCommas(cleanValue);
+            if (formattedValue !== inputValue) {
+                const cursorPos = event.target.selectionStart;
+                event.target.value = formattedValue;
+                // إعادة وضع المؤشر في الموضع الصحيح
+                const newPos = this.adjustCursorPosition(inputValue, formattedValue, cursorPos);
+                event.target.setSelectionRange(newPos, newPos);
+            }
+        }
+        
+        if (cleanValue === null) {
+            // قيمة غير صحيحة - عرض رسالة خطأ مؤقتة
+            this.showTemporaryError('تنسيق غير صحيح - استخدم أرقام فقط أو k/m');
             return;
         }
-
-        // 3. التحقق من الحدود
-        if (rawNumber > this.maxCoins) {
-            this.showError(`الحد الأقصى ${this.maxCoins.toLocaleString('en-US')}`);
-            this.currentAmount = this.maxCoins; // ثبت القيمة على الحد الأقصى
-        } else {
-            this.currentAmount = rawNumber;
-        }
-
-        // 4. تحديث العرض في خانة الإدخال
-        const formattedValue = this.formatSmartDisplay(this.currentAmount);
         
-        // *** هذا هو الجزء الذي يحل مشكلة "التعليق" ***
-        if (inputElement.value !== formattedValue) {
-            const originalLength = inputElement.value.length;
-            const newLength = formattedValue.length;
-            const selectionStart = inputElement.selectionStart;
-            
-            inputElement.value = formattedValue;
-            
-            // إعادة المؤشر إلى مكانه الصحيح
-            inputElement.setSelectionRange(selectionStart + (newLength - originalLength), selectionStart + (newLength - originalLength));
+        // التحقق من الحدود
+        if (cleanValue > this.maxCoins) {
+            this.showError(`الحد الأقصى ${this.formatNumberDisplay(this.maxCoins)} كوين`);
+            event.target.value = this.lastValidValue;
+            return;
         }
-
-        // 5. إرسال الحدث للقلاع الأخرى
+        
+        if (cleanValue > 0 && cleanValue < this.minCoins) {
+            this.showError(`الحد الأدنى ${this.formatNumberDisplay(this.minCoins)} كوين`);
+            return;
+        }
+        
+        // حفظ القيمة الصحيحة
+        this.currentAmount = cleanValue;
+        this.lastValidValue = event.target.value; // حفظ القيمة المنسقة
+        
+        // إرسال حدث للقلاع الأخرى
         window.dispatchEvent(new CustomEvent('coinsAmountChanged', {
-            detail: {
-                amount: this.currentAmount,
-                isValid: this.currentAmount >= this.minCoins
+            detail: { 
+                amount: this.currentAmount, 
+                isValid: cleanValue >= this.minCoins,
+                formattedDisplay: this.formatNumberDisplay(cleanValue)
             }
         }));
     }
-
-
-
 
     showError(message) {
         const errorElement = document.getElementById('errorText');

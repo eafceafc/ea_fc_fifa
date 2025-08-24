@@ -131,7 +131,14 @@ class CoinsQuantityHandler {
         // حفظ القيمة الصحيحة
         this.currentAmount = cleanValue;
         this.lastValidValue = event.target.value; // حفظ القيمة المنسقة
-        
+
+
+        // 🔥 عرض K/M لحظي أثناء الكتابة
+        if (cleanValue > 0 && !event.target.matches(':focus')) {
+            // إذا الحقل مش مُركز، اعرض التنسيق
+            event.target.value = this.formatCoinsKM(cleanValue);
+        }
+
         // إرسال حدث للقلاع الأخرى
         window.dispatchEvent(new CustomEvent('coinsAmountChanged', {
             detail: { 
@@ -140,6 +147,12 @@ class CoinsQuantityHandler {
                 formattedDisplay: this.formatCoinsKM(cleanValue)  // 🔥 التطبيق الأول
             }
         }));
+        // 🔥 عرض K/M في الحقل مباشرة بعد فترة قصيرة
+        setTimeout(() => {
+            if (this.currentAmount > 0 && !this.input.matches(':focus')) {
+                this.input.value = this.formatCoinsKM(this.currentAmount);
+            }
+        }, 100);
     }
 
     showError(message) {
@@ -157,9 +170,9 @@ class CoinsQuantityHandler {
     }
 
     handleBlur(event) {
-        // تنسيق القيمة عند فقدان التركيز
+        // 🔥 تنسيق القيمة عند فقدان التركيز بتنسيق K/M
         if (this.currentAmount > 0) {
-            event.target.value = this.formatNumberDisplay(this.currentAmount);
+            event.target.value = this.formatCoinsKM(this.currentAmount);  // 🔥 الإصلاح هنا
         }
     }
     

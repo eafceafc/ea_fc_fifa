@@ -1049,3 +1049,24 @@
 .summary-card .summary-value.total {
     color: var(--accent-orange) !important; /* استعادة اللون البرتقالي وإجباره */
 }
+
+/* =============================================== */
+/* 🔥 تحديث تصميمي: تكبير السعر النهائي في الملخص 🔥 */
+/* =============================================== */
+
+/* تكبير السعر النهائي في قسم التأكيد */
+.confirmation-fortress .summary-value.total {
+    font-size: 1.9rem !important; /* تكبير من 1.3rem إلى 2.5rem */
+    font-weight: 900 !important;
+    color: var(--accent-orange) !important;
+    text-shadow: 0 2px 10px rgba(255, 144, 0, 0.3);
+    letter-spacing: 1px;
+    line-height: 1.2;
+}
+
+/* التأكد من التجاوب على الهواتف */
+@media (max-width: 480px) {
+    .confirmation-fortress .summary-value.total {
+        font-size: 2rem !important;
+    }
+}

@@ -137,7 +137,7 @@ class CoinsQuantityHandler {
             detail: { 
                 amount: this.currentAmount, 
                 isValid: cleanValue >= this.minCoins,
-                formattedDisplay: this.formatNumberDisplay(cleanValue)
+                formattedDisplay: this.formatCoinsKM(cleanValue)  // 🔥 التطبيق الأول
             }
         }));
     }
@@ -216,11 +216,25 @@ class CoinsQuantityHandler {
     
     formatNumberDisplay(number) {
         if (number === 0) return '0';
-        
+    
         // تحسين 4: تنسيق بالفواصل الإنجليزية مع فواصل آلاف تلقائية
         return Math.round(number).toLocaleString('en-US');
     }
+
+    // 🔥 الدالة الجديدة: تنسيق K/M حسب المطلوب
+    formatCoinsKM(number) {
+        if (number === 0) return '0';
     
+        const rounded = Math.round(number);
+    
+        // قاعدة التنسيق الجديدة
+        if (rounded < 1000) {
+            return `${rounded.toLocaleString('en-US')} K`;
+        } else {
+            return `${rounded.toLocaleString('en-US')} M`;
+        }
+    }
+
     formatNumberWithCommas(number) {
         // تحسين 4: تطبيق فواصل الآلاف تلقائياً
         return Math.round(number).toLocaleString('en-US');
@@ -861,7 +875,7 @@ class OrderConfirmationHandler {
         const basePrice = coinsAmount * coinPrice;
         const finalPrice = basePrice * rate;
 
-        this.elements.summaryCoins.textContent = coinsAmount.toLocaleString('en-US');
+        this.elements.summaryCoins.textContent = this.formatCoinsKM(coinsAmount);  // 🔥 التطبيق الثاني
         this.elements.summaryType.textContent = transferType === 'instant' ? 'فوري (خلال ساعة)' : 'عادي (خلال 24 ساعة)';
         this.elements.summaryBase.textContent = `${this.formatCurrency(basePrice)} جنيه`;
         this.elements.summaryTotal.textContent = `${this.formatCurrency(finalPrice)} جنيه`;
@@ -1030,6 +1044,28 @@ class OrderConfirmationHandler {
     hide() {
         if (this.elements.section) {
             this.elements.section.style.display = 'none';
+        }
+    }
+        formatCurrency(amount) {
+        // *** الحل النهائي والمثالي هنا ***
+        // 1. نقوم بتقريب الرقم إلى أقرب عدد صحيح
+        const roundedAmount = Math.round(amount);
+    
+        // 2. نستخدم 'en-US' لعرض الأرقام بالشكل الإنجليزي مع فواصل الآلاف
+        return roundedAmount.toLocaleString('en-US');
+    }
+
+    // 🔥 إضافة دالة K/M للملخص
+    formatCoinsKM(number) {
+        if (number === 0) return '0';
+    
+        const rounded = Math.round(number);
+    
+        // قاعدة التنسيق الجديدة
+        if (rounded < 1000) {
+            return `${rounded.toLocaleString('en-US')} K`;
+        } else {
+            return `${rounded.toLocaleString('en-US')} M`;
         }
     }
 }

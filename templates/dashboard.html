@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - FC 26</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Orbitron:wght@400;700;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+
+<body class="dashboard-body">
+    <!-- خلفية الجسيمات -->
+    <div class="particles-bg" id="particlesBg"></div>
+
+    <!-- شاشة التحميل -->
+    <div class="dashboard-loading" id="dashboardLoading" style="display: none;">
+        <div class="spinner"></div>
+        <div class="loading-text">جاري تحميل لوحة التحكم...</div>
+    </div>
+
+    <!-- رسائل الخطأ -->
+    <div class="dashboard-error" id="dashboardError" style="display: none;"></div>
+
+    <!-- الحاوي الرئيسي للوحة التحكم -->
+    <div class="dashboard-container" id="dashboardContainer">
+
+        <!-- رأس لوحة التحكم -->
+        <div class="dashboard-header">
+            <div class="header-content">
+                <h1 class="dashboard-title">
+                    <i class="fas fa-chart-line"></i>
+                    لوحة تحكم FC 26
+                </h1>
+                <div class="header-actions">
+                    <button class="dashboard-btn refresh-btn" id="refreshDashboardBtn">
+                        <i class="fas fa-sync-alt"></i>
+                        تحديث
+                    </button>
+                    <button class="dashboard-btn export-btn" id="exportDataBtn">
+                        <i class="fas fa-download"></i>
+                        تصدير البيانات
+                    </button>
+                    <a href="/" class="dashboard-btn back-btn">
+                        <i class="fas fa-home"></i>
+                        الرئيسية
+                    </a>
+                </div>
+            </div>
+            <div class="last-updated" id="lastUpdated">جاري التحميل...</div>
+        </div>
+
+        <!-- شبكة البطاقات الإحصائية -->
+        <div class="dashboard-grid">
+
+            <!-- بطاقة إجمالي المستخدمين -->
+            <div class="dashboard-card users-card">
+                <div class="card-header">
+                    <h3>إجمالي المستخدمين</h3>
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="card-content" id="totalUsersCard">
+                    <div class="loading-placeholder">جاري التحميل...</div>
+                </div>
+            </div>
+
+            <!-- بطاقة توزيع المنصات -->
+            <div class="dashboard-card platforms-card">
+                <div class="card-header">
+                    <h3>توزيع المنصات</h3>
+                    <i class="fas fa-gamepad"></i>
+                </div>
+                <div class="card-content" id="platformsChart">
+                    <div class="loading-placeholder">جاري التحميل...</div>
+                </div>
+            </div>
+
+            <!-- بطاقة طرق الدفع -->
+            <div class="dashboard-card payment-card">
+                <div class="card-header">
+                    <h3>طرق الدفع</h3>
+                    <i class="fas fa-credit-card"></i>
+                </div>
+                <div class="card-content" id="paymentMethodsChart">
+                    <div class="loading-placeholder">جاري التحميل...</div>
+                </div>
+            </div>
+
+            <!-- بطاقة إحصائيات التليجرام -->
+            <div class="dashboard-card telegram-card">
+                <div class="card-header">
+                    <h3>التليجرام</h3>
+                    <i class="fab fa-telegram"></i>
+                </div>
+                <div class="card-content" id="telegramStatsCard">
+                    <div class="loading-placeholder">جاري التحميل...</div>
+                </div>
+            </div>
+
+            <!-- بطاقة صحة النظام -->
+            <div class="dashboard-card health-card">
+                <div class="card-header">
+                    <h3>صحة النظام</h3>
+                    <i class="fas fa-heartbeat"></i>
+                </div>
+                <div class="card-content" id="systemHealthCard">
+                    <div class="loading-placeholder">جاري التحميل...</div>
+                </div>
+            </div>
+
+            <!-- بطاقة النشاطات الأخيرة -->
+            <div class="dashboard-card activity-card large-card">
+                <div class="card-header">
+                    <h3>النشاطات الأخيرة</h3>
+                    <i class="fas fa-history"></i>
+                </div>
+                <div class="card-content" id="activityList">
+                    <div class="loading-placeholder">جاري التحميل...</div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- تذييل لوحة التحكم -->
+        <div class="dashboard-footer">
+            <div class="footer-content">
+                <p>© 2024 FC 26 Profile System - لوحة التحكم المعزولة v1.0.0</p>
+                <div class="last-updated">آخر تحديث: جاري التحميل...</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- إشعارات النجاح -->
+    <div class="success-notifications" id="successNotifications"></div>
+
+    <!-- تحميل ملف JavaScript المعزول -->
+    <script src="{{ url_for('static', filename='js/DashboardFortress.js') }}"></script>
+</body>
+
+</html>

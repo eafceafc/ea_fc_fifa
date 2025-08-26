@@ -13,11 +13,14 @@
 """
 
 import json
+import os  # 🔥 إضافة import os المطلوب لـ os.urandom()
 import re  # 🔥 إضافة هذا الاستيراد المفقود
 from datetime import datetime
 
+from dotenv import load_dotenv  # <--- ✅✅ السطر الأول المطلوب هنا ✅✅
 from flask import jsonify, render_template, request, session
 
+load_dotenv()  # <--- ✅✅ السطر الثاني المطلوب هنا ✅✅
 
 
 # ============================================================================
@@ -41,6 +44,7 @@ from validators import (
     validate_whatsapp_ultimate,
 )
 
+# ... (باقي الملف يبقى كما هو) ...
 # ============================================================================
 # 🚀 الخطوة 2: إنشاء التطبيق وتهيئته
 # ============================================================================
@@ -56,7 +60,7 @@ print(f"📊 ملخص الإعدادات: {app_config.get_config_summary()}")
 if telegram_manager.bot_token:
     print("🔄 محاولة تعيين Telegram Webhook...")
     webhook_result = telegram_manager.set_webhook()
-    if webhook_result.get('success'):
+    if webhook_result.get("success"):
         print("✅ تم تعيين Telegram Webhook بنجاح")
     else:
         print(f"⚠️ فشل تعيين Webhook: {webhook_result.get('error')}")
@@ -80,6 +84,7 @@ if not config_validation[0]:
 # 🔑 الخطوة 4: إعداد الجلسات والأمان
 # ============================================================================
 
+
 @app.before_request
 def before_request():
     """تهيئة الجلسة - محدثة لحل مشاكل CSRF"""
@@ -87,9 +92,149 @@ def before_request():
         session["csrf_token"] = generate_csrf_token()
         session.permanent = True
 
+
+# ============================================================================
+# 🏰 وزارة لوحة التحكم - Dashboard Ministry Routes
+# ============================================================================
+
+# استيراد وزارة لوحة التحكم
+try:
+    from dashboard_ministry import (
+        dashboard_ministry,
+        export_data,
+        get_analytics,
+        get_dashboard_data,
+    )
+
+    print("🏰 وزارة لوحة التحكم محملة بنجاح")
+except ImportError:
+    print("⚠️ تحذير: لم يتم العثور على وزارة لوحة التحكم")
+    dashboard_ministry = None
+
+
+@app.route("/dashboard")
+def dashboard_page():
+    """صفحة لوحة التحكم الرئيسية"""
+    return render_template("dashboard.html")
+
+
+@app.route("/api/dashboard-data")
+def dashboard_data_api():
+    """API لجلب بيانات لوحة التحكم"""
+    if not dashboard_ministry:
+        return jsonify({"success": False, "error": "وزارة لوحة التحكم غير متاحة"}), 503
+
+    try:
+        result = get_dashboard_data()
+        return jsonify(result)
+    except Exception as e:
+        print(f"خطأ في API لوحة التحكم: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/dashboard-analytics")
+def dashboard_analytics_api():
+    """API لجلب التحليلات فقط"""
+    if not dashboard_ministry:
+        return jsonify({"success": False, "error": "وزارة لوحة التحكم غير متاحة"}), 503
+
+    try:
+        result = get_analytics()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/dashboard-export")
+def dashboard_export_api():
+    """API لتصدير بيانات لوحة التحكم"""
+    if not dashboard_ministry:
+        return jsonify({"success": False, "error": "وزارة لوحة التحكم غير متاحة"}), 503
+
+    try:
+        result = export_data()
+
+        if result["success"]:
+            # إرجاع البيانات كـ JSON file للتحميل
+            response = jsonify(result["export_data"])
+            response.headers["Content-Disposition"] = (
+                f'attachment; filename=fc26_dashboard_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+            )
+            response.headers["Content-Type"] = "application/json"
+            return response
+        else:
+            return jsonify(result), 500
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 # ============================================================================
 # 🗺️ الخطوة 5: تعريف مسارات التطبيق (Routes)
 # ============================================================================
+
+
+# ============================================================================
+# 🏦 وزارة طلبات البيع - Sell Orders Ministry
+# ============================================================================
+
+
+@app.route("/api/sell-coins", methods=["POST"])
+def handle_sell_coins_request():
+    """
+    API لاستقبال ومعالجة طلبات بيع الكوينز.
+    """
+    try:
+        # 1. قراءة البيانات من الطلب
+        data = request.get_json()
+        if not data:
+            return jsonify({"success": False, "error": "لم يتم إرسال أي بيانات"}), 400
+
+        print(f"🔍 طلب بيع جديد: {data}")
+
+        # 2. التحقق من البيانات الأساسية
+        required_fields = ["coins_amount", "transfer_type", "ea_account"]
+        if not all(field in data for field in required_fields):
+            return jsonify({"success": False, "error": "بيانات الطلب ناقصة"}), 400
+
+        # 3. استخدام sell_handler لإنشاء الطلب
+        if not sell_handler:
+            return (
+                jsonify({"success": False, "error": "خدمة بيع الكوينز غير متاحة"}),
+                503,
+            )
+
+        result = create_sell_request(data)
+
+        # 4. إرسال إشعار تليجرام (إذا كانت الوزارة متاحة)
+        if (
+            result.get("success")
+            and "telegram_manager" in globals()
+            and telegram_manager
+        ):
+            request_id = result.get("request_id", "Unknown")
+            message = (
+                f"🚀 **طلب بيع جديد - #{request_id}** 🚀\n\n"
+                f"👤 **المستخدم:** {data.get('user_id', 'غير معروف')}\n"
+                f"💰 **الكمية:** {data.get('coins_amount', 0):,} كوين\n"
+                f"⚡ **نوع التحويل:** {data.get('transfer_type', 'غير محدد')}\n"
+                f"📧 **حساب EA:** {data.get('ea_account', {}).get('email', 'غير متوفر')}\n\n"
+                f"يرجى مراجعة لوحة التحكم للمزيد من التفاصيل."
+            )
+            try:
+                telegram_manager.send_admin_notification(message)
+            except:
+                print("⚠️ فشل في إرسال إشعار تليجرام")
+
+        # 5. إضافة redirect_url للرد إذا كان الطلب نجح
+        if result.get("success"):
+            result["redirect_url"] = "/dashboard"
+
+        return jsonify(result)
+
+    except Exception as e:
+        print(f"❌ خطأ فادح في معالجة طلب البيع: {str(e)}")
+        return jsonify({"success": False, "error": "حدث خطأ داخلي في الخادم"}), 500
 
 
 @app.route("/")
@@ -298,8 +443,8 @@ def generate_telegram_code_endpoint():
         )
 
         # 🔥 إضافة bot_username للاستجابة
-        if 'bot_username' not in result:
-            result['bot_username'] = telegram_manager.bot_username
+        if "bot_username" not in result:
+            result["bot_username"] = telegram_manager.bot_username
 
         print(f"🤖 Generated Telegram Code Response: {result}")
         return jsonify(result)
@@ -330,31 +475,35 @@ def get_bot_username():
     """الحصول على username البوت - مُصلحة"""
     try:
         # 🔥 إصلاح: إرجاع username البوت بشكل مضمون
-        username = telegram_manager.bot_username or 'ea_fc_fifa_bot'
-        
+        username = telegram_manager.bot_username or "ea_fc_fifa_bot"
+
         # محاولة الحصول على معلومات البوت الحقيقية
         if telegram_manager.bot_token:
             bot_info = telegram_manager.get_bot_info()
-            if bot_info and bot_info.get('username'):
-                username = bot_info.get('username')
-        
+            if bot_info and bot_info.get("username"):
+                username = bot_info.get("username")
+
         print(f"🤖 Returning bot username: @{username}")
-        
-        return jsonify({
-            "success": True,
-            "username": username,
-            "bot_username": username  # 🔥 إضافة للتوافق
-        })
+
+        return jsonify(
+            {
+                "success": True,
+                "username": username,
+                "bot_username": username,  # 🔥 إضافة للتوافق
+            }
+        )
 
     except Exception as e:
         print(f"خطأ في الحصول على username البوت: {str(e)}")
         # 🔥 إرجاع قيمة افتراضية حتى في حالة الخطأ
-        return jsonify({
-            "success": False,
-            "username": "ea_fc_fifa_bot",
-            "bot_username": "ea_fc_fifa_bot",
-            "error": str(e)
-        })
+        return jsonify(
+            {
+                "success": False,
+                "username": "ea_fc_fifa_bot",
+                "bot_username": "ea_fc_fifa_bot",
+                "error": str(e),
+            }
+        )
 
 
 @app.route("/admin-data")
@@ -415,28 +564,30 @@ def set_telegram_webhook():
         print(f"خطأ في تعيين webhook: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
 
+
 @app.route("/setup-telegram", methods=["GET"])
 def setup_telegram():
     """إعداد التليجرام تلقائياً - للاستخدام مرة واحدة"""
     try:
         # تعيين webhook
         result = telegram_manager.set_webhook()
-        
+
         # اختبار البوت
         bot_info = telegram_manager.get_bot_info()
-        
+
         setup_info = {
-            'webhook_result': result,
-            'bot_info': bot_info,
-            'config': telegram_manager.get_admin_data(),
-            'timestamp': datetime.now().isoformat()
+            "webhook_result": result,
+            "bot_info": bot_info,
+            "config": telegram_manager.get_admin_data(),
+            "timestamp": datetime.now().isoformat(),
         }
-        
+
         return jsonify(setup_info)
-        
+
     except Exception as e:
         print(f"خطأ في إعداد التليجرام: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"error": str(e)}), 500
+
 
 # ============================================================================
 # 💰 وزارة بيع الكوينز - Sell Coins Ministry Routes
@@ -444,57 +595,33 @@ def setup_telegram():
 
 # استيراد وزارة بيع الكوينز
 try:
-    from sell_handler import sell_coins_ministry
+    from sell_handler import calculate_price, create_sell_request, sell_handler
+
     print("💰 وزارة بيع الكوينز محملة بنجاح")
 except ImportError:
     print("⚠️ تحذير: لم يتم العثور على وزارة بيع الكوينز")
-    sell_coins_ministry = None
+    sell_handler = None
 
-@app.route('/sell-coins')
+
+@app.route("/sell-coins")
 def sell_coins_page():
     """صفحة بيع الكوينز"""
-    return render_template('sell_coins.html')
+    return render_template("sell_coins.html")
 
-@app.route('/api/calculate-price', methods=['POST'])
-def calculate_price():
+
+@app.route("/api/calculate-price", methods=["POST"])
+def calculate_price_api():
     """حساب سعر الكوينز"""
-    if not sell_coins_ministry:
-        return jsonify({'success': False, 'error': 'الخدمة غير متاحة حالياً'}), 503
-    
+    if not sell_handler:
+        return jsonify({"success": False, "error": "الخدمة غير متاحة حالياً"}), 503
+
     data = request.json
-    coins = data.get('coins', 0)
-    transfer_type = data.get('transferType', 'normal')
-    
-    result = sell_coins_ministry.calculate_price(coins, transfer_type)
+    coins = data.get("coins", 0)
+    transfer_type = data.get("transferType", "normal")
+
+    result = calculate_price(coins, transfer_type)
     return jsonify(result)
 
-@app.route('/api/sell-coins', methods=['POST'])
-def sell_coins():
-    """إنشاء طلب بيع كوينز"""
-    if not sell_coins_ministry:
-        return jsonify({'success': False, 'error': 'الخدمة غير متاحة حالياً'}), 503
-    
-    data = request.json
-    
-    # استخراج البيانات
-    user_info = data.get('user_info', {})
-    coins = data.get('coins', 0)
-    transfer_type = data.get('transferType', 'normal')
-    payment_method = data.get('paymentMethod', '')
-    account_details = data.get('accountDetails', '')
-    notes = data.get('notes', '')
-    
-    # إنشاء طلب البيع
-    result = sell_coins_ministry.create_sell_request(
-        user_info=user_info,
-        coins=coins,
-        transfer_type=transfer_type,
-        payment_method=payment_method,
-        account_details=account_details,
-        notes=notes
-    )
-    
-    return jsonify(result)
 
 # ============================================================================
 # 🚦 الخطوة 6: تعريف معالجات الأخطاء
@@ -512,6 +639,7 @@ def internal_error(error):
     """معالج خطأ 500"""
     print(f"خطأ داخلي في الخادم: {str(error)}")
     return jsonify({"error": "خطأ داخلي في الخادم"}), 500
+
 
 # ============================================================================
 # 🏁 الخطوة 7: تشغيل التطبيق
@@ -531,7 +659,7 @@ if __name__ == "__main__":
     host = app_config.HOST or "0.0.0.0"
     port = app_config.PORT or 10000
     debug = app_config.DEBUG or False
-    
+
     print(f"\n🌐 Server starting on {host}:{port} (debug={debug})")
-    
+
     app.run(host=host, port=port, debug=debug)

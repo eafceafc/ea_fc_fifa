@@ -133,6 +133,29 @@
 
     <!-- تحميل ملف JavaScript المعزول -->
     <script src="{{ url_for('static', filename='js/DashboardFortress.js') }}"></script>
+    
+    <!-- 🏰 تحميل قلاع Fort Knox Digital Identity (للاختبار الذاتي) -->
+    <script src="{{ url_for('static', filename='js/CryptoEngineFortress.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/SilentIdentityFortress.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/FC26_Integration_Bridge.js') }}"></script>
+    
+    <!-- 🔧 نظام الاختبار الذاتي - Fort Knox Digital Identity Testing Framework -->
+    <script src="{{ url_for('static', filename='js/fortress_testing/fortresses/DevToolsInspectorFortress.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/fortress_testing/core/CoreTestFortress.js') }}"></script>
+    
+    <!-- 🔍 تفعيل نظام الاختبار الذاتي -->
+    <script>
+        // تفعيل نظام مراقبة أدوات المطور
+        if (window.DevToolsInspectorAPI) {
+            window.DevToolsInspectorAPI.startMonitoring();
+            console.log('🔍 DevToolsInspectorFortress: نظام المراقبة مفعل');
+        }
+        
+        // تفعيل نظام الاختبار الأساسي (سيتم تشغيله تلقائياً)
+        if (window.CoreTestFortressAPI) {
+            console.log('🏰 CoreTestFortress: جاهز للتشغيل التلقائي');
+        }
+    </script>
 </body>
 
 </html>

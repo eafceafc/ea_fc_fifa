@@ -347,7 +347,7 @@
 
             try {
                 // محاولة الحصول على هوية محفوظة
-                const savedIdentity = localStorage.getItem('silent_identity');
+                const savedIdentity = localStorage.getItem('fc26_silent_identity');
                 
                 return {
                     name: 'Identity Persistence Test',
@@ -839,7 +839,7 @@
             setTimeout(() => {
                 console.log('%c🚀 Starting automatic Fort Knox system tests...', 'color: #3b82f6; font-size: 12px;');
                 testManager.runAllTests();
-            }, 2000); // انتظار ثانيتين للسماح للقلاع الأخرى بالتحميل
+            }, 3000); // انتظار 3 ثوان للسماح للقلاع الأخرى بالتحميل والتهيئة
         });
     }
 

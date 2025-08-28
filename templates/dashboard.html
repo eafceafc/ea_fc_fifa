@@ -155,6 +155,64 @@
         if (window.CoreTestFortressAPI) {
             console.log('🏰 CoreTestFortress: جاهز للتشغيل التلقائي');
         }
+        
+        // 🩺 اختبار مباشر للهوية الصامتة
+        setTimeout(() => {
+            console.log('🩺 فحص مباشر للهوية الصامتة:');
+            console.log('- SilentIdentityAPI:', typeof window.SilentIdentityAPI);
+            console.log('- FC26IntegrationBridge:', typeof window.FC26IntegrationBridge);
+            console.log('- localStorage items:', localStorage.length);
+            
+            // فحص localStorage مباشرة
+            for(let i = 0; i < localStorage.length; i++) {
+                let key = localStorage.key(i);
+                console.log(`- ${key}:`, localStorage.getItem(key).substring(0, 50) + '...');
+            }
+            
+            // محاولة تهيئة يدوية
+            if (window.SilentIdentityAPI) {
+                console.log('🔄 محاولة تهيئة يدوية للهوية...');
+                window.SilentIdentityAPI.initialize().then(() => {
+                    console.log('✅ تم تهيئة الهوية يدوياً');
+                    const identity = window.SilentIdentityAPI.getCurrentIdentity();
+                    console.log('🆔 الهوية:', identity ? identity.id.substring(0, 12) + '...' : 'null');
+                }).catch(e => {
+                    console.log('❌ خطأ في التهيئة:', e.message);
+                });
+            }
+            
+            // محاولة تهيئة Integration Bridge يدوياً  
+            if (window.FC26IntegrationBridge) {
+                console.log('🌉 محاولة تهيئة جسر التكامل يدوياً...');
+                window.FC26IntegrationBridge.initialize().then(() => {
+                    console.log('✅ تم تهيئة جسر التكامل يدوياً');
+                    const info = window.FC26IntegrationBridge.getIdentityInfo();
+                    console.log('🔗 معلومات التكامل:', info);
+                }).catch(e => {
+                    console.log('❌ خطأ في تهيئة الجسر:', e.message);
+                });
+            }
+        }, 3000);
+        
+        // 🚀 ضمان تهيئة تلقائية للهوية الصامتة (Failsafe)
+        setTimeout(() => {
+            if (window.SilentIdentityAPI && window.FC26IntegrationBridge) {
+                console.log('🚀 تفعيل نظام الهوية الصامتة (Failsafe)...');
+                
+                // تهيئة صامتة بدون انتظار النتيجة
+                window.SilentIdentityAPI.initialize().then(() => {
+                    console.log('✅ تم تفعيل نظام الهوية الصامتة بنجاح');
+                }).catch(() => {
+                    // نجاهل الأخطاء - ممكن تكون مُفعلة بالفعل
+                });
+                
+                window.FC26IntegrationBridge.initialize().then(() => {
+                    console.log('✅ تم تفعيل جسر التكامل بنجاح'); 
+                }).catch(() => {
+                    // نجاهل الأخطاء - ممكن يكون مُفعل بالفعل
+                });
+            }
+        }, 1000);
     </script>
 </body>
 

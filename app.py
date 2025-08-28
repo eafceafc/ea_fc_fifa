@@ -112,6 +112,19 @@ except ImportError:
     print("⚠️ تحذير: لم يتم العثور على وزارة لوحة التحكم")
     dashboard_ministry = None
 
+# 🏰 استيراد وزارة الهوية الصامتة - Identity Ministry
+try:
+    from identity_ministry import IdentityMinistry
+    identity_ministry = IdentityMinistry()
+    if identity_ministry.initialize():
+        print("🕵️ وزارة الهوية الصامتة محملة ومُهيأة بنجاح")
+    else:
+        print("⚠️ فشل في تهيئة وزارة الهوية الصامتة")
+        identity_ministry = None
+except ImportError as e:
+    print(f"⚠️ تحذير: لم يتم العثور على وزارة الهوية الصامتة: {e}")
+    identity_ministry = None
+
 
 @app.route("/dashboard")
 def dashboard_page():
@@ -168,6 +181,89 @@ def dashboard_export_api():
 
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ============================================================================
+# 🕵️ وزارة الهوية الصامتة - Identity Ministry API Routes
+# ============================================================================
+
+@app.route("/api/identity/request", methods=["POST"])
+def identity_request_api():
+    """API لطلب تسجيل هوية صامتة جديدة"""
+    if not identity_ministry:
+        return jsonify({"success": False, "error": "وزارة الهوية غير متاحة"}), 503
+    
+    try:
+        # قراءة البيانات من الطلب
+        data = request.get_json()
+        if not data:
+            return jsonify({"success": False, "error": "لا توجد بيانات في الطلب"}), 400
+        
+        device_fingerprint = data.get('device_fingerprint', '')
+        metadata = data.get('metadata', {})
+        
+        # معالجة الطلب عبر وزارة الهوية
+        result = identity_ministry.process_identity_request(device_fingerprint, metadata)
+        
+        return jsonify(result)
+    
+    except Exception as e:
+        return jsonify({"success": False, "error": f"خطأ في معالجة الطلب: {str(e)}"}), 500
+
+
+@app.route("/api/identity/session", methods=["POST"])  
+def identity_session_api():
+    """API لإنشاء جلسة جديدة للهوية الصامتة"""
+    if not identity_ministry:
+        return jsonify({"success": False, "error": "وزارة الهوية غير متاحة"}), 503
+    
+    try:
+        # قراءة البيانات من الطلب
+        data = request.get_json()
+        if not data:
+            return jsonify({"success": False, "error": "لا توجد بيانات في الطلب"}), 400
+        
+        identity_id = data.get('identity_id', '')
+        session_metadata = data.get('metadata', {})
+        
+        if not identity_id:
+            return jsonify({"success": False, "error": "معرف الهوية مطلوب"}), 400
+        
+        # إنشاء جلسة جديدة
+        result = identity_ministry.create_session_for_identity(identity_id, session_metadata)
+        
+        return jsonify(result)
+    
+    except Exception as e:
+        return jsonify({"success": False, "error": f"خطأ في إنشاء الجلسة: {str(e)}"}), 500
+
+
+@app.route("/api/identity/track-event", methods=["POST"])
+def identity_track_event_api():
+    """API لتتبع الأحداث للهوية الصامتة"""
+    if not identity_ministry:
+        return jsonify({"success": False, "error": "وزارة الهوية غير متاحة"}), 503
+    
+    try:
+        # قراءة البيانات من الطلب
+        data = request.get_json()
+        if not data:
+            return jsonify({"success": False, "error": "لا توجد بيانات في الطلب"}), 400
+        
+        session_id = data.get('session_id', '')
+        event_type = data.get('event_type', '')
+        event_data = data.get('event_data', {})
+        
+        if not session_id or not event_type:
+            return jsonify({"success": False, "error": "معرف الجلسة ونوع الحدث مطلوبان"}), 400
+        
+        # تسجيل الحدث
+        result = identity_ministry.track_user_event(session_id, event_type, event_data)
+        
+        return jsonify(result)
+    
+    except Exception as e:
+        return jsonify({"success": False, "error": f"خطأ في تتبع الحدث: {str(e)}"}), 500
 
 
 # ============================================================================

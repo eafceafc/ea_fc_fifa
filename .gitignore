@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Flask
+flask_app.log
+flask_app_error.log
+
+# Database
+*.db
+fc26_identities.db
+
+# Supervisor
+supervisord.log
+supervisord.pid
+supervisor.sock
+
+# Environment (we'll add .env manually for this deployment)
+# .env
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
